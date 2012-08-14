@@ -7,7 +7,7 @@ import (
 	//"io/ioutil"
 	"strings"
 	"time"
-	"../model/"
+	"pickup/model"
 )
 
 type AlbumHandler struct {

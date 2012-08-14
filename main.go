@@ -1,8 +1,8 @@
 package main
 
 import (
-	"./model"
-	"./handlers"
+	"pickup/model"
+	"pickup/handlers"
 	"flag"
 	"fmt"
 	"net/http"
