@@ -19,7 +19,8 @@ type AlbumHandler struct {
 func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/albums/"):]
     parts := strings.SplitN(path, "/", 2)
-	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts, len(parts))
+	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
+			len(parts))
 	// If only one part, we'll search for it
 	if len(parts) == 1 {
 		query := parts[0]
@@ -47,7 +48,7 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	// Convert to Album Summary to save on info
 	albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
 	for i := 0; i< len(h.Music.Albums); i++ {
-		albumSummaries[i] = h.Music.Albums[i]
+		albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
 	}
 	j, _ := json.Marshal(albumSummaries)
 	fmt.Println("Time to marshall all albums:", time.Since(t0))
@@ -60,7 +61,7 @@ func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {
 	matches := model.SearchAlbums(h.Music, query)
 	fmt.Printf("Found %d results\n", len(matches))
 	for _, item := range matches{
-		fmt.Printf("%s - %s\n", item.GetArtist(), item.GetName())
+		fmt.Printf("%s - %s\n", item.Artist, item.Name)
 	}
 	j, _ := json.Marshal(matches)
 	w.Write(j)

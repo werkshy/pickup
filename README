@@ -7,17 +7,18 @@ search available. The "albums" interface in Google Play Music (web) is pretty
 close, but the google play uploader sucks and misses half of my songs.
 
 I've written a functional prototype of this in C++, Python, C++ again (I was
-trying to run it on an NSLU2 embedded Linux machine with 32MB RAM). It started
-off as a standalone player, then grew an xmms2 backend, and now is going to use
-mpd for playback, since I already use mpd everywhere and it just works. I'm
-writing it now in Go because I want to learn Go and I want to have this system.
+trying to run it on an NSLU2 embedded Linux machine with 32MB RAM) and now Go.
+It started off as a standalone player, then grew an xmms2 backend, and now is
+going to use mpd for playback, since I already use mpd everywhere and it just
+works. I'm writing it now in Go because I want to learn Go and I want to have
+this system.
 
 Design Requirements:
 
 - Run on embedded hardware. NSLU2 would be nice, Raspberry Pi (256MB) would be
   fine.
 - Display results quickly even when the music is stored on a slow-ish network
-  drive.
+  drive (i.e. some caching of available music).
 - Include more metadata than pure MPD, e.g. related artists, reviews etc. Can be
   loaded on the fly or stored locally.
 - Show random albums to play. Shuffle-by-album.
@@ -37,13 +38,13 @@ URLS to implement:
 
 	/artists/              : GET: list all artists
 	/artists/[search term] : GET: show matching artists
-	/artists/Artist_Name   : GET: show albums of given artist
+	/artists/Artist_Name/  : GET: show albums of given artist
                             POST: add or play given artist
 
 	/albums/               : GET: list all albums
     /albums/[search term]  : GET: list matching albums
-    /albums/Artist_Name/Album_Name : GET: show given album
-                                    POST: add or play given album
+    /albums/Artist_Name/Album_Name/ : GET: show given album
+                                     POST: add or play given album
 
 	/tracks/               : GET: list all tracks?
     /tracks/[search term]  : GET: list matching tracks

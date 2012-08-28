@@ -1,1 +1,21 @@
-# Figure out persistence
+# Get albums and artists endpoints working
+#
+# Get basic backbone page working for artist and album
+#
+# Get basic playback working (replace all tracks for artist or album)
+#
+# Get basic playback controls working (play / pause / stop / volume)
+#
+# Get basic playlist control working (view, remove, add)
+#
+# Show album covers and artist photos from disk or embedded
+#
+# View / play individual tracks
+#
+# Related artists (via last.fm or whatever)
+#
+# Seek-in-track
+#
+# Better persistence and/or search
+
+

@@ -41,22 +41,28 @@ type Album struct {
 	Artist string
 }
 
-type AlbumSummary interface {
-	GetName() string
-	GetArtist() string
+type AlbumSummary struct {
+	Name string
+	Artist string
+	Tracks []string
 }
 
 func (a Album) SubItems() []Track {
 	return a.Tracks
 }
 
-func (a Album) GetName() string {
-	return a.Name
+/*
+ * Convert Album to AlbumSummary
+ */
+func NewAlbumSummary(a Album) AlbumSummary {
+	trackNames := make([]string, len(a.Tracks))
+	for i := 0; i< len(a.Tracks); i++ {
+		trackNames[i] = a.Tracks[i].Name
+	}
+	return AlbumSummary{a.Name, a.Artist, trackNames}
 }
 
-func (a Album) GetArtist() string {
-	return a.Artist
-}
+
 
 /**
  * Artist struct
@@ -71,7 +77,24 @@ func (a Artist) SubItems() []Album {
 	return a.Albums
 }
 
-func (a Artist) getName() string {
+func (a Artist) GetName() string {
 	return a.Name
 }
+
+type ArtistSummary struct {
+	Name string
+	AlbumNames []string
+}
+
+/*
+ * Convert Artist to ArtistSummary
+ */
+func NewArtistSummary(a Artist) ArtistSummary {
+	names := make([]string, len(a.Albums))
+	for i := 0; i< len(a.Albums); i++ {
+		names[i] = a.Albums[i].Name
+	}
+	return ArtistSummary{a.Name, names}
+}
+
 

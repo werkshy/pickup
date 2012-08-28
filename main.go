@@ -1,12 +1,14 @@
 package main
 
 import (
-	"pickup/model"
-	"pickup/handlers"
 	"flag"
 	"fmt"
 	"net/http"
+	"pickup/handlers"
+	"pickup/model"
 )
+
+var Port = 8080
 
 func main() {
 	var action = flag.String("action", "serve", "Action to perform (serve|refresh)")
@@ -15,7 +17,6 @@ func main() {
 	flag.Parse()
 
 	fmt.Println("Action is:", *action)
-
 
 	collection := loadOrRefresh(*musicDir)
 
@@ -34,17 +35,20 @@ func main() {
 }
 
 func serve(musicDir string, music model.Collection) bool {
-	fmt.Println("Serving from", musicDir)
-	albumHandler := handlers.AlbumHandler {music}
+	albumHandler := handlers.AlbumHandler{music}
+	artistHandler := handlers.ArtistHandler{music}
 	http.Handle("/albums/", albumHandler)
-	http.ListenAndServe(":8080", nil)
+	http.Handle("/artists/", artistHandler)
+	var bind = fmt.Sprintf(":%d", Port)
+	fmt.Printf("Serving from %s on %s\n", musicDir, bind)
+	http.ListenAndServe(bind, nil)
 	return true
 }
 
 func stats(music model.Collection) {
 	fmt.Printf("%d tracks, %d albums, %d artists\n",
-			len(music.Tracks), len(music.Albums),
-			len(music.Artists))
+		len(music.Tracks), len(music.Albums),
+		len(music.Artists))
 }
 
 func search(music model.Collection, query string) {

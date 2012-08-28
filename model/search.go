@@ -7,7 +7,9 @@ import (
 )
 
 /*
-	Search in the music collection for items matching the query string
+	Search in the music collection for items matching the query string.
+	For now an in-memory linear scan is fine (about 4ms for album searches on my
+	laptop)
 */
 func Search(music Collection, query string) (
 		matching Collection) {
@@ -43,9 +45,21 @@ func SearchAlbums(music Collection, query string) (matching []AlbumSummary) {
 	lQuery := strings.ToLower(query)
 	for _, item := range music.Albums {
 		if strings.Contains(strings.ToLower(item.Name), lQuery) {
-			matching = append(matching, item)
+			matching = append(matching, NewAlbumSummary(item))
 		}
 	}
 	fmt.Println("Time to search albums: ", time.Since(t0))
+	return matching
+}
+
+func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
+	t0 := time.Now()
+	lQuery := strings.ToLower(query)
+	for _, item := range music.Artists {
+		if strings.Contains(strings.ToLower(item.Name), lQuery) {
+			matching = append(matching, NewArtistSummary(item))
+		}
+	}
+	fmt.Println("Time to search artists: ", time.Since(t0))
 	return matching
 }
