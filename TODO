@@ -1,8 +1,12 @@
-# Get albums and artists endpoints working
+# Get albums and artists endpoints working  [DONE]
 #
 # Get basic backbone page working for artist and album
 #
+# Write some js unit tests
+#
 # Get basic playback working (replace all tracks for artist or album)
+#
+# Write some go unit tests
 #
 # Get basic playback controls working (play / pause / stop / volume)
 #

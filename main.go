@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 	"pickup/handlers"
 	"pickup/model"
 )
@@ -39,6 +40,14 @@ func serve(musicDir string, music model.Collection) bool {
 	artistHandler := handlers.ArtistHandler{music}
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
+	staticDir, _ := os.Getwd()
+	staticDir = staticDir + "/static"
+	fmt.Printf("Serving static files from %s\n", staticDir)
+	// strip '/static' from the url to get the name of the file within the
+	// static dir.
+	http.Handle("/static/", http.StripPrefix("/static/",
+			http.FileServer(http.Dir(staticDir))))
+	http.HandleFunc("/", handlers.Index)
 	var bind = fmt.Sprintf(":%d", Port)
 	fmt.Printf("Serving from %s on %s\n", musicDir, bind)
 	http.ListenAndServe(bind, nil)
