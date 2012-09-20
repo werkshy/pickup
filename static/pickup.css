@@ -1,0 +1,25 @@
+body {
+	font-family: sans-serif;
+	font-size: 12px;
+	background-color: #050505;
+	color: #eeeeee;
+}
+
+div.multicolumn {
+	-moz-column-count: 4;
+	-moz-column-gap: 20px;
+	-webkit-column-count: 4;
+	-webkit-column-gap: 20px;
+	column-count: 4;
+	column-gap: 20px;
+}
+
+ul#artistList {
+	list-style-type: none;
+	padding: 0px;
+}
+
+ul#artistList li {
+	margin-left: 3px;
+}
+

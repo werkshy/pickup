@@ -3,9 +3,33 @@
 	<script type="text/javascript" src="/static/jquery-1.8.0.js"></script>
 	<script type="text/javascript" src="/static/underscore.js"></script>
 	<script type="text/javascript" src="/static/backbone.js"></script>
-	<script type="text/javascript" src="/static/mustache.js"></script>
+	<script type="text/javascript" src="/static/icanhaz.js"></script>
 	<script type="text/javascript" src="/static/pickup.js"></script>
 	<link type="text/css" rel="stylesheet" href="/static/pickup.css">
+
+	<!-- icanhaz Mustache templates -->
+	<script id="artistList" type="text/html">
+		<span>{{Name}}</span>
+	</script>
+
+	<script id="artist" type="text/html">
+		<h2>{{Name}}</h2>
+		<div class="multicolumn">
+			<ul class="multicolumn">
+				{{#AlbumNames}}
+				<li id="{{.}}">{{.}}</li>
+				{{/AlbumNames}}
+			</ul>
+		</div>
+	</script>
 </head>
-<h1>Pickup!</h1>
+<h1 id="home">Pickup!</h1>
+
+<div class="multicolumn">
+	<ul id="artistList"></ul>
+</div>
+
+<div id="artist">
+</div>
+
 </html>
