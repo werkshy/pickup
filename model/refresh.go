@@ -95,6 +95,6 @@ func Refresh(musicDir string) Collection {
 		}
 	}
 	fmt.Println("Time to sort music: ", time.Since(t1))
-	return Collection {artists, albums, tracks}
+	return Collection {musicDir, artists, albums, tracks}
 }
 

@@ -1,8 +1,8 @@
 # Get albums and artists endpoints working  [DONE]
 #
-# Get basic backbone page working for artist and album
+# Get basic backbone page working for artist and album [DONE]
 #
-# Write some js unit tests
+# Write some js unit tests [HAHAHA]
 #
 # Get basic playback working (replace all tracks for artist or album)
 #
@@ -13,6 +13,8 @@
 # Get basic playlist control working (view, remove, add)
 #
 # Show album covers and artist photos from disk or embedded
+#
+# Figure out elegant tabs / single page app architecture
 #
 # View / play individual tracks
 #

@@ -1,6 +1,7 @@
 package model
 
 type Collection struct {
+	MusicDir string
 	Artists []Artist
 	Albums []Album
 	Tracks []Track

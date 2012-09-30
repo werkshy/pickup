@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"log"
 	"os"
 	"pickup/handlers"
 	"pickup/model"
+	"pickup/player"
 )
 
 var Port = 8080
@@ -30,6 +32,8 @@ func main() {
 		serve(*musicDir, collection)
 	case "save":
 		save(collection)
+	case "test-playback":
+		testPlayback(collection)
 	default:
 		fmt.Println("Unknown action", *action)
 	}
@@ -38,8 +42,10 @@ func main() {
 func serve(musicDir string, music model.Collection) bool {
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
+	playlistHandler := handlers.PlaylistHandler{music}
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
+	http.Handle("/playlist/", playlistHandler)
 	staticDir, _ := os.Getwd()
 	staticDir = staticDir + "/static"
 	fmt.Printf("Serving static files from %s\n", staticDir)
@@ -91,6 +97,24 @@ func save(music model.Collection) error {
 	err := music.Save()
 	if err != nil {
 		fmt.Println(err)
+	}
+	return err
+}
+
+func testPlayback(music model.Collection) error {
+	playlist := player.NewMpdPlaylist(music.MusicDir)
+	playlist.Clear()
+
+	// add any old album
+	album := music.Albums[2]
+	log.Printf("Playing album %s - %s\n", album.Artist, album.Name)
+	playlist.AddAlbum(album)
+
+	// get the contents of the playlist
+	currentTracks, err := playlist.List()
+	log.Printf("Current playlist: (%d tracks)", len(currentTracks))
+	for _, track := range currentTracks {
+		log.Printf("%s\n", track)
 	}
 	return err
 }
