@@ -5,6 +5,7 @@
 	<script type="text/javascript" src="/static/backbone.js"></script>
 	<script type="text/javascript" src="/static/icanhaz.js"></script>
 	<script type="text/javascript" src="/static/pickup.js"></script>
+	<link type="text/css" rel="stylesheet" href="/static/normalize.css">
 	<link type="text/css" rel="stylesheet" href="/static/pickup.css">
 
 	<!-- icanhaz Mustache templates -->
@@ -13,9 +14,9 @@
 	</script>
 
 	<script id="artist" type="text/html">
-		<h2>{{Name}}</h2>
-		<div class="multicolumn">
-			<ul class="multicolumn">
+		<div id="artistView" class="multicolumn">
+			<h2>{{Name}}</h2>
+			<ul id="albumList">
 				{{#AlbumNames}}
 				<li id="{{.}}">{{.}}</li>
 				{{/AlbumNames}}
@@ -25,7 +26,7 @@
 </head>
 <h1 id="home">Pickup!</h1>
 
-<div class="multicolumn">
+<div id="allArtistsView" class="multicolumn">
 	<ul id="artistList"></ul>
 </div>
 

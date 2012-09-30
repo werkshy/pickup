@@ -41,6 +41,17 @@ $(function() {
 		url: "/artists/"
 	});
 
+	App.showView = function(viewId) {
+		console.log("Showing view '%s'", viewId);
+		$(viewId).show();
+		var allViews = ["#allArtistsView", "#artistView"]
+		for (i=0; i<allViews.length; i++) {
+			if (allViews[i] !== viewId) {
+				$(allViews[i]).hide();
+			}
+		}
+	}
+
 	App.ArtistListView = Backbone.View.extend({
 		el : "#artistList",
 		className: "artist-list",
@@ -51,12 +62,12 @@ $(function() {
 			this.collection.bind("reset", this.render, this);
 		},
 		render: function () {
+			App.showView("#allArtistsView");
 			var that = this;
 			_.each(this.collection.models, function (item) {
 				that.renderItem(item);
 			}, this);
 		},
-
 		renderItem: function (item) {
 			var itemView = new App.ArtistListItemView({
 				model: item
@@ -77,10 +88,8 @@ $(function() {
 			return this;
 		},
 		viewArtist: function() {
-			console.log("Hiding artist list");
-			// Todo: be smarter about hiding.
 			// Todo swipe visible panel or tab left/right as we navigate
-			$("#artistList").hide();
+			App.showView("#artistView");
 			console.log("view artist " + this.model.get('Name'));
 			App.router.navigate("artists/" + this.model.get('Name'),
 					{ 'trigger' : true});
@@ -90,9 +99,7 @@ $(function() {
 	App.Route = {}
 	App.Route.allArtists = function() {
 		console.log("Route: show all artists (%d)", App.artists.length)
-		App.artistListView = new App.ArtistListView({collection:App.artists});
-		App.artistListView.render();
-		console.log("Rendered all artists");
+		App.showView("#allArtistsView");
 	}
 
 	App.Route.artist = function(query) {
@@ -136,6 +143,10 @@ $(function() {
 			success: function() {
 				console.log("Fetched all artists: %d", App.artists.length);
 				Backbone.history.start();
+				console.log("Rendering the artist list");
+				App.artistListView = new App.ArtistListView({collection:App.artists});
+				App.artistListView.render();
+				console.log("Rendered all artists");
 			}
 	});
 

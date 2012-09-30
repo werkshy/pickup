@@ -5,7 +5,7 @@ body {
 	color: #eeeeee;
 }
 
-div.multicolumn {
+div.multicolumn ul {
 	-moz-column-count: 4;
 	-moz-column-gap: 20px;
 	-webkit-column-count: 4;
@@ -14,12 +14,27 @@ div.multicolumn {
 	column-gap: 20px;
 }
 
-ul#artistList {
+ul#artistList,
+ul#albumList {
 	list-style-type: none;
 	padding: 0px;
+	margin: 0px;
 }
 
-ul#artistList li {
+ul#artistList li,
+ul#albumList li {
 	margin-left: 3px;
 }
 
+/**
+ * Don't put a column break inside an <li>
+ */
+ol li,
+ul li {
+	break-inside: avoid-column;
+	-webkit-column-break-inside:avoid;
+	-moz-column-break-inside:avoid;
+	-o-column-break-inside:avoid;
+	-ms-column-break-inside:avoid;
+	column-break-inside:avoid;
+}
