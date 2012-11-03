@@ -63,3 +63,35 @@ func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
 	fmt.Println("Time to search artists: ", time.Since(t0))
 	return matching
 }
+
+func GetAlbum(music Collection, artistName string, albumName string) (*Album, error) {
+	for _, artist := range music.Artists {
+		if artist.Name == artistName {
+			for _, album := range artist.Albums {
+				if album.Name == albumName {
+					return &album, nil
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("Album not found: %s/%s", artistName, albumName)
+}
+
+func GetTrack(music Collection, artistName string, albumName string,
+			trackName string) (*Track, error) {
+	for _, artist := range music.Artists {
+		if artist.Name == artistName {
+			for _, album := range artist.Albums {
+				if album.Name == albumName {
+					for _, track := range album.Tracks {
+						if track.Name == trackName {
+							return &track, nil
+						}
+					}
+				}
+			}
+		}
+	}
+	return nil, fmt.Errorf("Track not found: %s/%s", artistName, albumName,
+			trackName)
+}
