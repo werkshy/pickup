@@ -78,6 +78,7 @@ func (h PlaylistHandler) command(w http.ResponseWriter,
 
 func (h PlaylistHandler) add(artist string, album string) (err error) {
 	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
+	controls := player.NewMpdControls()
 	if artist == "" || album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -88,8 +89,18 @@ func (h PlaylistHandler) add(artist string, album string) (err error) {
 		log.Printf("Album not found.")
 		return err
 	}
-	playlist.Clear()
-	return playlist.AddAlbum(*albumData)
+	err = playlist.Clear()
+	if err != nil {
+		log.Printf("Error clearing playlist")
+		return err
+	}
+
+	err = playlist.AddAlbum(*albumData)
+	if err != nil {
+		log.Printf("Error adding album '%s'", album)
+		return err
+	}
+	return controls.Play()
 }
 
 func (h PlaylistHandler) clear() (err error) {
