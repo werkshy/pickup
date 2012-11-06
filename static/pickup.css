@@ -26,6 +26,28 @@ ul#albumList li {
 	margin-left: 3px;
 }
 
+/** To abbreviate text you need these properties and a width.
+ * Note that elements probably need to be floated to pick up the width
+ */
+.abbreviated {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+ul#albumList li span.album-title {
+	max-width: 15em;
+	float: left;
+	clear: left;
+}
+
+.album-actions {
+	font-weight: bold;
+	cursor: pointer;
+	float: right;
+	margin-right: 4px;
+}
+
 /**
  * Don't put a column break inside an <li>
  */
@@ -38,3 +60,4 @@ ul li {
 	-ms-column-break-inside:avoid;
 	column-break-inside:avoid;
 }
+

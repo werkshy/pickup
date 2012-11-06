@@ -55,6 +55,7 @@ type PlaylistCommand struct {
 	Command string
 	Artist string
 	Album string
+	Immediate bool
 }
 
 // dispatch playlist commands (add, clear etc)
@@ -69,30 +70,34 @@ func (h PlaylistHandler) command(w http.ResponseWriter,
 	log.Printf("Received playlist command '%s'\n", data.Command)
 	switch(data.Command) {
 		case "add":
-			err = h.add(data.Artist, data.Album)
+			err = h.add(data.Artist, data.Album, data.Immediate)
 		case "clear":
 			err = h.clear();
 	}
 	return err
 }
 
-func (h PlaylistHandler) add(artist string, album string) (err error) {
+func (h PlaylistHandler) add(artist string, album string, immediate bool) (
+			err error) {
 	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
 	controls := player.NewMpdControls()
 	if artist == "" || album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
 	}
-	log.Printf("Trying to add '%s'/'%s' to playlist\n", artist, album)
+	log.Printf("Trying to add '%s'/'%s' to playlist (%s)\n", artist, album,
+			immediate)
 	albumData, err := model.GetAlbum(h.Music, artist, album)
 	if err != nil {
 		log.Printf("Album not found.")
 		return err
 	}
-	err = playlist.Clear()
-	if err != nil {
-		log.Printf("Error clearing playlist")
-		return err
+	if immediate {
+		err = playlist.Clear()
+		if err != nil {
+			log.Printf("Error clearing playlist")
+			return err
+		}
 	}
 
 	err = playlist.AddAlbum(*albumData)
@@ -100,7 +105,10 @@ func (h PlaylistHandler) add(artist string, album string) (err error) {
 		log.Printf("Error adding album '%s'", album)
 		return err
 	}
-	return controls.Play()
+	if immediate {
+		err = controls.Play()
+	}
+	return err
 }
 
 func (h PlaylistHandler) clear() (err error) {

@@ -21,7 +21,11 @@
 			<h2>{{Name}}</h2>
 			<ul id="albumList">
 				{{#AlbumNames}}
-				<li id="{{.}}">{{.}}</li>
+				<li id="{{.}}">
+					<span class="album-title abbreviated">{{.}}</span>
+					<span class='album-actions add' title="Add '{{.}}'">+</span>
+					<span class='album-actions play' title="Play '{{.}}'">&gt;</span>
+				</li>
 				{{/AlbumNames}}
 			</ul>
 		</div>

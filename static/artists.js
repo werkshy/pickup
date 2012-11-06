@@ -22,17 +22,24 @@ function initArtists(App) {
 				console.log("Render artist '%s'", this.model.get("Name"));
 				var that = this;
 				this.$el.html(ich.artist(this.model.toJSON()));
-				$(this.$el).find("li").click(function(event){
-					console.log("Clicked");
-					that.viewAlbum(event);
+				$(this.$el).find(".play").click(function(event){
+					that.playAlbum(event);
+				});
+				$(this.$el).find(".add").click(function(event){
+					that.addAlbum(event);
 				});
 				App.showView("#artistView")
 				return this;
 			},
-			viewAlbum: function(event) {
-				var album = event.currentTarget.id;
-				console.log("Play Album: %s/%s", this.model.get('Name'), album);
+			playAlbum: function(event) {
+				var album = event.currentTarget.parentElement.id;
+				console.log("Play album: %s/%s", this.model.get('Name'), album);
 				playAlbum(this.model.get('Name'), album, true)
+			},
+			addAlbum: function(event) {
+				var album = event.currentTarget.parentElement.id;
+				console.log("Add album: %s/%s", this.model.get('Name'), album);
+				playAlbum(this.model.get('Name'), album, false)
 			}
 	});
 

@@ -4,7 +4,7 @@ function playAlbum(artist, album, immediate) {
 				"command" : "add",
 				"artist" : artist,
 				"album" : album,
-				//"immediate" : immediate
+				"immediate" : immediate
 			},
 			function() {
 				console.log("Play success!");
