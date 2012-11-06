@@ -44,9 +44,11 @@ func serve(musicDir string, music model.Collection) bool {
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
 	playlistHandler := handlers.PlaylistHandler{music}
+	controlHandler := handlers.ControlHandler{}
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
 	http.Handle("/playlist/", playlistHandler)
+	http.Handle("/control/", controlHandler)
 	staticDir, _ := os.Getwd()
 	staticDir = staticDir + "/static"
 	fmt.Printf("Serving static files from %s\n", staticDir)

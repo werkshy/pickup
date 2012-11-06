@@ -17,10 +17,8 @@ function initRoutes(App) {
 		var artistView = new App.ArtistView({model:artist})
 	}
 
-	$("h1#home").click(function() {
-		App.router.navigate("artists",
-				{ 'trigger' : true});
-	});
+	/** Wire up the controls in the top of the page **/
+	initControls();
 
 	// Set up the Backbone router
 	App.Router = Backbone.Router.extend({

@@ -8,7 +8,10 @@ import (
 // Define the interface for a player
 type Controls interface {
 	Play() error
-//	Stop() error
+	Stop() error
+	Pause() error
+	Prev() error
+	Next() error
 //	Volume(newVol int) error
 //	VolumeDown() error
 //	VolumeUp() error
@@ -30,6 +33,26 @@ func NewMpdControls() MpdControls {
 
 func (controls MpdControls) Play() (err error) {
 	log.Printf("mpd 'play'\n")
-	err = controls.conn.Play(0)
-	return err
+	return controls.conn.Play(0)
+}
+
+func (controls MpdControls) Stop() (err error) {
+	log.Printf("mpd 'stop'\n")
+	return controls.conn.Stop()
+}
+
+func (controls MpdControls) Pause() (err error) {
+	log.Printf("mpd 'pause'\n")
+	// TODO: get current pause state and toggle it
+	return controls.conn.Pause(true)
+}
+
+func (controls MpdControls) Prev() (err error) {
+	log.Printf("mpd 'prev'\n")
+	return controls.conn.Previous()
+}
+
+func (controls MpdControls) Next() (err error) {
+	log.Printf("mpd 'next'\n")
+	return controls.conn.Next()
 }

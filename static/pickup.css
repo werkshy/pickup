@@ -14,6 +14,20 @@ div.multicolumn ul {
 	column-gap: 20px;
 }
 
+/**
+ * Don't put a column break inside an <li>
+ */
+ol li,
+ul li {
+	break-inside: avoid-column;
+	-webkit-column-break-inside:avoid;
+	-moz-column-break-inside:avoid;
+	-o-column-break-inside:avoid;
+	-ms-column-break-inside:avoid;
+	column-break-inside:avoid;
+}
+
+
 ul#artistList,
 ul#albumList {
 	list-style-type: none;
@@ -48,16 +62,20 @@ ul#albumList li span.album-title {
 	margin-right: 4px;
 }
 
-/**
- * Don't put a column break inside an <li>
- */
-ol li,
-ul li {
-	break-inside: avoid-column;
-	-webkit-column-break-inside:avoid;
-	-moz-column-break-inside:avoid;
-	-o-column-break-inside:avoid;
-	-ms-column-break-inside:avoid;
-	column-break-inside:avoid;
+#controls {
+	background-color: #eeeeee;
+	color: #050505;
+	text-transform: uppercase;
+	font-weight: bold;
+	font-family: ubuntu, verdana, sans-serif;
+}
+
+#controls span {
+	cursor: pointer;
+}
+
+#controls span.control-break {
+	padding-left: 3px;
+	padding-right: 3px;
 }
 
