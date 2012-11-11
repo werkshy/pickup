@@ -3,7 +3,7 @@
 	<script type="text/javascript" src="/static/jquery-1.8.0.js"></script>
 	<script type="text/javascript" src="/static/underscore.js"></script>
 	<script type="text/javascript" src="/static/backbone.js"></script>
-	<script type="text/javascript" src="/static/icanhaz.js"></script>
+	<script type="text/javascript" src="/static/handlebars.js"></script>
 	<script type="text/javascript" src="/static/control.js"></script>
 	<script type="text/javascript" src="/static/artists.js"></script>
 	<script type="text/javascript" src="/static/routes.js"></script>
@@ -11,12 +11,12 @@
 	<link type="text/css" rel="stylesheet" href="/static/normalize.css">
 	<link type="text/css" rel="stylesheet" href="/static/pickup.css">
 
-	<!-- icanhaz Mustache templates -->
-	<script id="artistList" type="text/html">
+	<!-- Mustache / Handlebars templates -->
+	<script id="artist-list-template" type="text/html">
 		<span>{{Name}}</span>
 	</script>
 
-	<script id="artist" type="text/html">
+	<script id="artist-template" type="text/html">
 		<div id="artistView" class="multicolumn">
 			<h2>{{Name}}</h2>
 			<ul id="albumList">

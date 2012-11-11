@@ -16,12 +16,13 @@ function initArtists(App) {
 			el : "#artist",
 			className : "artist",
 			initialize: function() {
+				this.template = Handlebars.compile($("#artist-template").html())
 				this.render();
 			},
 			render: function() {
 				console.log("Render artist '%s'", this.model.get("Name"));
 				var that = this;
-				this.$el.html(ich.artist(this.model.toJSON()));
+				this.$el.html(this.template(this.model.attributes))
 				$(this.$el).find(".play").click(function(event){
 					that.playAlbum(event);
 				});
@@ -60,6 +61,7 @@ function initArtists(App) {
 		render: function () {
 			// Render and show the artist list view
 			var that = this;
+			log.debug("Rendering artistList")
 			this.renderDontShow()
 			App.showView("#allArtistsView");
 			return this;
@@ -87,12 +89,14 @@ function initArtists(App) {
 	App.ArtistListItemView = Backbone.View.extend({
 		tagName: "li",
 		className: "artist-list-item",
-
+		template: Handlebars.compile($("#artist-list-template").html()),
 		events : {
 			"click" : "viewArtist",
 		},
 		render: function () {
-			this.$el.html(ich.artistList(this.model.toJSON()));
+			var html = this.template(this.model.attributes);
+			//console.log("Rendered %s to '%s'", this.model.attributes.Name, html)
+			this.$el.html(html)
 			return this;
 		},
 		viewArtist: function() {
