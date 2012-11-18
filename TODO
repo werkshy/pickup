@@ -10,6 +10,8 @@
 #
 # Get basic playback controls working (play / pause / stop / volume)
 #
+# Fix Mpd connection leak
+#
 # Get basic playlist control working (view, remove, add)
 #    - consider expand-down or -up from controls overlay div for playlist
 #

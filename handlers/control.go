@@ -35,7 +35,10 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
-	controls := player.NewMpdControls()
+	controls, err := player.NewMpdControls()
+	if (err != nil) {
+		return err
+	}
 
 	// get the status
 	status, err := controls.Status()
@@ -56,7 +59,10 @@ type ControlCommand struct {
 func (h ControlHandler) command(w http.ResponseWriter,
 			r *http.Request) (err error) {
 	var data ControlCommand
-	controls := player.NewMpdControls()
+	controls, err := player.NewMpdControls()
+	if (err != nil) {
+		return err
+	}
 	err = JsonRequestToType(w, r, &data)
 	if (err != nil) {
 		return err

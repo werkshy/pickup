@@ -35,12 +35,15 @@ type MpdControls struct {
 	conn *mpd.Client
 }
 
-func NewMpdControls() MpdControls {
+func NewMpdControls() (controls MpdControls, err error) {
 	conn, err := mpd.Dial("tcp", "localhost:6600")
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Error trying to get MPD client")
+		log.Println(err)
+		return MpdControls{}, err
+
 	}
-	return MpdControls { conn }
+	return MpdControls { conn }, err
 }
 
 func (controls MpdControls) Play() (err error) {
@@ -72,6 +75,11 @@ func (controls MpdControls) Next() (err error) {
 func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	// mpd status returns map[string] string
 	attrs, err := controls.conn.Status()
+	if err != nil {
+		log.Println("Error trying to get mpd status")
+		log.Println(err)
+		return status, err
+	}
 	log.Printf("mpd 'status': %v\n", attrs)
 	//var currentId = attrs["songid"]
 	//var nextId = attrs["nextsongid"]
@@ -82,6 +90,11 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	}
 
 	attrs, err = controls.conn.CurrentSong()
+	if err != nil {
+		log.Println("Error trying to get mpd current song")
+		log.Println(err)
+		return status, err
+	}
 	log.Printf("mpd 'current song': %v\n", attrs)
 	status.CurrentArtist = attrs["Artist"]
 	status.CurrentAlbum = attrs["Album"]

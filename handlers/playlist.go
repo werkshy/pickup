@@ -80,7 +80,10 @@ func (h PlaylistHandler) command(w http.ResponseWriter,
 func (h PlaylistHandler) add(artist string, album string, immediate bool) (
 			err error) {
 	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
-	controls := player.NewMpdControls()
+	controls, err := player.NewMpdControls()
+	if err != nil {
+		return err
+	}
 	if artist == "" || album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
