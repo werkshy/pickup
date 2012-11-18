@@ -1,3 +1,68 @@
+
+function initControls(App) {
+	console.log("Setting up control classes")
+	App.Control = Backbone.Model.extend({
+		initialize: function() {
+			console.log("Initializing artist");
+			this.url = "/control"
+		},
+	});
+
+	App.ControlView = Backbone.View.extend({
+			// TODO: bind events
+			el : "#controls",
+			className : "controls",
+			events : {
+				"click span#go-home" : "goHome",
+				"click #controls #next-track" : "nextTrack",
+				"click #controls #prev-track" : "prevTrack",
+				"click #controls #play" : "play",
+				"click #controls #stop" : "stop",
+				"click #controls #pause" : "pause",
+			},
+			initialize: function() {
+				_.bindAll(this, "render")
+				_.bindAll(this)
+				this.model.bind("change", this.render)
+				this.template = Handlebars.compile($("#control-template").html())
+				this.render();
+			},
+			render: function() {
+				console.log("Render control")
+				this.$el.html(this.template(this.model.attributes))
+				return this;
+			},
+			goHome: function () {
+				console.log("Going to home page")
+				App.router.navigate("artists", { 'trigger' : true});
+			},
+			postCommand: function(command) {
+				$.postJSON("/control/", command,
+						function() {
+							console.log("Control success");
+						}
+				);
+			},
+			nextTrack: function() {
+				console.log("Sending 'next' command");
+				this.postCommand({"command" : "next"})
+			},
+			prevTrack: function() {
+				this.postCommand({"command" : "prev"})
+			},
+			play: function() {
+				this.postCommand({"command" : "play"})
+			},
+			stop: function() {
+				this.postCommand({"command" : "stop"})
+			},
+			pause: function() {
+				this.postCommand({"command" : "pause"})
+			},
+	});
+
+}
+
 function playAlbum(artist, album, immediate) {
 	console.log("Playing album %s/%s (%s)", artist, album, immediate);
 	$.postJSON("/playlist/", {
@@ -24,64 +89,3 @@ function volumeChange(delta) {
 	);
 }
 
-/**
- * Wire up the controls div
- * Called from routes.js
- */
-function initControls() {
-	$("span#go-home").click(function() {
-		App.router.navigate("artists",
-				{ 'trigger' : true});
-	});
-
-	$("#controls #next-track").click(function() {
-		console.log("Sending 'next' command");
-		$.postJSON("/control/", {
-					"command" : "next",
-				},
-				function() {
-					console.log("Next track success!");
-				}
-		);
-	});
-	$("#controls #prev-track").click(function() {
-		console.log("Sending 'prev' command");
-		$.postJSON("/control/", {
-					"command" : "prev",
-				},
-				function() {
-					console.log("Prev track success!");
-				}
-		);
-	});
-	$("#controls #stop").click(function() {
-		console.log("Sending 'stop' command");
-		$.postJSON("/control/", {
-					"command" : "stop",
-				},
-				function() {
-					console.log("Stop playing success!");
-				}
-		);
-	});
-	$("#controls #play").click(function() {
-		console.log("Sending 'play' command");
-		$.postJSON("/control/", {
-					"command" : "play",
-				},
-				function() {
-					console.log("Start playing success!");
-				}
-		);
-	});
-	$("#controls #pause").click(function() {
-		console.log("Sending 'pause' command");
-		$.postJSON("/control/", {
-					"command" : "pause",
-				},
-				function() {
-					console.log("pause playing success!");
-				}
-		);
-	});
-}

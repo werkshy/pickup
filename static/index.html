@@ -30,21 +30,28 @@
 			</ul>
 		</div>
 	</script>
+
+	<script id="control-template" type="text/html">
+		<span id="go-home" title="Go to Artists page">Home</span>
+		<span class="control-break">|</span>
+		<span id="vol-up" title="Increase Volume">⇧</span> vol 
+		<span id="vol-up" title="Decrease Volume">⇩</span>
+		<span>{{Volume}}%</span>
+		<span class="control-break">|</span>
+		<span id="stop" title="Stop playback">◻</span>
+		<span id="play" title="Start playback">▷</span>
+		<span id="pause" title="Pause playback">ǁ</span>
+		<span class="control-break">|</span>
+		<span id="prev-track" title="Play previous track">⇤</span> track
+		<span id="next-track" title="Play next track">⇥</span>
+		<span class="control-break">|</span>
+		<span>{{CurrentTrack}}</span>
+	</script>
+
 	<title>Pickup!</title>
 </head>
 
 <div id="controls">
-	<span id="go-home" title="Go to Artists page">Home</span>
-	<span class="control-break">|</span>
-	<span id="vol-up" title="Increase Volume">⇧</span> vol 
-	<span id="vol-up" title="Decrease Volume">⇩</span>
-	<span class="control-break">|</span>
-	<span id="stop" title="Stop playback">◻</span>
-	<span id="play" title="Start playback">▷</span>
-	<span id="pause" title="Pause playback">ǁ</span>
-	<span class="control-break">|</span>
-	<span id="prev-track" title="Play previous track">⇤</span> track
-	<span id="next-track" title="Play next track">⇥</span>
 </div>
 
 <div id="allArtistsView" class="multicolumn">

@@ -34,11 +34,14 @@ $(function() {
 	}
 
 	initArtists(App);
+	initControls(App);
 	initRoutes(App);
 
-	// Start the backbone router / history
+	// Start the backbone router / history after we retrieve the artists
+	// collection.
 	App.artists = new App.ArtistList();
 	var t1 = new Date();
+	// fetch all data and initialize view on success
 	App.artists.fetch({
 			success: function() {
 				var t2 = new Date();
@@ -57,4 +60,14 @@ $(function() {
 					}, 10);
 			}
 	});
+	// Set up player controls
+	console.log("Initializing controls")
+	App.control = new App.Control()
+	App.controlView = new App.ControlView({model:App.control})
+	App.control.fetch()
+	// Set up polling for control status
+	setInterval(function() {
+		console.log("Fetching controls");
+		App.control.fetch()
+	}, 10000);
 });

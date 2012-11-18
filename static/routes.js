@@ -17,9 +17,6 @@ function initRoutes(App) {
 		var artistView = new App.ArtistView({model:artist})
 	}
 
-	/** Wire up the controls in the top of the page **/
-	initControls();
-
 	// Set up the Backbone router
 	App.Router = Backbone.Router.extend({
 		routes: {
