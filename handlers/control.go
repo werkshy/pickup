@@ -35,11 +35,12 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
-	//controls := player.NewMpdControls()
+	controls := player.NewMpdControls()
 
 	// get the status
-	var status = map[string] string {
-		"volume" : "10",
+	status, err := controls.Status()
+	if (err != nil) {
+		return err
 	}
 	j, _ := json.Marshal(status)
 	w.Write(j)
