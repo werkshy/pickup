@@ -43,8 +43,11 @@ func main() {
 func serve(musicDir string, music model.Collection) bool {
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
-	playlistHandler := handlers.PlaylistHandler{music}
-	controlHandler := handlers.ControlHandler{}
+	playlistHandler, err := handlers.NewPlaylistHandler(music)
+	controlHandler, err := handlers.NewControlHandler()
+	if err != nil {
+		log.Fatalln("Couldn't connect to MPD")
+	}
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
 	http.Handle("/playlist/", playlistHandler)

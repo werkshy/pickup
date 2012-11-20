@@ -16,6 +16,14 @@ import (
 
 type PlaylistHandler struct {
 	Music model.Collection
+	playlist player.MpdPlaylist
+	controls player.MpdControls
+}
+
+func NewPlaylistHandler(music model.Collection) (h PlaylistHandler, err error) {
+	playlist := player.NewMpdPlaylist(music.MusicDir)
+	controls, err := player.NewMpdControls()
+	return PlaylistHandler{music, playlist, controls}, err
 }
 
 
@@ -37,10 +45,8 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter) error {
-	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
-
 	// get the contents of the playlist
-	currentTracks, err := playlist.List()
+	currentTracks, err := h.playlist.List()
 	if (err != nil) {
 		log.Printf("Error getting playlist: %s", err)
 		return err
@@ -79,11 +85,6 @@ func (h PlaylistHandler) command(w http.ResponseWriter,
 
 func (h PlaylistHandler) add(artist string, album string, immediate bool) (
 			err error) {
-	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
-	controls, err := player.NewMpdControls()
-	if err != nil {
-		return err
-	}
 	if artist == "" || album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -96,25 +97,24 @@ func (h PlaylistHandler) add(artist string, album string, immediate bool) (
 		return err
 	}
 	if immediate {
-		err = playlist.Clear()
+		err = h.playlist.Clear()
 		if err != nil {
 			log.Printf("Error clearing playlist")
 			return err
 		}
 	}
 
-	err = playlist.AddAlbum(*albumData)
+	err = h.playlist.AddAlbum(*albumData)
 	if err != nil {
 		log.Printf("Error adding album '%s'", album)
 		return err
 	}
 	if immediate {
-		err = controls.Play()
+		err = h.controls.Play()
 	}
 	return err
 }
 
 func (h PlaylistHandler) clear() (err error) {
-	playlist := player.NewMpdPlaylist(h.Music.MusicDir)
-	return playlist.Clear()
+	return h.playlist.Clear()
 }

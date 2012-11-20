@@ -14,8 +14,13 @@ import (
 
 
 type ControlHandler struct {
+	controls player.MpdControls
 }
 
+func NewControlHandler() (h ControlHandler, err error) {
+	controls, err := player.NewMpdControls()
+	return ControlHandler{controls}, err
+}
 
 // Return a list of albums or a specific album
 func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -35,13 +40,16 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
+	/*
 	controls, err := player.NewMpdControls()
 	if (err != nil) {
 		return err
 	}
+	defer controls.Close()
+	*/
 
 	// get the status
-	status, err := controls.Status()
+	status, err := h.controls.Status()
 	if (err != nil) {
 		return err
 	}
@@ -59,10 +67,13 @@ type ControlCommand struct {
 func (h ControlHandler) command(w http.ResponseWriter,
 			r *http.Request) (err error) {
 	var data ControlCommand
+	/*
 	controls, err := player.NewMpdControls()
 	if (err != nil) {
 		return err
 	}
+	defer controls.Close()
+	*/
 	err = JsonRequestToType(w, r, &data)
 	if (err != nil) {
 		return err
@@ -71,15 +82,15 @@ func (h ControlHandler) command(w http.ResponseWriter,
 	log.Printf("Received control command '%s'\n", data.Command)
 	switch(data.Command) {
 		case "prev":
-			err = controls.Prev()
+			err = h.controls.Prev()
 		case "next":
-			err = controls.Next()
+			err = h.controls.Next()
 		case "stop":
-			err = controls.Stop()
+			err = h.controls.Stop()
 		case "play":
-			err = controls.Play()
+			err = h.controls.Play()
 		case "pause":
-			err = controls.Pause()
+			err = h.controls.Pause()
 		default:
 			log.Printf("Unknown command: %s\n", data.Command)
 			err = errors.New("Unknown command " + data.Command)

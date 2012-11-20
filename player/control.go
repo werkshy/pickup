@@ -36,6 +36,7 @@ type MpdControls struct {
 }
 
 func NewMpdControls() (controls MpdControls, err error) {
+	log.Println("Creating MpdControls instance")
 	conn, err := mpd.Dial("tcp", "localhost:6600")
 	if err != nil {
 		log.Println("Error trying to get MPD client")
@@ -44,6 +45,10 @@ func NewMpdControls() (controls MpdControls, err error) {
 
 	}
 	return MpdControls { conn }, err
+}
+
+func (controls MpdControls) Close() (err error) {
+	return controls.conn.Close()
 }
 
 func (controls MpdControls) Play() (err error) {
