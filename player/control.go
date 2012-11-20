@@ -13,7 +13,7 @@ type Controls interface {
 	Pause() error
 	Prev() error
 	Next() error
-//	Volume(newVol int) error
+	VolumeDelta(volumeDelta int) error
 //	VolumeDown() error
 //	VolumeUp() error
 //	GetVolume() (int, error)
@@ -75,6 +75,22 @@ func (controls MpdControls) Prev() (err error) {
 func (controls MpdControls) Next() (err error) {
 	log.Printf("mpd 'next'\n")
 	return controls.conn.Next()
+}
+
+func (controls MpdControls) VolumeDelta(volumeDelta int) (err error) {
+	log.Printf("mpd 'volumeDelta' %d\n", volumeDelta)
+	attrs, err := controls.conn.Status()
+	if err != nil {
+		log.Println("Error trying to get mpd status")
+		log.Println(err)
+		return err
+	}
+	volume, err := strconv.Atoi(attrs["volume"])
+	if err == nil {
+		log.Printf("mpd 'volumeDelta' %d + %d\n", volume, volumeDelta)
+		err = controls.conn.SetVolume(volume + volumeDelta)
+	}
+	return err
 }
 
 func (controls MpdControls) Status() (status PlayerStatus, err error) {

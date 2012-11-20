@@ -91,6 +91,8 @@ func (h ControlHandler) command(w http.ResponseWriter,
 			err = h.controls.Play()
 		case "pause":
 			err = h.controls.Pause()
+		case "volumeDelta":
+			err = h.controls.VolumeDelta(data.VolumeDelta)
 		default:
 			log.Printf("Unknown command: %s\n", data.Command)
 			err = errors.New("Unknown command " + data.Command)

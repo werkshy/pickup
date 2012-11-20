@@ -69,5 +69,5 @@ $(function() {
 	setInterval(function() {
 		console.log("Fetching controls");
 		App.control.fetch()
-	}, 10000);
+	}, 5000);
 });

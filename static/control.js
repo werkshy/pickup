@@ -19,6 +19,8 @@ function initControls(App) {
 				"click #controls #play" : "play",
 				"click #controls #stop" : "stop",
 				"click #controls #pause" : "pause",
+				"click #controls #vol-up" : "volUp",
+				"click #controls #vol-down" : "volDown",
 			},
 			initialize: function() {
 				_.bindAll(this, "render")
@@ -42,6 +44,7 @@ function initControls(App) {
 							console.log("Control success");
 						}
 				);
+				App.control.fetch()
 			},
 			nextTrack: function() {
 				console.log("Sending 'next' command");
@@ -58,6 +61,19 @@ function initControls(App) {
 			},
 			pause: function() {
 				this.postCommand({"command" : "pause"})
+			},
+			volUp: function() {
+				this.postCommand({
+					"command" : "volumeDelta",
+					"volumeDelta" : 5,
+				})
+			},
+			volDown: function() {
+				console.log("Sending volume down");
+				this.postCommand({
+					"command" : "volumeDelta",
+					"volumeDelta" : -5,
+				})
 			},
 	});
 
@@ -77,15 +93,4 @@ function playAlbum(artist, album, immediate) {
 	);
 }
 
-function volumeChange(delta) {
-	console.log("Changing volume by %d", delta);
-	$.postJSON("/control/", {
-				"command" : "volumeDelta",
-				"volumeDelta" : delta,
-			},
-			function() {
-				console.log("Volume change success!");
-			}
-	);
-}
 
