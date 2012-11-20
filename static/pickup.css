@@ -40,6 +40,11 @@ ul#albumList li {
 	margin-left: 3px;
 }
 
+ul#artistList li span.artist-title {
+	margin-left: 3px;
+	cursor: pointer;
+}
+
 /** To abbreviate text you need these properties and a width.
  * Note that elements probably need to be floated to pick up the width
  */
@@ -53,6 +58,7 @@ ul#albumList li span.album-title {
 	max-width: 15em;
 	float: left;
 	clear: left;
+	cursor: pointer;
 }
 
 .album-actions {
