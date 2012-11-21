@@ -83,5 +83,6 @@ ul#albumList li span.album-title {
 #controls span.control-break {
 	padding-left: 3px;
 	padding-right: 3px;
+	color: #cccccc;
 }
 
