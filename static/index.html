@@ -34,10 +34,9 @@
 	<script id="control-template" type="text/html">
 		<span id="go-home" title="Go to Artists page">Home</span>
 		<span class="control-break">|</span>
-		vol
+		vol <span>{{Volume}}%</span>
 		<span id="vol-up" title="Increase Volume">⇧</span>
 		<span id="vol-down" title="Decrease Volume">⇩</span>
-		<span>{{Volume}}%</span>
 		<span class="control-break">|</span>
 		<span id="stop" title="Stop playback">◻</span>
 		<span id="play" title="Start playback">▷</span>
@@ -47,6 +46,8 @@
 		<span id="next-track" title="Play next track">⇥</span>
 		<span class="control-break">|</span>
 		<span>{{CurrentTrack}}</span>
+		<span class="control-break">|</span>
+		<span>{{Elapsed}}</span> / <span>{{Length}}</span>
 	</script>
 
 	<title>Pickup!</title>
