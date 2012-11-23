@@ -4,13 +4,15 @@
 #
 # Get basic playback working (replace all tracks for artist or album) [DONE]
 #
+# Get basic playback controls working (play / pause / stop / volume) [DONE]
+#
 # Write some js unit tests [HAHAHA]
 #
 # Write some go unit tests
 #
-# Get basic playback controls working (play / pause / stop / volume)
-#
 # Parallelize /controls/ get (two calls to mpd)
+#
+# Get refresh working without full restart
 #
 # Get basic playlist control working (view, remove, add)
 #    - consider expand-down or -up from controls overlay div for playlist
@@ -21,6 +23,8 @@
 # 	- artists
 #   - albums
 #   - random / pick for me
+#
+# Make back button work when returning to '/' or '/#artists
 #
 # View / play individual tracks
 #
