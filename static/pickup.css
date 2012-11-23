@@ -86,3 +86,7 @@ ul#albumList li span.album-title {
 	color: #cccccc;
 }
 
+#controls .lower {
+	text-transform: lowercase;
+}
+

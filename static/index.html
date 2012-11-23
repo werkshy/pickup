@@ -45,9 +45,12 @@
 		<span id="prev-track" title="Play previous track">⇤</span> track
 		<span id="next-track" title="Play next track">⇥</span>
 		<span class="control-break">|</span>
-		<span>{{CurrentArtist}} - {{CurrentTrack}}</span>
+		{{#if CurrentArtist}}
+			<span class="artist">{{CurrentArtist}}</span> - 
+			<span class="track">{{CurrentTrack}}</span>
+		{{/if}}
 		<span class="control-break">|</span>
-		<span>{{Elapsed}}</span> / <span>{{Length}}</span>
+		<span>{{Elapsed}}</span> / <span>{{Length}}<span class="lower">s</span></span>
 	</script>
 
 	<title>Pickup!</title>

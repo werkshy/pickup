@@ -21,6 +21,7 @@ function initControls(App) {
 				"click #controls #pause" : "pause",
 				"click #controls #vol-up" : "volUp",
 				"click #controls #vol-down" : "volDown",
+				"click #controls .artist" : "gotoArtist",
 			},
 			initialize: function() {
 				_.bindAll(this, "render")
@@ -75,6 +76,11 @@ function initControls(App) {
 					"volumeDelta" : -5,
 				})
 			},
+			gotoArtist: function () {
+				console.log("Going to see %s", this.model.get('CurrentArtist'))
+				App.router.navigate("artists/" + this.model.get('CurrentArtist'),
+					{ 'trigger' : true});
+			}
 	});
 
 }
