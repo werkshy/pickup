@@ -106,12 +106,13 @@ func (controls MpdControls) VolumeDelta(volumeDelta int) (err error) {
 	return err
 }
 
-func (controls MpdControls) Status() (status PlayerStatus, err error) {
+func (controls *MpdControls) Status() (status PlayerStatus, err error) {
 	// mpd status returns map[string] string
 	attrs, err := controls.conn.Status()
 	if err != nil {
 		log.Println("Error trying to get mpd status")
 		log.Println(err)
+		controls.connect()
 		return status, err
 	}
 	log.Printf("mpd 'status': %v\n", attrs)
