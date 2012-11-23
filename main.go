@@ -100,6 +100,7 @@ func loadOrRefresh(musicDir string) model.Collection {
 	if err != nil {
 		fmt.Printf("No collection loaded, refreshing\n")
 		collection = model.Refresh(musicDir)
+		save(collection)
 	}
 	return collection
 }
