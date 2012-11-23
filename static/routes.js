@@ -31,7 +31,7 @@ function initRoutes(App) {
 			console.log("Show about");
 		},
 		defaultRoute: function(other){
-			console.log("Invalid. You attempted to reach:" + other);
+			App.Route.allArtists()
 		}
 	});
 
