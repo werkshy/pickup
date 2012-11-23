@@ -20,9 +20,10 @@ type PlaylistHandler struct {
 	controls player.MpdControls
 }
 
-func NewPlaylistHandler(music model.Collection) (h PlaylistHandler, err error) {
-	playlist := player.NewMpdPlaylist(music.MusicDir)
-	controls, err := player.NewMpdControls()
+func NewPlaylistHandler(music model.Collection, mpdHost string,
+			mpdPassword string) (h PlaylistHandler, err error) {
+	playlist := player.NewMpdPlaylist(music.MusicDir, mpdHost, mpdPassword)
+	controls, err := player.NewMpdControls(mpdHost, mpdPassword)
 	return PlaylistHandler{music, playlist, controls}, err
 }
 

@@ -17,8 +17,8 @@ type ControlHandler struct {
 	controls player.MpdControls
 }
 
-func NewControlHandler() (h ControlHandler, err error) {
-	controls, err := player.NewMpdControls()
+func NewControlHandler(addr, password string) (h ControlHandler, err error) {
+	controls, err := player.NewMpdControls(addr, password)
 	return ControlHandler{controls}, err
 }
 

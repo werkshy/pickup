@@ -27,8 +27,8 @@ type MpdPlaylist struct {
 /**
  * Constructor of MpdPlaylist
  */
-func NewMpdPlaylist(musicDir string) MpdPlaylist {
-	conn, err := mpd.Dial("tcp", "localhost:6600")
+func NewMpdPlaylist(musicDir, mpdHost, mpdPassword string) MpdPlaylist {
+	conn, err := mpd.DialAuthenticated("tcp", mpdHost, mpdPassword)
 	if err != nil {
 		log.Fatalln(err)
 	}

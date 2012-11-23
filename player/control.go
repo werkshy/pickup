@@ -33,21 +33,34 @@ type PlayerStatus struct {
 // Implementation of player interface via mpd
 type MpdControls struct {
 	conn *mpd.Client
+	addr string
+	password string
 }
 
-func NewMpdControls() (controls MpdControls, err error) {
-	log.Println("Creating MpdControls instance")
-	conn, err := mpd.Dial("tcp", "localhost:6600")
+func NewMpdControls(addr, password string) (controls MpdControls,
+			err error) {
+	log.Printf("Creating MpdControls instance (%s / %s)\n", addr, password)
+	controls = MpdControls { nil, addr, password }
+	err = controls.connect()
+	controls.conn.Ping()
+	log.Println("Pinged OK")
+	controls.Status()
+	return controls, err
+}
+
+func (controls *MpdControls) connect() (err error) {
+	log.Println("Connecting to mpd")
+	controls.conn, err = mpd.DialAuthenticated("tcp", controls.addr,
+			controls.password)
 	if err != nil {
 		log.Println("Error trying to get MPD client")
 		log.Println(err)
-		return MpdControls{}, err
-
 	}
-	return MpdControls { conn }, err
+	return err
 }
 
 func (controls MpdControls) Close() (err error) {
+	log.Println("Closing mpd connection (controls)")
 	return controls.conn.Close()
 }
 
