@@ -10,29 +10,27 @@
 #
 # Write some go unit tests
 #
-# Parallelize /controls/ get (two calls to mpd)
-#
-# Get refresh working without full restart
+# View / play individual tracks (album view)
 #
 # Get basic playlist control working (view, remove, add)
 #    - consider expand-down or -up from controls overlay div for playlist
-#
-# Show album covers and artist photos from disk or embedded
 #
 # Figure out elegant tabs / single page app architecture
 # 	- artists
 #   - albums
 #   - random / pick for me
 #
-# Make back button work when returning to '/' or '/#artists
-#
-# View / play individual tracks
+# Show album covers and artist photos from disk or embedded
 #
 # Related artists (via last.fm or whatever)
 #
 # Seek-in-track control
 #
+# Get music dir refresh working without full restart
+#
 # Better persistence and/or search
 #
 # podcasts and/or internet radio (including DI)
-
+#
+# Parallelize /controls/ get (two calls to mpd)?
+#
