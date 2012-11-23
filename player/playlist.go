@@ -2,9 +2,10 @@ package player
 
 
 import (
-	"pickup/model"
 	"code.google.com/p/gompd/mpd"
 	"log"
+	"pickup/config"
+	"pickup/model"
 )
 
 // In theory we could have different backends, so define an interface that will
@@ -15,6 +16,7 @@ type Playlist interface {
 	AddTrack(model.Track) error
 	AddTracks([]model.Track) error
 	Clear() error
+	Close() error
 }
 
 // In practice I only care about mpd for playback at the moment, aside from
@@ -27,12 +29,18 @@ type MpdPlaylist struct {
 /**
  * Constructor of MpdPlaylist
  */
-func NewMpdPlaylist(musicDir, mpdHost, mpdPassword string) MpdPlaylist {
-	conn, err := mpd.DialAuthenticated("tcp", mpdHost, mpdPassword)
+func NewMpdPlaylist(conf *config.Config) MpdPlaylist {
+	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
+			*conf.MpdPassword)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return MpdPlaylist { conn, musicDir }
+	return MpdPlaylist { conn, *conf.MusicDir }
+}
+
+func (playlist MpdPlaylist) Close() (err error) {
+	log.Println("Closing mpd connection (playlist)")
+	return playlist.conn.Close()
 }
 
 /**

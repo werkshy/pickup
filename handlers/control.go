@@ -9,28 +9,29 @@ import (
 	//"strings"
 	//"time"
 	"pickup/player"
+	"pickup/config"
 )
 
 
 
 type ControlHandler struct {
-	controls player.MpdControls
+	conf *config.Config
 }
 
-func NewControlHandler(addr, password string) (h ControlHandler, err error) {
-	controls, err := player.NewMpdControls(addr, password)
-	return ControlHandler{controls}, err
+func NewControlHandler(conf *config.Config) (h ControlHandler) {
+	return ControlHandler{conf}
 }
 
 // Return a list of albums or a specific album
 func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error = nil
+	controls, err := player.NewMpdControls(h.conf)
+	defer controls.Close()
 	switch (r.Method) {
 	case "GET":
 		log.Printf("GET: return current status\n")
-		err = h.currentStatus(w)
+		err = h.currentStatus(w, controls)
 	case "POST":
-		err = h.command(w, r)
+		err = h.command(w, r, controls)
 	}
 
 	if (err != nil) {
@@ -39,7 +40,8 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
+func (h ControlHandler) currentStatus(w http.ResponseWriter,
+			controls player.Controls) (err error) {
 	/*
 	controls, err := player.NewMpdControls()
 	if (err != nil) {
@@ -49,7 +51,7 @@ func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 	*/
 
 	// get the status
-	status, err := h.controls.Status()
+	status, err := controls.Status()
 	if (err != nil) {
 		return err
 	}
@@ -65,7 +67,7 @@ type ControlCommand struct {
 
 // dispatch control commands (vol, prev, next)
 func (h ControlHandler) command(w http.ResponseWriter,
-			r *http.Request) (err error) {
+			r *http.Request, controls player.Controls) (err error) {
 	var data ControlCommand
 	/*
 	controls, err := player.NewMpdControls()
@@ -82,17 +84,17 @@ func (h ControlHandler) command(w http.ResponseWriter,
 	log.Printf("Received control command '%s'\n", data.Command)
 	switch(data.Command) {
 		case "prev":
-			err = h.controls.Prev()
+			err = controls.Prev()
 		case "next":
-			err = h.controls.Next()
+			err = controls.Next()
 		case "stop":
-			err = h.controls.Stop()
+			err = controls.Stop()
 		case "play":
-			err = h.controls.Play()
+			err = controls.Play()
 		case "pause":
-			err = h.controls.Pause()
+			err = controls.Pause()
 		case "volumeDelta":
-			err = h.controls.VolumeDelta(data.VolumeDelta)
+			err = controls.VolumeDelta(data.VolumeDelta)
 		default:
 			log.Printf("Unknown command: %s\n", data.Command)
 			err = errors.New("Unknown command " + data.Command)

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"log"
 	"os"
+	"pickup/config"
 	"pickup/handlers"
 	"pickup/model"
 	"pickup/player"
@@ -14,27 +15,22 @@ import (
 
 var Port = 8080
 
-type Config struct {
-	MusicDir *string
-	MpdAddress *string
-	MpdPassword *string
-}
 
 func main() {
 	var action = flag.String("action", "serve", "Action to perform (serve|refresh)")
-	config := Config{}
-	config.MusicDir = flag.String("music-dir", "/music", "Music dir")
-	config.MpdAddress = flag.String("mpd-address", "localhost:6600", "MPD address")
-	config.MpdPassword = flag.String("mpd-password", "", "MPD Password")
+	conf := config.Config{}
+	conf.MusicDir = flag.String("music-dir", "/music", "Music dir")
+	conf.MpdAddress = flag.String("mpd-address", "localhost:6600", "MPD address")
+	conf.MpdPassword = flag.String("mpd-password", "", "MPD Password")
 
 	var query = flag.String("query", "", "Search query")
 	flag.Parse()
 
 	fmt.Println("Action is:", *action)
-	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *config.MpdAddress,
-			*config.MpdPassword)
+	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
+			*conf.MpdPassword)
 
-	collection := loadOrRefresh(*config.MusicDir)
+	collection := loadOrRefresh(*conf.MusicDir)
 
 	switch *action {
 	case "stats":
@@ -42,27 +38,21 @@ func main() {
 	case "search":
 		search(collection, *query)
 	case "serve":
-		serve(config, collection)
+		serve(&conf, collection)
 	case "save":
 		save(collection)
 	case "test-playback":
-		testPlayback(config, collection)
+		testPlayback(&conf, collection)
 	default:
 		fmt.Println("Unknown action", *action)
 	}
 }
 
-func serve(config Config, music model.Collection) bool {
+func serve(conf *config.Config, music model.Collection) bool {
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
-	playlistHandler, err := handlers.NewPlaylistHandler(music,
-			*config.MpdAddress,
-			*config.MpdPassword)
-	controlHandler, err := handlers.NewControlHandler(*config.MpdAddress,
-			*config.MpdPassword)
-	if err != nil {
-		log.Fatalln("Couldn't connect to MPD")
-	}
+	playlistHandler := handlers.NewPlaylistHandler(music, conf)
+	controlHandler := handlers.NewControlHandler(conf)
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
 	http.Handle("/playlist/", playlistHandler)
@@ -76,7 +66,7 @@ func serve(config Config, music model.Collection) bool {
 			http.FileServer(http.Dir(staticDir))))
 	http.HandleFunc("/", handlers.Index)
 	var bind = fmt.Sprintf(":%d", Port)
-	fmt.Printf("Serving from %s on %s\n", *config.MusicDir, bind)
+	fmt.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
 	return true
 }
@@ -122,9 +112,8 @@ func save(music model.Collection) error {
 	return err
 }
 
-func testPlayback(config Config, music model.Collection) error {
-	playlist := player.NewMpdPlaylist(*config.MusicDir, *config.MpdAddress,
-			*config.MpdPassword)
+func testPlayback(conf *config.Config, music model.Collection) error {
+	playlist := player.NewMpdPlaylist(conf)
 	playlist.Clear()
 
 	// add any old album

@@ -8,6 +8,7 @@ import (
 	//"io/ioutil"
 	//"strings"
 	//"time"
+	"pickup/config"
 	"pickup/model"
 	"pickup/player"
 )
@@ -16,27 +17,28 @@ import (
 
 type PlaylistHandler struct {
 	Music model.Collection
-	playlist player.MpdPlaylist
-	controls player.MpdControls
+	conf *config.Config
 }
 
-func NewPlaylistHandler(music model.Collection, mpdHost string,
-			mpdPassword string) (h PlaylistHandler, err error) {
-	playlist := player.NewMpdPlaylist(music.MusicDir, mpdHost, mpdPassword)
-	controls, err := player.NewMpdControls(mpdHost, mpdPassword)
-	return PlaylistHandler{music, playlist, controls}, err
+func NewPlaylistHandler(music model.Collection, conf *config.Config) (
+			h PlaylistHandler) {
+	return PlaylistHandler{music, conf}
 }
 
 
 // Return a list of albums or a specific album
 func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var err error = nil
+	controls, err := player.NewMpdControls(h.conf)
+	defer controls.Close()
+	playlist := player.NewMpdPlaylist(h.conf)
+	defer playlist.Close()
+
 	switch (r.Method) {
 	case "GET":
 		log.Printf("GET: Showing current playlist\n")
-		err = h.currentPlaylist(w)
+		err = h.currentPlaylist(w, playlist)
 	case "POST":
-		err = h.command(w, r)
+		err = h.command(w, r, playlist, controls)
 	}
 
 	if (err != nil) {
@@ -45,9 +47,10 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter) error {
+func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
+			playlist player.Playlist) error {
 	// get the contents of the playlist
-	currentTracks, err := h.playlist.List()
+	currentTracks, err := playlist.List()
 	if (err != nil) {
 		log.Printf("Error getting playlist: %s", err)
 		return err
@@ -66,8 +69,8 @@ type PlaylistCommand struct {
 }
 
 // dispatch playlist commands (add, clear etc)
-func (h PlaylistHandler) command(w http.ResponseWriter,
-			r *http.Request) (err error) {
+func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
+			playlist player.Playlist, controls player.Controls) (err error) {
 	var data PlaylistCommand
 	err = JsonRequestToType(w, r, &data)
 	if (err != nil) {
@@ -77,15 +80,15 @@ func (h PlaylistHandler) command(w http.ResponseWriter,
 	log.Printf("Received playlist command '%s'\n", data.Command)
 	switch(data.Command) {
 		case "add":
-			err = h.add(data.Artist, data.Album, data.Immediate)
+			err = h.add(playlist, controls, data.Artist, data.Album, data.Immediate)
 		case "clear":
-			err = h.clear();
+			err = h.clear(playlist);
 	}
 	return err
 }
 
-func (h PlaylistHandler) add(artist string, album string, immediate bool) (
-			err error) {
+func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
+			artist string, album string, immediate bool) ( err error) {
 	if artist == "" || album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -98,24 +101,24 @@ func (h PlaylistHandler) add(artist string, album string, immediate bool) (
 		return err
 	}
 	if immediate {
-		err = h.playlist.Clear()
+		err = playlist.Clear()
 		if err != nil {
 			log.Printf("Error clearing playlist")
 			return err
 		}
 	}
 
-	err = h.playlist.AddAlbum(*albumData)
+	err = playlist.AddAlbum(*albumData)
 	if err != nil {
 		log.Printf("Error adding album '%s'", album)
 		return err
 	}
 	if immediate {
-		err = h.controls.Play()
+		err = controls.Play()
 	}
 	return err
 }
 
-func (h PlaylistHandler) clear() (err error) {
-	return h.playlist.Clear()
+func (h PlaylistHandler) clear(playlist player.Playlist) (err error) {
+	return playlist.Clear()
 }

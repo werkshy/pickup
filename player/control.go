@@ -4,7 +4,18 @@ import (
 	"code.google.com/p/gompd/mpd"
 	"log"
 	"strconv"
+	"pickup/config"
 )
+
+type PlayerStatus struct {
+	State string
+	Volume int
+	CurrentArtist string
+	CurrentAlbum string
+	CurrentTrack string
+	Elapsed float64
+	Length float64
+}
 
 // Define the interface for a player
 type Controls interface {
@@ -17,46 +28,26 @@ type Controls interface {
 //	VolumeDown() error
 //	VolumeUp() error
 //	GetVolume() (int, error)
-	Status() (status string, err error)
-}
-
-type PlayerStatus struct {
-	State string
-	Volume int
-	CurrentArtist string
-	CurrentAlbum string
-	CurrentTrack string
-	Elapsed float64
-	Length float64
+	Status() (status PlayerStatus, err error)
 }
 
 // Implementation of player interface via mpd
 type MpdControls struct {
 	conn *mpd.Client
-	addr string
-	password string
 }
 
-func NewMpdControls(addr, password string) (controls MpdControls,
+func NewMpdControls(conf *config.Config) (controls MpdControls,
 			err error) {
-	log.Printf("Creating MpdControls instance (%s / %s)\n", addr, password)
-	controls = MpdControls { nil, addr, password }
-	err = controls.connect()
-	controls.conn.Ping()
-	log.Println("Pinged OK")
-	controls.Status()
-	return controls, err
-}
-
-func (controls *MpdControls) connect() (err error) {
-	log.Println("Connecting to mpd")
-	controls.conn, err = mpd.DialAuthenticated("tcp", controls.addr,
-			controls.password)
+	log.Printf("Creating MpdControls instance (%s / %s)\n", *conf.MpdAddress,
+			*conf.MpdPassword)
+	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
+			*conf.MpdPassword)
 	if err != nil {
 		log.Println("Error trying to get MPD client")
 		log.Println(err)
 	}
-	return err
+	controls = MpdControls { conn }
+	return controls, err
 }
 
 func (controls MpdControls) Close() (err error) {
@@ -106,13 +97,12 @@ func (controls MpdControls) VolumeDelta(volumeDelta int) (err error) {
 	return err
 }
 
-func (controls *MpdControls) Status() (status PlayerStatus, err error) {
+func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	// mpd status returns map[string] string
 	attrs, err := controls.conn.Status()
 	if err != nil {
 		log.Println("Error trying to get mpd status")
 		log.Println(err)
-		controls.connect()
 		return status, err
 	}
 	log.Printf("mpd 'status': %v\n", attrs)
