@@ -13,8 +13,8 @@ type PlayerStatus struct {
 	CurrentArtist string
 	CurrentAlbum string
 	CurrentTrack string
-	Elapsed float64
-	Length float64
+	Elapsed int
+	Length int
 }
 
 // Define the interface for a player
@@ -111,7 +111,8 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	status.Volume, err = strconv.Atoi(attrs["volume"])
 	status.State = attrs["state"]
 	if attrs["elapsed"] != ""  {
-		status.Elapsed, err = strconv.ParseFloat(attrs["elapsed"], 64)
+		elapsed, _ := strconv.ParseFloat(attrs["elapsed"], 64)
+		status.Elapsed = int(elapsed)
 	}
 
 	attrs, err = controls.conn.CurrentSong()
@@ -125,7 +126,8 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	status.CurrentAlbum = attrs["Album"]
 	status.CurrentTrack = attrs["Title"]
 	if attrs["Time"] != "" {
-		status.Length, err = strconv.ParseFloat(attrs["Time"], 64)
+		length, _ := strconv.ParseFloat(attrs["Time"], 64)
+		status.Length = int(length)
 	}
 
 
