@@ -65,6 +65,7 @@ type PlaylistCommand struct {
 	Command string
 	Artist string
 	Album string
+	Track string
 	Immediate bool
 }
 
@@ -80,7 +81,7 @@ func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
 	log.Printf("Received playlist command '%s'\n", data.Command)
 	switch(data.Command) {
 		case "add":
-			err = h.add(playlist, controls, data.Artist, data.Album, data.Immediate)
+			err = h.add(playlist, controls, data)
 		case "clear":
 			err = h.clear(playlist);
 	}
@@ -88,19 +89,29 @@ func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
 }
 
 func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
-			artist string, album string, immediate bool) ( err error) {
-	if artist == "" || album == "" {
+			data PlaylistCommand) ( err error) {
+	if data.Artist == "" || data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
 	}
-	log.Printf("Trying to add '%s'/'%s' to playlist (%s)\n", artist, album,
-			immediate)
-	albumData, err := model.GetAlbum(h.Music, artist, album)
+
+	log.Printf("Trying to add %s/%s/%s to playlist (%v)\n", data.Artist,
+			data.Album, data.Track, data.Immediate)
+
+	var album *model.Album = nil
+	var track *model.Track = nil
+	if data.Track == "" {
+		album, err = model.GetAlbum(h.Music, data.Artist, data.Album)
+	} else {
+		track, err = model.GetTrack(h.Music, data.Artist, data.Album,
+				data.Track)
+	}
 	if err != nil {
 		log.Printf("Album not found.")
 		return err
 	}
-	if immediate {
+
+	if data.Immediate {
 		err = playlist.Clear()
 		if err != nil {
 			log.Printf("Error clearing playlist")
@@ -108,16 +119,23 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		}
 	}
 
-	err = playlist.AddAlbum(*albumData)
+	if track != nil  {
+		err = playlist.AddTrack(track)
+	}
+	if (album != nil) {
+		err = playlist.AddAlbum(album)
+	}
 	if err != nil {
-		log.Printf("Error adding album '%s'", album)
+		log.Printf("Error adding album or track %s/%s", data.Album, data.Track)
 		return err
 	}
-	if immediate {
+	if data.Immediate {
 		err = controls.Play()
 	}
 	return err
 }
+
+
 
 func (h PlaylistHandler) clear(playlist player.Playlist) (err error) {
 	return playlist.Clear()

@@ -74,7 +74,7 @@ func (h ArtistHandler) showArtist(w http.ResponseWriter, query string) {
 			return
 		}
 	}
-	fmt.Printf("Artist not found: %s\n", query)
+	fmt.Printf("Artist not found: %s %s\n", query)
 	writeError(w, http.StatusNotFound, fmt.Sprintf("No artist found '%s'",
 		query))
 }

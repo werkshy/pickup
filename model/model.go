@@ -2,15 +2,15 @@ package model
 
 type Collection struct {
 	MusicDir string
-	Artists []Artist
-	Albums []Album
-	Tracks []Track
+	Artists []*Artist
+	Albums []*Album
+	Tracks []*Track
 }
 
 
 type Item interface {
 	GetName() string
-	SubItems() []Item
+	SubItems() []*Item
 }
 
 /**
@@ -23,7 +23,7 @@ type Track struct {
 	Artist string
 }
 
-func (t Track) SubItems() []Item {
+func (t Track) SubItems() []*Item {
 	return nil
 }
 
@@ -38,7 +38,7 @@ func (t Track) GetName() string {
 type Album struct {
 	Name string
 	Path string
-	Tracks []Track
+	Tracks []*Track
 	Artist string
 }
 
@@ -48,14 +48,14 @@ type AlbumSummary struct {
 	Tracks []string
 }
 
-func (a Album) SubItems() []Track {
+func (a Album) SubItems() []*Track {
 	return a.Tracks
 }
 
 /*
  * Convert Album to AlbumSummary
  */
-func NewAlbumSummary(a Album) AlbumSummary {
+func NewAlbumSummary(a *Album) AlbumSummary {
 	trackNames := make([]string, len(a.Tracks))
 	for i := 0; i< len(a.Tracks); i++ {
 		trackNames[i] = a.Tracks[i].Name
@@ -71,10 +71,10 @@ func NewAlbumSummary(a Album) AlbumSummary {
 type Artist struct {
 	Name string
 	Path string
-	Albums []Album
+	Albums []*Album
 }
 
-func (a Artist) SubItems() []Album {
+func (a Artist) SubItems() []*Album {
 	return a.Albums
 }
 
@@ -90,7 +90,7 @@ type ArtistSummary struct {
 /*
  * Convert Artist to ArtistSummary
  */
-func NewArtistSummary(a Artist) ArtistSummary {
+func NewArtistSummary(a *Artist) ArtistSummary {
 	names := make([]string, len(a.Albums))
 	for i := 0; i< len(a.Albums); i++ {
 		names[i] = a.Albums[i].Name

@@ -69,7 +69,7 @@ func GetAlbum(music Collection, artistName string, albumName string) (*Album, er
 		if artist.Name == artistName {
 			for _, album := range artist.Albums {
 				if album.Name == albumName {
-					return &album, nil
+					return album, nil
 				}
 			}
 		}
@@ -85,7 +85,7 @@ func GetTrack(music Collection, artistName string, albumName string,
 				if album.Name == albumName {
 					for _, track := range album.Tracks {
 						if track.Name == trackName {
-							return &track, nil
+							return track, nil
 						}
 					}
 				}

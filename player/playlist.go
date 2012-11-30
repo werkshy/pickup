@@ -12,9 +12,9 @@ import (
 // allow for that.
 type Playlist interface {
 	List() ([]string, error) // what should this return? []Track?
-	AddAlbum(model.Album) error
-	AddTrack(model.Track) error
-	AddTracks([]model.Track) error
+	AddAlbum(*model.Album) error
+	AddTrack(*model.Track) error
+	AddTracks([]*model.Track) error
 	Clear() error
 	Close() error
 }
@@ -61,7 +61,7 @@ func (playlist MpdPlaylist) List() (results []string, err error) {
 	return results, nil
 }
 
-func (playlist MpdPlaylist) AddAlbum(album model.Album) (err error) {
+func (playlist MpdPlaylist) AddAlbum(album *model.Album) (err error) {
 	log.Printf("Adding album %s - %s (%s)\n", album.Artist, album.Name,
 			album.Path)
 	uri := playlist.pathToUri(album.Path)
@@ -69,13 +69,14 @@ func (playlist MpdPlaylist) AddAlbum(album model.Album) (err error) {
 	return playlist.conn.Add(uri)
 }
 
-func (playlist MpdPlaylist) AddTrack(track model.Track) (err error) {
-	log.Printf("Adding track %s\n", track)
+func (playlist MpdPlaylist) AddTrack(track *model.Track) (err error) {
+	log.Printf("Adding track %v\n", track)
 	uri := playlist.pathToUri(track.Path)
+	log.Printf("Uri: %s\n", uri);
 	return playlist.conn.Add(uri)
 }
 
-func (playlist MpdPlaylist) AddTracks(tracks []model.Track) (err error) {
+func (playlist MpdPlaylist) AddTracks(tracks []*model.Track) (err error) {
 	for _, track := range tracks {
 		log.Printf("Adding track %s\n", track)
 		err := playlist.AddTrack(track)

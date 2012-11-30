@@ -21,10 +21,12 @@ $(function() {
 	var t0 = new Date();
 	window.App = {}
 
+	// TODO: this isn't so pretty, I'd like to do better but without
+	// re-rendering the entire artist list when we switch to it
 	App.showView = function(viewId) {
 		console.log("Showing view '%s'", viewId);
 		$(viewId).show();
-		var allViews = ["#allArtistsView", "#artistView"]
+		var allViews = ["#allArtistsView", "#artistView", "#albumView"]
 		for (i=0; i<allViews.length; i++) {
 			if (allViews[i] !== viewId) {
 				$(allViews[i]).hide();
@@ -34,6 +36,7 @@ $(function() {
 	}
 
 	initArtists(App);
+	initAlbums(App);
 	initControls(App);
 	initRoutes(App);
 

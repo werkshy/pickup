@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"encoding/json"
+	"log"
 	"net/http"
 	//"io/ioutil"
 	"strings"
@@ -34,12 +35,23 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Otherwise we assume artist/album
-	artist := parts[0]
-	album := parts[1]
+	artistName := parts[0]
+	albumName := parts[1]
 
-	fmt.Printf("Looking up album '%s - %s\n", artist, album)
+	log.Printf("Looking up album '%s - %s\n", artistName, albumName)
+	album, err := model.GetAlbum(h.Music, artistName, albumName)
+	if err == nil {
+		log.Printf("Found album: %s", album.Name)
+		summary := model.NewAlbumSummary(album)
+		j, _ := json.Marshal(summary)
+		w.Write(j)
+		return
+	}
+	log.Printf("Did not find album: %s (%v)", album.Name, err)
 
-    fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
+    //fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
+	writeError(w, http.StatusNotFound, fmt.Sprintf("Album not found '%s'",
+			albumName))
 }
 
 func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {

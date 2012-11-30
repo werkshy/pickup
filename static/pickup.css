@@ -29,7 +29,8 @@ ul li {
 
 
 ul#artistList,
-ul#albumList {
+ul#albumList,
+ul#trackList {
 	list-style-type: none;
 	padding: 0px;
 	margin: 0px;
@@ -62,6 +63,24 @@ ul#albumList li span.album-title {
 }
 
 .album-actions {
+	font-weight: bold;
+	cursor: pointer;
+	float: right;
+	margin-right: 4px;
+}
+
+#trackList {
+	width: 25em;
+}
+
+ul#trackList li span.track-title {
+	max-width: 20em;
+	margin-left: 20px;
+	float: left;
+	clear: left;
+}
+
+.track-actions {
 	font-weight: bold;
 	cursor: pointer;
 	float: right;

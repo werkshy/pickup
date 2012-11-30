@@ -16,19 +16,19 @@ function initArtists(App) {
 			el : "#artist",
 			className : "artist",
 			initialize: function() {
+				_.bindAll(this, "render")
+				_.bindAll(this)
 				this.template = Handlebars.compile($("#artist-template").html())
 				this.render();
 			},
+			events : {
+				"click .play" : "playAlbum",
+				"click .add" : "addAlbum",
+				"click .album-title" : "showAlbum"
+			},
 			render: function() {
 				console.log("Render artist '%s'", this.model.get("Name"));
-				var that = this;
 				this.$el.html(this.template(this.model.attributes))
-				$(this.$el).find(".play").click(function(event){
-					that.playAlbum(event);
-				});
-				$(this.$el).find(".add").click(function(event){
-					that.addAlbum(event);
-				});
 				App.showView("#artistView")
 				return this;
 			},
@@ -41,6 +41,14 @@ function initArtists(App) {
 				var album = event.currentTarget.parentElement.id;
 				console.log("Add album: %s/%s", this.model.get('Name'), album);
 				playAlbum(this.model.get('Name'), album, false)
+			},
+			showAlbum: function(event) {
+				var album = event.currentTarget.parentElement.id;
+				console.log("Navigating to album: %s/%s",
+						this.model.get('Name'), album);
+				App.router.navigate("albums/" + this.model.get('Name')
+						+ "/" + album,
+						{ 'trigger' : true});
 			}
 	});
 

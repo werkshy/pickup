@@ -99,4 +99,3 @@ function playAlbum(artist, album, immediate) {
 	);
 }
 
-
