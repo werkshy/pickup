@@ -18,14 +18,14 @@
 	</script>
 
 	<script id="artist-template" type="text/html">
-		<div id="artistView" class="multicolumn">
+		<div id="artistView" class="singlecolumn">
 			<h2>{{Name}}</h2>
 			<ul id="albumList">
 				{{#AlbumNames}}
 				<li id="{{.}}">
 					<span class="album-title abbreviated">{{.}}</span>
-					<span class='album-actions add' title="Add '{{.}}'">+</span>
-					<span class='album-actions play' title="Play '{{.}}'">&gt;</span>
+					<div class='album-actions add' title="Add '{{.}}'"></div>
+					<div class='album-actions play' title="Play '{{.}}'"></div>
 				</li>
 				{{/AlbumNames}}
 			</ul>
@@ -61,8 +61,8 @@
 				{{#each Tracks}}
 				<li id="{{.}}">
 					<span class="track-title abbreviated">{{.}}</span>
-					<span class='track-actions add' title="Add '{{.}}'">+</span>
-					<span class='track-actions play' title="Play '{{.}}'">&gt;</span>
+					<div class='track-actions add' title="Add '{{.}}'"></div>
+					<div class='track-actions play' title="Play '{{.}}'">&nbsp;</div>
 				</li>
 				{{/each}}
 			</ul>

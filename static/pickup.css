@@ -69,8 +69,15 @@ ul#albumList li span.album-title {
 	margin-right: 4px;
 }
 
-#trackList {
-	width: 25em;
+#trackList,
+#albumList {
+	width: 28em;
+}
+
+#trackList li,
+#albumList li {
+	width: 28em;
+	height: 16px;
 }
 
 ul#trackList li span.track-title {
@@ -86,6 +93,23 @@ ul#trackList li span.track-title {
 	float: right;
 	margin-right: 4px;
 }
+
+.track-actions.play,
+.album-actions.play {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -560px -100px;
+	width: 14px;
+	height: 16px;
+}
+
+.track-actions.add,
+.album-actions.add {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -200px -100px;
+	width: 14px;
+	height: 16px;
+}
+
 
 #controls {
 	background-color: #eeeeee;
