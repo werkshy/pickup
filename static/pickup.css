@@ -121,6 +121,16 @@ ul#trackList li span.track-title {
 
 #controls span {
 	cursor: pointer;
+	float: left;
+}
+
+#controls div.button {
+	cursor: pointer;
+	float: left;
+	width: 14px;
+	height: 16px;
+	margin-left: 3px;
+	margin-right: 2px;
 }
 
 #controls span.control-break {
@@ -133,3 +143,27 @@ ul#trackList li span.track-title {
 	text-transform: lowercase;
 }
 
+#controls #play {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -557px -100px;
+}
+
+#controls #stop {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -581px -100px;
+}
+
+#controls #pause {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -535px -100px;
+}
+
+#controls #prev-track {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -54px -123px;
+}
+
+#controls #next-track {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -78px -123px;
+}

@@ -33,25 +33,28 @@
 	</script>
 
 	<script id="control-template" type="text/html">
+		&nbsp;
 		<span id="go-home" title="Go to Artists page">Home</span>
 		<span class="control-break">|</span>
-		vol <span>{{Volume}}%</span>
+		<span>vol {{Volume}}%</span>
 		<span id="vol-down" title="Decrease Volume">⇩</span>
 		<span id="vol-up" title="Increase Volume">⇧</span>
 		<span class="control-break">|</span>
-		<span id="stop" title="Stop playback">◻</span>
-		<span id="play" title="Start playback">▷</span>
-		<span id="pause" title="Pause playback">ǁ</span>
+		<div id="stop" class="button" title="Stop playback"></div>
+		<div id="play" class="button" title="Start playback"></div>
+		<div id="pause" class="button" title="Pause playback"></div>
 		<span class="control-break">|</span>
-		<span id="prev-track" title="Play previous track">⇤</span> track
-		<span id="next-track" title="Play next track">⇥</span>
+		<div id="prev-track" class="button" title="Play previous track"></div>
+		<span> track</span>
+		<div id="next-track" class="button" title="Play next track"></div>
 		<span class="control-break">|</span>
 		{{#if CurrentArtist}}
-			<span class="artist">{{CurrentArtist}}</span> - 
+			<span class="artist">{{CurrentArtist}}</span>
+			<span> - </span>
 			<span class="track">{{CurrentTrack}}</span>
 		{{/if}}
 		<span class="control-break">|</span>
-		<span>{{Elapsed}}</span> / <span>{{Length}}<span class="lower">s</span></span>
+		<span>{{Elapsed}} / {{Length}}</span><span class="lower">s</span>
 	</script>
 
 	<script id="album-template" type="text/html">
