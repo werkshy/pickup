@@ -167,3 +167,14 @@ ul#trackList li span.track-title {
 	background-image: url("/static/images/tango-feet-small.png");
 	background-position: -78px -123px;
 }
+
+#controls #vol-down {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -460px -4px;
+}
+
+#controls #vol-up {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -437px -4px;
+	width: 16px;
+}
