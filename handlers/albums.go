@@ -1,27 +1,26 @@
 package handlers
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	//"io/ioutil"
+	"pickup/model"
 	"strings"
 	"time"
-	"pickup/model"
 )
 
 type AlbumHandler struct {
 	Music model.Collection
 }
 
-
 // Return a list of albums or a specific album
 func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/albums/"):]
-    parts := strings.SplitN(path, "/", 2)
+	parts := strings.SplitN(path, "/", 2)
 	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
-			len(parts))
+		len(parts))
 	// If only one part, we'll search for it
 	if len(parts) == 1 {
 		query := parts[0]
@@ -49,17 +48,17 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Did not find album: %s (%v)", album.Name, err)
 
-    //fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
+	//fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
 	writeError(w, http.StatusNotFound, fmt.Sprintf("Album not found '%s'",
-			albumName))
+		albumName))
 }
 
 func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	t0 := time.Now()
-    fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
+	fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
 	// Convert to Album Summary to save on info
 	albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
-	for i := 0; i< len(h.Music.Albums); i++ {
+	for i := 0; i < len(h.Music.Albums); i++ {
 		albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
 	}
 	j, _ := json.Marshal(albumSummaries)
@@ -72,7 +71,7 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {
 	matches := model.SearchAlbums(h.Music, query)
 	fmt.Printf("Found %d results\n", len(matches))
-	for _, item := range matches{
+	for _, item := range matches {
 		fmt.Printf("%s - %s\n", item.Artist, item.Name)
 	}
 	j, _ := json.Marshal(matches)

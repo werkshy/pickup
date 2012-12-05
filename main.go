@@ -4,8 +4,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"net/http"
 	"log"
+	"net/http"
 	"os"
 	"pickup/config"
 	"pickup/handlers"
@@ -14,7 +14,6 @@ import (
 )
 
 var Port = 8080
-
 
 func main() {
 	var action = flag.String("action", "serve", "Action to perform (serve|refresh)")
@@ -28,7 +27,7 @@ func main() {
 
 	fmt.Println("Action is:", *action)
 	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
-			*conf.MpdPassword)
+		*conf.MpdPassword)
 
 	collection := loadOrRefresh(*conf.MusicDir)
 
@@ -63,7 +62,7 @@ func serve(conf *config.Config, music model.Collection) bool {
 	// strip '/static' from the url to get the name of the file within the
 	// static dir.
 	http.Handle("/static/", http.StripPrefix("/static/",
-			http.FileServer(http.Dir(staticDir))))
+		http.FileServer(http.Dir(staticDir))))
 	http.HandleFunc("/", handlers.Index)
 	var bind = fmt.Sprintf(":%d", Port)
 	fmt.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)

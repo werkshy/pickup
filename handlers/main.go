@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
 	"io/ioutil"
+	"net/http"
 )
 
 func Index(w http.ResponseWriter, req *http.Request) {
@@ -11,4 +11,3 @@ func Index(w http.ResponseWriter, req *http.Request) {
 	index, _ := ioutil.ReadFile("static/index.html")
 	w.Write(index)
 }
-

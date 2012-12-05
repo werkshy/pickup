@@ -12,7 +12,7 @@ import (
 	laptop)
 */
 func Search(music Collection, query string) (
-		matching Collection) {
+	matching Collection) {
 	lQuery := strings.ToLower(query)
 	t0 := time.Now()
 
@@ -78,7 +78,7 @@ func GetAlbum(music Collection, artistName string, albumName string) (*Album, er
 }
 
 func GetTrack(music Collection, artistName string, albumName string,
-			trackName string) (*Track, error) {
+	trackName string) (*Track, error) {
 	for _, artist := range music.Artists {
 		if artist.Name == artistName {
 			for _, album := range artist.Albums {
@@ -93,5 +93,5 @@ func GetTrack(music Collection, artistName string, albumName string,
 		}
 	}
 	return nil, fmt.Errorf("Track not found: %s/%s", artistName, albumName,
-			trackName)
+		trackName)
 }

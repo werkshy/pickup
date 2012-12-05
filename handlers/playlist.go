@@ -13,18 +13,15 @@ import (
 	"pickup/player"
 )
 
-
-
 type PlaylistHandler struct {
 	Music model.Collection
-	conf *config.Config
+	conf  *config.Config
 }
 
 func NewPlaylistHandler(music model.Collection, conf *config.Config) (
-			h PlaylistHandler) {
+	h PlaylistHandler) {
 	return PlaylistHandler{music, conf}
 }
-
 
 // Return a list of albums or a specific album
 func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +30,7 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	playlist := player.NewMpdPlaylist(h.conf)
 	defer playlist.Close()
 
-	switch (r.Method) {
+	switch r.Method {
 	case "GET":
 		log.Printf("GET: Showing current playlist\n")
 		err = h.currentPlaylist(w, playlist)
@@ -41,17 +38,17 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = h.command(w, r, playlist, controls)
 	}
 
-	if (err != nil) {
+	if err != nil {
 		log.Printf("Error detected in /playlist: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
-			playlist player.Playlist) error {
+	playlist player.Playlist) error {
 	// get the contents of the playlist
 	currentTracks, err := playlist.List()
-	if (err != nil) {
+	if err != nil {
 		log.Printf("Error getting playlist: %s", err)
 		return err
 	}
@@ -62,41 +59,41 @@ func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
 }
 
 type PlaylistCommand struct {
-	Command string
-	Artist string
-	Album string
-	Track string
+	Command   string
+	Artist    string
+	Album     string
+	Track     string
 	Immediate bool
 }
 
 // dispatch playlist commands (add, clear etc)
 func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
-			playlist player.Playlist, controls player.Controls) (err error) {
+	playlist player.Playlist, controls player.Controls) (err error) {
 	var data PlaylistCommand
 	err = JsonRequestToType(w, r, &data)
-	if (err != nil) {
+	if err != nil {
 		return err
 	}
 
 	log.Printf("Received playlist command '%s'\n", data.Command)
-	switch(data.Command) {
-		case "add":
-			err = h.add(playlist, controls, data)
-		case "clear":
-			err = h.clear(playlist);
+	switch data.Command {
+	case "add":
+		err = h.add(playlist, controls, data)
+	case "clear":
+		err = h.clear(playlist)
 	}
 	return err
 }
 
 func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
-			data PlaylistCommand) ( err error) {
+	data PlaylistCommand) (err error) {
 	if data.Artist == "" || data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
 	}
 
 	log.Printf("Trying to add %s/%s/%s to playlist (%v)\n", data.Artist,
-			data.Album, data.Track, data.Immediate)
+		data.Album, data.Track, data.Immediate)
 
 	var album *model.Album = nil
 	var track *model.Track = nil
@@ -104,7 +101,7 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		album, err = model.GetAlbum(h.Music, data.Artist, data.Album)
 	} else {
 		track, err = model.GetTrack(h.Music, data.Artist, data.Album,
-				data.Track)
+			data.Track)
 	}
 	if err != nil {
 		log.Printf("Album not found.")
@@ -119,10 +116,10 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		}
 	}
 
-	if track != nil  {
+	if track != nil {
 		err = playlist.AddTrack(track)
 	}
-	if (album != nil) {
+	if album != nil {
 		err = playlist.AddAlbum(album)
 	}
 	if err != nil {
@@ -134,8 +131,6 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 	}
 	return err
 }
-
-
 
 func (h PlaylistHandler) clear(playlist player.Playlist) (err error) {
 	return playlist.Clear()

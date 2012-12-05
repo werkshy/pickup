@@ -1,26 +1,25 @@
 package handlers
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	//"io/ioutil"
+	"pickup/model"
 	"strings"
 	"time"
-	"pickup/model"
 )
 
 type ArtistHandler struct {
 	Music model.Collection
 }
 
-
 // Return a list of albums or a specific album
 func (h ArtistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/artists/"):]
-    parts := strings.SplitN(path, "/", 2)
+	parts := strings.SplitN(path, "/", 2)
 	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
-			len(parts))
+		len(parts))
 	// If only one part, we'll search for it
 	if len(parts) == 1 {
 		query := parts[0]
@@ -39,10 +38,10 @@ func (h ArtistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	t0 := time.Now()
-    fmt.Printf("All albums (%d)\n", len(h.Music.Artists))
+	fmt.Printf("All albums (%d)\n", len(h.Music.Artists))
 	// Convert to Artist Summary to save on info
 	artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
-	for i := 0; i< len(h.Music.Artists); i++ {
+	for i := 0; i < len(h.Music.Artists); i++ {
 		artistSummaries[i] = model.NewArtistSummary(h.Music.Artists[i])
 	}
 	j, _ := json.Marshal(artistSummaries)
@@ -55,7 +54,7 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
 	matches := model.SearchArtists(h.Music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
-	for _, item := range matches{
+	for _, item := range matches {
 		fmt.Printf("\t%s\n", item.Name)
 	}
 	j, _ := json.Marshal(matches)
@@ -66,7 +65,7 @@ func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
 func (h ArtistHandler) showArtist(w http.ResponseWriter, query string) {
 	matches := model.SearchArtists(h.Music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
-	for _, item := range matches{
+	for _, item := range matches {
 		if item.Name == query {
 			fmt.Printf("Found artist: '%s'\n", item.Name)
 			j, _ := json.Marshal(item)

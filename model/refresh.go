@@ -1,6 +1,5 @@
 package model
 
-
 import (
 	"fmt"
 	"io/ioutil"
@@ -9,17 +8,17 @@ import (
 	"time"
 )
 
-var MusicExtensions = map[string]bool {
-		".mp3": true,
-		".m4a": true,
-	}
+var MusicExtensions = map[string]bool{
+	".mp3": true,
+	".m4a": true,
+}
 
 /**
  * Recursively process a directory, creating Tracks, Albums and Artists 
  * with the music found.
-*/
+ */
 func ProcessDir(dir string, parent string) (
-			tracks []*Track, albums []*Album, artists []*Artist) {
+	tracks []*Track, albums []*Album, artists []*Artist) {
 	//fmt.Println("Processing dir", dir)
 	list, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -40,7 +39,7 @@ func ProcessDir(dir string, parent string) (
 			// If there were subtracks returned, create an album
 			if len(subTracks) > 0 {
 				album := &Album{entry.Name(), subPath, subTracks,
-						""}
+					""}
 				//fmt.Printf("Created album %s\n", entry.Name())
 				albums = append(albums, album)
 			}
@@ -48,18 +47,18 @@ func ProcessDir(dir string, parent string) (
 			// If there were albums returned, create an artist and
 			// set the Artist for each album
 			if len(subAlbums) > 0 {
-				artist := &Artist{ entry.Name(), subPath, subAlbums}
+				artist := &Artist{entry.Name(), subPath, subAlbums}
 				artists = append(artists, artist)
 				fmt.Printf("Created artist %s\n", entry.Name())
 				for _, subAlbum := range subAlbums {
 					subAlbum.Artist = artist.Name
-					fmt.Printf("\t %s - %s\n", subAlbum.Artist, subAlbum.Name);
+					fmt.Printf("\t %s - %s\n", subAlbum.Artist, subAlbum.Name)
 				}
 			}
 
 		} else {
 			var ext = path.Ext(entry.Name())
-			if ! MusicExtensions[ext] {
+			if !MusicExtensions[ext] {
 				continue
 			}
 			trackPath := filepath.Join(dir, entry.Name())
@@ -80,8 +79,8 @@ func Refresh(musicDir string) Collection {
 	fmt.Println("Time to refresh music: ", time.Since(t0))
 
 	t1 := time.Now()
-	var albums =  make([]*Album, 0, 10)
-	var tracks =  make([]*Track, 0, 10)
+	var albums = make([]*Album, 0, 10)
+	var tracks = make([]*Track, 0, 10)
 
 	for _, artist := range artists {
 		for _, album := range artist.Albums {
@@ -95,6 +94,5 @@ func Refresh(musicDir string) Collection {
 		}
 	}
 	fmt.Println("Time to sort music: ", time.Since(t1))
-	return Collection {musicDir, artists, albums, tracks}
+	return Collection{musicDir, artists, albums, tracks}
 }
-
