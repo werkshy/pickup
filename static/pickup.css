@@ -1,6 +1,6 @@
 body {
-	font-family: ubuntu, Droid Sans, sans-serif;
-	font-size: 12px;
+	font-family: Droid Sans, sans-serif;
+	font-size: 13px;
 	background-color: #050505;
 	color: #eeeeee;
 }
@@ -114,6 +114,7 @@ ul#trackList li span.track-title {
 #controls {
 	background-color: #eeeeee;
 	color: #050505;
+	font-size: 12px;
 	text-transform: uppercase;
 	font-weight: bold;
 	font-family: ubuntu, verdana, sans-serif;
