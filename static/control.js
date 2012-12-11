@@ -4,7 +4,15 @@ function initControls(App) {
 	App.Control = Backbone.Model.extend({
 		initialize: function() {
 			console.log("Initializing artist");
+			_.bindAll(this, "tick")
 			this.url = "/control"
+			setInterval(this.tick, 1000);
+		},
+		tick : function() {
+			var elapsed = this.get("Elapsed")
+			if (elapsed !== 'undefined' && this.get("State") === "play") {
+				this.set("Elapsed", elapsed + 1 );
+			}
 		},
 	});
 
@@ -31,7 +39,6 @@ function initControls(App) {
 				this.render();
 			},
 			render: function() {
-				console.log("Render control")
 				this.$el.html(this.template(this.model.attributes))
 				return this;
 			},
@@ -40,6 +47,7 @@ function initControls(App) {
 				App.router.navigate("artists", { 'trigger' : true});
 			},
 			postCommand: function(command) {
+				console.log("Posting command: %s", command["command"])
 				$.postJSON("/control/", command,
 						function() {
 							console.log("Control success");
@@ -48,7 +56,6 @@ function initControls(App) {
 				App.control.fetch()
 			},
 			nextTrack: function() {
-				console.log("Sending 'next' command");
 				this.postCommand({"command" : "next"})
 			},
 			prevTrack: function() {

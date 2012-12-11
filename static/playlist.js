@@ -33,7 +33,6 @@ function initPlaylist(App) {
 				"click .bottom" : "toggleVisible",
 			},
 			render: function() {
-				console.log("Render playlist. %d items.", this.collection.length);
 				var that = this;
 				this.$tracksEl.html("")
 				_.each(this.collection.models, function (item) {

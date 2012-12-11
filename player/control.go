@@ -57,7 +57,8 @@ func (controls MpdControls) Close() (err error) {
 
 func (controls MpdControls) Play() (err error) {
 	log.Printf("mpd 'play'\n")
-	return controls.conn.Play(0)
+	// Play(-1) implies play from current place
+	return controls.conn.Play(-1)
 }
 
 func (controls MpdControls) Stop() (err error) {
@@ -67,8 +68,21 @@ func (controls MpdControls) Stop() (err error) {
 
 func (controls MpdControls) Pause() (err error) {
 	log.Printf("mpd 'pause'\n")
-	// TODO: get current pause state and toggle it
-	return controls.conn.Pause(true)
+	// get current pause state and toggle it
+	attrs, err := controls.conn.Status()
+	if err != nil {
+		log.Println("Error trying to get mpd status")
+		log.Println(err)
+		return err
+	}
+	if (attrs["state"] == "pause") {
+		log.Printf("Resuming playback")
+		return controls.conn.Pause(false)
+	} else if (attrs["state"] == "play") {
+		log.Printf("Pausing playback")
+		return controls.conn.Pause(true)
+	}
+	return nil
 }
 
 func (controls MpdControls) Prev() (err error) {

@@ -71,7 +71,7 @@ $(function() {
 	App.control.fetch()
 	// Set up polling for control status
 	setInterval(function() {
-		console.log("Fetching controls");
+		//console.log("Fetching controls");
 		App.control.fetch()
 	}, 2500);
 
@@ -79,16 +79,8 @@ $(function() {
 	App.playlist = new App.Playlist();
 	App.playlistView = new App.PlaylistView({collection:App.playlist});
 	App.playlist.fetch()
-	/*
-	App.playlist.fetch({
-		success: function() {
-			console.log("Retrieved playlist")
-			App.playlistView = new App.PlaylistView({collection:App.playlist});
-		}
-	});
-	*/
 	 setInterval(function() {
-		console.log("Fetching playlist");
+		//console.log("Fetching playlist");
 		App.playlist.fetch()
 	}, 2500);
 });
