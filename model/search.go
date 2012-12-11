@@ -92,6 +92,7 @@ func GetTrack(music Collection, artistName string, albumName string,
 			}
 		}
 	}
-	return nil, fmt.Errorf("Track not found: %s/%s", artistName, albumName,
+	return nil, fmt.Errorf("Track not found: %s/%s/%s", artistName, albumName,
 		trackName)
 }
+

@@ -68,7 +68,6 @@ function initArtists(App) {
 		},
 		render: function () {
 			// Render and show the artist list view
-			var that = this;
 			log.debug("Rendering artistList")
 			this.renderDontShow()
 			App.showView("#allArtistsView");
@@ -108,7 +107,7 @@ function initArtists(App) {
 			return this;
 		},
 		viewArtist: function() {
-			// Todo swipe visible panel or tab left/right as we navigate
+			// TODO swipe visible panel or tab left/right as we navigate
 			console.log("view artist " + this.model.get('Name'));
 			App.router.navigate("artists/" + this.model.get('Name'),
 					{ 'trigger' : true});

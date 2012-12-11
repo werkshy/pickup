@@ -178,3 +178,94 @@ ul#trackList li span.track-title {
 	background-position: -437px -4px;
 	width: 16px;
 }
+
+#playlist-wrapper {
+	position: fixed;
+	bottom: 0px;
+	right: 0px;
+	width: 50em;
+	z-index: 10;
+	background: black;
+}
+
+#playlist-wrapper .top,
+#playlist-wrapper .bottom {
+	width: 100%;
+	background-color: #eeeeee;
+	color: #050505;
+	font-weight: bold;
+	font-family: ubuntu, verdana, sans-serif;
+	font-size: 14px;
+	margin-bottom: 0px;
+	cursor: pointer;
+	height: 18px;
+}
+
+#playlist-wrapper .top {
+	height: 18px;
+}
+
+#playlist-wrapper .top span {
+	float: left;
+}
+
+#playlist-wrapper .bottom {
+	height: 16px;
+}
+
+/* Arrow by default implies up arrow */
+#playlist-wrapper .arrow {
+	background-image: url("/static/images/tango-feet-small.png");
+	background-position: -510px -76px;
+	width: 16px;
+	height: 16px;
+	float: right;
+	clear: none;
+}
+
+/* When open, show the down arrow */
+#playlist-wrapper.open .top .arrow,
+#playlist-wrapper .down-arrow {
+	background-position: -317px -76px;
+}
+
+#playlist {
+	padding-top: 5px;
+	border: 1px solid #eeeeee;
+	max-height: 500px;
+	overflow-y: auto;
+}
+
+#playlist ul {
+	list-style-type: none;
+	padding: 0px;
+}
+
+#playlist ul li {
+	margin-left: 5px;
+}
+
+#playlist ul li span {
+	display: block;
+	float: left;
+	margin-left: 5px;
+}
+
+#playlist span.track-title {
+	clear: left;
+	width: 15em;
+}
+
+#playlist span.track-artist {
+	width: 9em;
+}
+
+#playlist span.track-album {
+	width: 9em;
+}
+
+/* Initial state of slider is closed */
+#playlist-slider {
+	display: none;
+}
+

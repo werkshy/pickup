@@ -38,6 +38,7 @@ $(function() {
 	initArtists(App);
 	initAlbums(App);
 	initControls(App);
+	initPlaylist(App);
 	initRoutes(App);
 
 	// Start the backbone router / history after we retrieve the artists
@@ -72,5 +73,22 @@ $(function() {
 	setInterval(function() {
 		console.log("Fetching controls");
 		App.control.fetch()
+	}, 2500);
+
+	// Setup playlist polling
+	App.playlist = new App.Playlist();
+	App.playlistView = new App.PlaylistView({collection:App.playlist});
+	App.playlist.fetch()
+	/*
+	App.playlist.fetch({
+		success: function() {
+			console.log("Retrieved playlist")
+			App.playlistView = new App.PlaylistView({collection:App.playlist});
+		}
+	});
+	*/
+	 setInterval(function() {
+		console.log("Fetching playlist");
+		App.playlist.fetch()
 	}, 2500);
 });

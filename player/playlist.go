@@ -8,10 +8,18 @@ import (
 	"pickup/model"
 )
 
+type PlaylistTrack struct {
+	Pos string
+	Name string
+	Artist string
+	Album string
+	Path string
+}
+
 // In theory we could have different backends, so define an interface that will
 // allow for that.
 type Playlist interface {
-	List() ([]string, error) // what should this return? []Track?
+	List() ([]PlaylistTrack, error) // what should this return? []Track?
 	AddAlbum(*model.Album) error
 	AddTrack(*model.Track) error
 	AddTracks([]*model.Track) error
@@ -46,7 +54,7 @@ func (playlist MpdPlaylist) Close() (err error) {
 /**
  * Implement playlist interface via mpd
  */
-func (playlist MpdPlaylist) List() (results []string, err error) {
+func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 	log.Printf("Listing playlist\n")
 	info, err := playlist.conn.PlaylistInfo(-1, -1)
 	if (err != nil) {
@@ -56,7 +64,13 @@ func (playlist MpdPlaylist) List() (results []string, err error) {
 	log.Printf("mpd returned %d tracks in playlist\n", len(info))
 	for _, entry := range info {
 		//log.Printf("%q\n", entry)
-		results = append(results, entry["file"])
+		track := PlaylistTrack{
+			entry["Pos"],
+			entry["Title"],
+			entry["Artist"],
+			entry["Album"],
+			entry["Path"] }
+		results = append(results, track)
 	}
 	return results, nil
 }

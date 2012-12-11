@@ -7,6 +7,7 @@
 	<script type="text/javascript" src="/static/control.js"></script>
 	<script type="text/javascript" src="/static/artists.js"></script>
 	<script type="text/javascript" src="/static/albums.js"></script>
+	<script type="text/javascript" src="/static/playlist.js"></script>
 	<script type="text/javascript" src="/static/routes.js"></script>
 	<script type="text/javascript" src="/static/pickup.js"></script>
 	<link type="text/css" rel="stylesheet" href="/static/normalize.css">
@@ -72,6 +73,13 @@
 		</div>
 	</script>
 
+	<script id="playlist-item-template" type="text/html">
+		<li><span class="track-title abbreviated">{{Name}}</span> 
+			<span class="track-artist abbreviated">{{Artist}}</span>
+			<span class="track-album abbreviated">{{Album}}</span>
+		</li>
+	</script>
+
 	<title>Pickup!</title>
 </head>
 
@@ -88,6 +96,22 @@
 </div>
 
 <div id="album">
+</div>
+
+<div id="playlist-wrapper">
+	<div class="top">
+		<span>Playlist</span>
+			<div class="arrow up-arrow"></div>
+	</div>
+	<div id="playlist-slider">
+		<div id="playlist">
+			<ul id="playlist-tracks">
+			</ul>
+		</div>
+		<div class="bottom">
+			<div class="arrow down-arrow"></div>
+		</div>
+	</div>
 </div>
 
 </html>
