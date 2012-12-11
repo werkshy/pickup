@@ -12,8 +12,8 @@
 #
 # Write some go unit tests
 #
-# Get basic playlist control working (view, remove, add)
-#    - consider expand-down or -up from controls overlay div for playlist
+# Get basic playlist control working (view [DONE], remove)
+#    - consider expand-down or -up from controls overlay div for playlist [DONE]
 #
 # Figure out elegant tabs / single page app architecture and navigation
 # 	- artists
@@ -22,11 +22,14 @@
 #
 # Show album covers and artist photos from disk or embedded
 #
-# Consider using mpd db for everything using stickers
+# Consider using mpd db for everything using 'stickers' (arbitrary name-value
+# pairs stored in mpd db)
 #
 # Related artists (via last.fm or whatever)
 #
-# Seek-in-track control
+# Suggestions e.g. show 10 random albums, "like this" etc.
+#
+# Seek-in-track control via slider
 #
 # Get music dir refresh working without full restart
 #
