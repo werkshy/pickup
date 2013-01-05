@@ -12,7 +12,9 @@
 #
 # Write some go unit tests
 #
-# Get basic playlist control working (view [DONE], remove)
+# Get basic playlist control working
+# 	 -  view [DONE]
+# 	 -  remove
 #    - consider expand-down or -up from controls overlay div for playlist [DONE]
 #
 # Figure out elegant tabs / single page app architecture and navigation
