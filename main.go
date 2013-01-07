@@ -29,7 +29,11 @@ func main() {
 	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
 		*conf.MpdPassword)
 
-	collection := loadOrRefresh(*conf.MusicDir)
+	//collection := loadOrRefresh(*conf.MusicDir)
+	collection, err := model.RefreshMpd(&conf)
+	if (err != nil) {
+		log.Fatalln("Couldn't get files from mpd");
+	}
 
 	switch *action {
 	case "stats":
@@ -38,20 +42,22 @@ func main() {
 		search(collection, *query)
 	case "serve":
 		serve(&conf, collection)
-	case "save":
-		save(collection)
 	case "test-playback":
 		testPlayback(&conf, collection)
+	case "refresh":
+		os.Exit(0);
 	default:
 		fmt.Println("Unknown action", *action)
 	}
 }
 
 func serve(conf *config.Config, music model.Collection) bool {
+	collectionHandler := handlers.CollectionHandler{music}
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
 	playlistHandler := handlers.NewPlaylistHandler(music, conf)
 	controlHandler := handlers.NewControlHandler(conf)
+	http.Handle("/collection/", collectionHandler)
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
 	http.Handle("/playlist/", playlistHandler)
@@ -92,24 +98,6 @@ func search(music model.Collection, query string) {
 	for _, album := range matching.Albums {
 		fmt.Printf("%-40s (%s)\n", album.Name, album.Artist)
 	}
-}
-
-func loadOrRefresh(musicDir string) model.Collection {
-	collection, err := model.Load()
-	if err != nil {
-		fmt.Printf("No collection loaded, refreshing\n")
-		collection = model.Refresh(musicDir)
-		save(collection)
-	}
-	return collection
-}
-
-func save(music model.Collection) error {
-	err := music.Save()
-	if err != nil {
-		fmt.Println(err)
-	}
-	return err
 }
 
 func testPlayback(conf *config.Config, music model.Collection) error {

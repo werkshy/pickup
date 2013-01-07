@@ -1,10 +1,44 @@
 package model
 
+import (
+)
+
 type Collection struct {
-	MusicDir string
-	Artists  []*Artist
-	Albums   []*Album
-	Tracks   []*Track
+	Name           string
+	SubCollections []*Collection
+	Artists        []*Artist
+	Albums         []*Album
+	Tracks         []*Track
+}
+
+func NewCollection(name string) *Collection {
+	c := &Collection{}
+	c.Name = name
+	return c
+}
+
+type CollectionSummary struct {
+	Name           string
+	Artists        []ArtistSummary
+	AlbumNames     []string
+	SubCollections []CollectionSummary
+}
+
+func (c *Collection) GetSummary() CollectionSummary {
+	artistSummaries := make([]ArtistSummary, len(c.Artists))
+	for i := 0; i < len(c.Artists); i++ {
+		artistSummaries[i] = c.Artists[i].GetSummary()
+	}
+	albumNames := make([]string, len(c.Albums))
+	for i := 0; i < len(c.Albums); i++ {
+		albumNames[i] = c.Albums[i].Name
+	}
+	subCollections := make([]CollectionSummary, len(c.SubCollections))
+	for i := 0; i < len(c.SubCollections); i++ {
+		subCollections[i] = c.SubCollections[i].GetSummary()
+	}
+	return CollectionSummary{c.Name, artistSummaries, albumNames, subCollections}
+
 }
 
 type Item interface {
@@ -61,6 +95,12 @@ func NewAlbumSummary(a *Album) AlbumSummary {
 	return AlbumSummary{a.Name, a.Artist, trackNames}
 }
 
+func NewAlbum(name string) *Album {
+	album := &Album{}
+	album.Name = name
+	return album
+}
+
 /**
  * Artist struct
  */
@@ -83,10 +123,16 @@ type ArtistSummary struct {
 	AlbumNames []string
 }
 
+func NewArtist(name string) *Artist {
+	artist := &Artist{}
+	artist.Name = name
+	return artist
+}
+
 /*
  * Convert Artist to ArtistSummary
  */
-func NewArtistSummary(a *Artist) ArtistSummary {
+func (a *Artist) GetSummary() ArtistSummary {
 	names := make([]string, len(a.Albums))
 	for i := 0; i < len(a.Albums); i++ {
 		names[i] = a.Albums[i].Name

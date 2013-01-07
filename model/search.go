@@ -57,7 +57,7 @@ func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
 	lQuery := strings.ToLower(query)
 	for _, item := range music.Artists {
 		if strings.Contains(strings.ToLower(item.Name), lQuery) {
-			matching = append(matching, NewArtistSummary(item))
+			matching = append(matching, item.GetSummary())
 		}
 	}
 	fmt.Println("Time to search artists: ", time.Since(t0))

@@ -42,7 +42,7 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	// Convert to Artist Summary to save on info
 	artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
 	for i := 0; i < len(h.Music.Artists); i++ {
-		artistSummaries[i] = model.NewArtistSummary(h.Music.Artists[i])
+		artistSummaries[i] = h.Music.Artists[i].GetSummary()
 	}
 	j, _ := json.Marshal(artistSummaries)
 	fmt.Println("Time to marshall all artists:", time.Since(t0))
