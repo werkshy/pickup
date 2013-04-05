@@ -3,6 +3,7 @@ package model
 import (
 	"code.google.com/p/gompd/mpd"
 	"log"
+	"path"
 	"pickup/config"
 	"strings"
 	"time"
@@ -20,14 +21,15 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 
 	// Files come back from mpd sorted, so we can track the current
 	// artists/albums as we iterate through the files.
-	rootCollection := NewCollection("Music")
+	rootCategory := NewCategory("Music")
+	collection := Collection {
+		make([]*Category, 0),
+	}
+	collection.addCategory(rootCategory)
 
 	var currentArtist *Artist
 	var currentAlbum *Album
-	var currentCollection *Collection = rootCollection
-	/*
-		subCollections := make([]Collection, 0)
-	*/
+	var currentCategory *Category = rootCategory
 	for _, file := range files {
 		parts := strings.Split(file, "/")
 		nparts := len(parts)
@@ -37,7 +39,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		}
 		thisTrack := parts[nparts-1]
 		thisAlbum := parts[nparts-2]
-		thisTrack += "" // leave me alone golang!
+		//thisTrack += "" // leave me alone golang!
 
 		// Occassionally I have e.g. _mp3/ folders that I want to ignore
 		if strings.HasPrefix(thisAlbum, "_") {
@@ -46,7 +48,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		}
 
 		npartsWithArtist := 3 // expect artist, album, track
-		// If the path begins with _, it's a subcollection e.g. _Soundtracks
+		// If the path begins with _, it's a subcategory e.g. _Soundtracks
 		if strings.HasPrefix(file, "_") {
 			npartsWithArtist = 4 // category, artist, album, track
 		}
@@ -60,10 +62,12 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		// handle currentAlbum
 		if currentAlbum == nil {
 			currentAlbum = NewAlbum(thisAlbum)
+			currentAlbum.Path = path.Dir(file)
 		} else if currentAlbum.Name != thisAlbum {
 			// handle finished album
-			wrapUpAlbum(currentAlbum, currentArtist, currentCollection)
+			wrapUpAlbum(currentAlbum, currentArtist, currentCategory)
 			currentAlbum = NewAlbum(thisAlbum)
+			currentAlbum.Path = path.Dir(file)
 		}
 
 		// Handle currentArtist
@@ -74,71 +78,80 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 				currentArtist = NewArtist(thisArtist)
 			} else if currentArtist.Name != thisArtist {
 				// handle finished artist
-				wrapUpArtist(currentArtist, currentCollection)
+				wrapUpArtist(currentArtist, currentCategory)
 				currentArtist = NewArtist(thisArtist)
 			}
 		} else {
 			// Looking at a bare album
 			if currentArtist != nil {
 				// handle finished album if currentArtist != nil
-				wrapUpArtist(currentArtist, currentCollection)
+				wrapUpArtist(currentArtist, currentCategory)
 			}
 			currentArtist = nil
 		}
 
-		// handle currentCollection
+		// handle currentCategory
 		if strings.HasPrefix(file, "_") {
-			// This file is part of a subcollection
-			thisSubCollection := parts[0]
-			if currentCollection == rootCollection {
-				currentCollection = NewCollection(thisSubCollection)
-			} else if currentCollection.Name != thisSubCollection {
-				// handle finished subcollection
-				wrapUpSubCollection(currentCollection, rootCollection)
-				currentCollection = NewCollection(thisSubCollection)
+			// This file is part of a subcategory
+			thisCategory := parts[0]
+			if currentCategory == rootCategory {
+				currentCategory = NewCategory(thisCategory)
+			} else if currentCategory.Name != thisCategory {
+				// handle finished subcategory
+				wrapUpCategory(currentCategory, &collection)
+				currentCategory = NewCategory(thisCategory)
 			}
 		} else {
-			// this file is not in a subcollection, revert to root collection
-			if currentCollection != rootCollection {
-				// handle finished sub collection
-				wrapUpSubCollection(currentCollection, rootCollection)
+			// this file is not in a subcategory, revert to root category
+			if currentCategory != rootCategory {
+				// handle finished sub category
+				wrapUpCategory(currentCategory, &collection)
 			}
-			currentCollection = rootCollection
+			currentCategory = rootCategory
 		}
+		track := Track {thisTrack, file, currentAlbum.Name, ""}
+		if currentAlbum != nil {
+			track.Album = currentAlbum.Name
+		}
+		currentAlbum.Tracks = append(currentAlbum.Tracks, &track)
 	}
 
-	// handle final collection, artist and album
+	// handle final category, artist and album
 	if currentAlbum != nil {
-		wrapUpAlbum(currentAlbum, currentArtist, currentCollection)
+		wrapUpAlbum(currentAlbum, currentArtist, currentCategory)
 	}
 	if currentArtist != nil {
 		// handle finished artist
-		wrapUpArtist(currentArtist, currentCollection)
+		wrapUpArtist(currentArtist, currentCategory)
 	}
-	if currentCollection != nil {
-		// handle finished collection
-		wrapUpSubCollection(currentCollection, rootCollection)
+	if currentCategory != nil {
+		// handle finished category
+		wrapUpCategory(currentCategory, &collection)
 	}
 
-	log.Printf("Sorting mpd results took %d ms", time.Since(t1)/time.Millisecond)
-	return *rootCollection, err
+	log.Printf("Sorting mpd results took %d ms\n", time.Since(t1)/time.Millisecond)
+	log.Printf("Found %d categories\n", len(collection.Categories))
+	for _, category := range collection.Categories {
+		log.Printf("    %s\n", category.Name)
+	}
+	return collection, err
 }
 
-func wrapUpAlbum(album *Album, artist *Artist, collection *Collection) {
+func wrapUpAlbum(album *Album, artist *Artist, category *Category) {
+	album.Category = category.Name
 	if (artist != nil) {
+		album.Artist = artist.Name
 		artist.Albums = append(artist.Albums, album)
 	} else { // bare album, no artist
-		collection.Albums = append(collection.Albums, album)
+		category.Albums = append(category.Albums, album)
 	}
 }
 
-func wrapUpArtist(artist *Artist, collection *Collection) {
-	collection.Artists = append(collection.Artists, artist)
+func wrapUpArtist(artist *Artist, category *Category) {
+	category.Artists = append(category.Artists, artist)
 }
 
-func wrapUpSubCollection(subCollection *Collection, rootCollection *Collection) {
-	if subCollection != rootCollection {
-		rootCollection.SubCollections = append(
-					rootCollection.SubCollections, subCollection)
-	}
+func wrapUpCategory(category *Category, collection *Collection) {
+	log.Printf("Wrapping up category: %s", category.Name)
+	collection.addCategory(category)
 }

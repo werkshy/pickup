@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
-	//"io/ioutil"
 	"pickup/model"
 	"strings"
-	"time"
+	//"time"
 )
 
 type ArtistHandler struct {
@@ -37,8 +37,11 @@ func (h ArtistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
+	// TODO: list all artists
+	log.Printf("TOOD: list all artists\n");
+	/*
 	t0 := time.Now()
-	fmt.Printf("All albums (%d)\n", len(h.Music.Artists))
+	fmt.Printf("All artists (%d)\n", len(h.Music.Artists))
 	// Convert to Artist Summary to save on info
 	artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
 	for i := 0; i < len(h.Music.Artists); i++ {
@@ -49,6 +52,7 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	t1 := time.Now()
 	w.Write(j)
 	fmt.Println("Time to send all artists:", time.Since(t1))
+	*/
 }
 
 func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {

@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	//"io/ioutil"
 	"pickup/model"
 	"strings"
-	"time"
+	//"time"
 )
 
 type AlbumHandler struct {
@@ -18,7 +17,7 @@ type AlbumHandler struct {
 // Return a list of albums or a specific album
 func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := r.URL.Path[len("/albums/"):]
-	parts := strings.SplitN(path, "/", 2)
+	parts := strings.SplitN(path, "/", 3)
 	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
 		len(parts))
 	// If only one part, we'll search for it
@@ -33,20 +32,23 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	// Otherwise we assume artist/album
-	artistName := parts[0]
-	albumName := parts[1]
+	// Otherwise we assume category/artist/album
+	categoryName := parts[0]
+	artistName := parts[1]
+	albumName := parts[2]
 
-	log.Printf("Looking up album '%s - %s\n", artistName, albumName)
-	album, err := model.GetAlbum(h.Music, artistName, albumName)
+	log.Printf("Looking up album '%s/%s/%s\n", categoryName,
+			artistName, albumName)
+	album, err := model.GetAlbum(h.Music, categoryName, artistName, albumName)
 	if err == nil {
-		log.Printf("Found album: %s", album.Name)
+		log.Printf("Found album: %s/%s; %d tracks", album.Artist, album.Name, len(album.Tracks))
 		summary := model.NewAlbumSummary(album)
 		j, _ := json.Marshal(summary)
 		w.Write(j)
 		return
 	}
-	log.Printf("Did not find album: %s (%v)", album.Name, err)
+	log.Printf("Did not find album: %s/%s/%s (%v)", categoryName, artistName,
+			albumName, err)
 
 	//fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
 	writeError(w, http.StatusNotFound, fmt.Sprintf("Album not found '%s'",
@@ -54,6 +56,9 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
+	// TODO: list all albums
+	log.Printf("TOOD: list all albums\n");
+	/*
 	t0 := time.Now()
 	fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
 	// Convert to Album Summary to save on info
@@ -66,6 +71,7 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	t1 := time.Now()
 	w.Write(j)
 	fmt.Println("Time to send all albums:", time.Since(t1))
+	*/
 }
 
 func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {

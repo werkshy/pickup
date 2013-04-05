@@ -4,27 +4,41 @@ import (
 )
 
 type Collection struct {
+	Categories		[]*Category
+}
+
+func (c *Collection) GetSummary() []CategorySummary {
+	summaries := make([]CategorySummary, len(c.Categories))
+	for i:=0; i<len(c.Categories); i++ {
+		summaries[i] = c.Categories[i].GetSummary()
+	}
+	return summaries
+}
+
+func (c *Collection) addCategory(category *Category) {
+	c.Categories = append(c.Categories, category)
+}
+
+type Category struct {
 	Name           string
-	SubCollections []*Collection
 	Artists        []*Artist
 	Albums         []*Album
 	Tracks         []*Track
 }
 
-func NewCollection(name string) *Collection {
-	c := &Collection{}
+func NewCategory(name string) *Category {
+	c := &Category{}
 	c.Name = name
 	return c
 }
 
-type CollectionSummary struct {
+type CategorySummary struct {
 	Name           string
 	Artists        []ArtistSummary
 	AlbumNames     []string
-	SubCollections []CollectionSummary
 }
 
-func (c *Collection) GetSummary() CollectionSummary {
+func (c *Category) GetSummary() CategorySummary {
 	artistSummaries := make([]ArtistSummary, len(c.Artists))
 	for i := 0; i < len(c.Artists); i++ {
 		artistSummaries[i] = c.Artists[i].GetSummary()
@@ -33,13 +47,10 @@ func (c *Collection) GetSummary() CollectionSummary {
 	for i := 0; i < len(c.Albums); i++ {
 		albumNames[i] = c.Albums[i].Name
 	}
-	subCollections := make([]CollectionSummary, len(c.SubCollections))
-	for i := 0; i < len(c.SubCollections); i++ {
-		subCollections[i] = c.SubCollections[i].GetSummary()
-	}
-	return CollectionSummary{c.Name, artistSummaries, albumNames, subCollections}
+	return CategorySummary{c.Name, artistSummaries, albumNames}
 
 }
+
 
 type Item interface {
 	GetName() string
@@ -69,9 +80,10 @@ func (t Track) GetName() string {
  */
 type Album struct {
 	Name   string
-	Path   string
+	Path	string
 	Tracks []*Track
 	Artist string
+	Category string
 }
 
 type AlbumSummary struct {

@@ -78,16 +78,16 @@ func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 func (playlist MpdPlaylist) AddAlbum(album *model.Album) (err error) {
 	log.Printf("Adding album %s - %s (%s)\n", album.Artist, album.Name,
 			album.Path)
-	uri := playlist.pathToUri(album.Path)
-	log.Printf("uri: %s\n", uri)
-	return playlist.conn.Add(uri)
+	//uri := playlist.pathToUri(path)
+	log.Printf("uri: %s\n", album.Path)
+	return playlist.conn.Add(album.Path)
 }
 
 func (playlist MpdPlaylist) AddTrack(track *model.Track) (err error) {
 	log.Printf("Adding track %v\n", track)
-	uri := playlist.pathToUri(track.Path)
-	log.Printf("Uri: %s\n", uri);
-	return playlist.conn.Add(uri)
+	//uri := playlist.pathToUri(track.Path)
+	log.Printf("Uri: %s\n", track.Path);
+	return playlist.conn.Add(track.Path)
 }
 
 func (playlist MpdPlaylist) AddTracks(tracks []*model.Track) (err error) {
@@ -108,5 +108,6 @@ func (playlist MpdPlaylist) Clear() (err error) {
 }
 
 func (playlist MpdPlaylist) pathToUri(path string) (uri string){
+	log.Printf("pathToUri: musicDir is '%s'\n", playlist.musicDir)
 	return path[len(playlist.musicDir) + 1:]
 }

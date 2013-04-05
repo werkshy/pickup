@@ -33,7 +33,7 @@ ul#albumList,
 ul#trackList {
 	list-style-type: none;
 	padding: 0px;
-	margin: 0px;
+	margin: 20px 0px;
 }
 
 ul#artistList li,
@@ -44,6 +44,20 @@ ul#albumList li {
 ul#artistList li span.artist-title {
 	margin-left: 3px;
 	cursor: pointer;
+}
+
+ul.categories li {
+	display: inline;
+	list-style-type: none;
+	padding-right: 10px;
+	cursor: pointer;
+}
+
+ul.categories li span.title {
+}
+
+ul li.header {
+	font-weight: bold;
 }
 
 /** To abbreviate text you need these properties and a width.
@@ -110,6 +124,10 @@ ul#trackList li span.track-title {
 	height: 16px;
 }
 
+
+#albumView .artist-name {
+	cursor: pointer;
+}
 
 #controls {
 	background-color: #eeeeee;

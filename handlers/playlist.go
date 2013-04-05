@@ -60,6 +60,7 @@ func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
 
 type PlaylistCommand struct {
 	Command   string
+	Category  string
 	Artist    string
 	Album     string
 	Track     string
@@ -92,16 +93,17 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		return errors.New("Playing artists is not implemented")
 	}
 
-	log.Printf("Trying to add %s/%s/%s to playlist (%v)\n", data.Artist,
-		data.Album, data.Track, data.Immediate)
+	log.Printf("Trying to add %s/%s/%s/%s to playlist (%v)\n", 
+		data.Category, data.Artist, data.Album, data.Track, data.Immediate)
 
 	var album *model.Album = nil
 	var track *model.Track = nil
 	if data.Track == "" {
-		album, err = model.GetAlbum(h.Music, data.Artist, data.Album)
+		album, err = model.GetAlbum(h.Music, data.Category, data.Artist,
+			data.Album)
 	} else {
-		track, err = model.GetTrack(h.Music, data.Artist, data.Album,
-			data.Track)
+		track, err = model.GetTrack(h.Music, data.Category, data.Artist,
+			data.Album, data.Track)
 	}
 	if err != nil {
 		log.Printf("Album not found.")

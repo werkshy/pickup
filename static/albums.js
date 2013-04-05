@@ -6,15 +6,52 @@ function initAlbums(App) {
 		},
 		urlRoot: "/albums/",
 		url: function() {
-			return this.urlRoot + this.get("Artist") + "/" + this.get('Name');
-		}
+			_.bindAll(this)
+			return this.urlRoot + this.get("Category") + "/"
+					+ this.get("Artist") + "/" + this.get('Name');
+		},
+		play: function(immediate) {
+			console.log("Playing album %s/%s (%s)", this.get('Artist'),
+					this.get('Name'), immediate);
+			$.postJSON("/playlist/", {
+						"Command" : "add",
+						"Category" : this.get("Category"),
+						"Artist" : this.get('Artist'),
+						"Album" : this.get('Name'),
+						"Immediate" : immediate
+					},
+					function() {
+						console.log("Play success!");
+					}
+			);
+		},
+		playTrack: function(track, immediate) {
+			console.log("Playing track %s/%s/%s (%s)",
+					this.get('Artist'), this.get('Album'), track, immediate);
+			$.postJSON("/playlist/", {
+						"Command" : "add",
+						"Category" : this.get("Category"),
+						"Artist" : this.get('Artist'),
+						"Album" : this.get('Name'),
+						"Track" : track,
+						"Immediate" : immediate
+					},
+					function() {
+						console.log("Play success!");
+					}
+			);
+		},
+	});
+
+	App.Albums = Backbone.Collection.extend({
+		model: App.Album,
+		url: "/albums/"  // uh, not really
 	});
 
 	App.AlbumView = Backbone.View.extend({
-			el : "#album",
+			el : "#content",
 			className : "album",
 			initialize: function() {
-				_.bindAll(this, "render")
 				_.bindAll(this)
 				this.template = Handlebars.compile($("#album-template").html())
 				this.render();
@@ -22,42 +59,36 @@ function initAlbums(App) {
 			render: function() {
 				console.log("Render album '%s'", this.model.get("Name"));
 				this.$el.html(this.template(this.model.attributes))
-				App.showView("#albumView")
+				//App.showView("#albumView")
 				return this;
 			},
 			events : {
 				"click .play" : "playTrackNow",
 				"click .add" : "addTrack",
+				"click .artist-name" : "showArtist",
 			},
 			playTrackNow: function(event) {
 				var track = event.currentTarget.parentElement.id;
 				console.log("Play track: %s/%s/%s", this.model.get('Artist'),
 						this.model.get("Name"), track);
-				playTrack(this.model.get('Artist'),
-						this.model.get("Name"), track, true)
+				this.model.playTrack(track, true);
 			},
 			addTrack: function(event) {
 				var track = event.currentTarget.parentElement.id;
 				console.log("Add track: %s/%s/%s", this.model.get('Artist'),
 						this.model.get("Name"), track);
-				playTrack(this.model.get('Artist'),
-						this.model.get("Name"), track, false)
+				this.model.playTrack(track, false)
 			},
-			playTrack: function(artist, album, track, immediate) {
-				console.log("Playing track %s/%s/%s (%s)",
-						artist, album, track, immediate);
-				$.postJSON("/playlist/", {
-							"command" : "add",
-							"artist" : artist,
-							"album" : album,
-							"track" : track,
-							"immediate" : immediate
-						},
-						function() {
-							console.log("Play success!");
-						}
-				);
-			}
+			showArtist: function() {
+				console.log("Showing artist", this.model.get("Artist"));
+				App.router.navigate("artists/" + this.model.get("Category")
+					+ "/" + this.model.get('Artist'),
+					{ 'trigger' : true});
+			},
+			close: function() {
+				this.unbind();
+				this.undelegateEvents();
+			},
 	});
 
 	App.TrackListItemView = Backbone.View.extend({

@@ -30,20 +30,20 @@ func main() {
 		*conf.MpdPassword)
 
 	//collection := loadOrRefresh(*conf.MusicDir)
-	collection, err := model.RefreshMpd(&conf)
+	music, err := model.RefreshMpd(&conf)
 	if (err != nil) {
 		log.Fatalln("Couldn't get files from mpd");
 	}
 
 	switch *action {
 	case "stats":
-		stats(collection)
+		stats(music.Categories[0])
 	case "search":
-		search(collection, *query)
+		search(music, *query)
 	case "serve":
-		serve(&conf, collection)
+		serve(&conf, music)
 	case "test-playback":
-		testPlayback(&conf, collection)
+		testPlayback(&conf, music)
 	case "refresh":
 		os.Exit(0);
 	default:
@@ -52,12 +52,12 @@ func main() {
 }
 
 func serve(conf *config.Config, music model.Collection) bool {
-	collectionHandler := handlers.CollectionHandler{music}
+	categoryHandler := handlers.CategoryHandler{music}
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
 	playlistHandler := handlers.NewPlaylistHandler(music, conf)
 	controlHandler := handlers.NewControlHandler(conf)
-	http.Handle("/collection/", collectionHandler)
+	http.Handle("/categories/", categoryHandler)
 	http.Handle("/albums/", albumHandler)
 	http.Handle("/artists/", artistHandler)
 	http.Handle("/playlist/", playlistHandler)
@@ -76,18 +76,16 @@ func serve(conf *config.Config, music model.Collection) bool {
 	return true
 }
 
-func stats(music model.Collection) {
-	fmt.Printf("%d tracks, %d albums, %d artists\n",
-		len(music.Tracks), len(music.Albums),
-		len(music.Artists))
+func stats(category *model.Category) {
+	fmt.Printf("Stats: %d tracks, %d albums, %d artists\n",
+		len(category.Tracks), len(category.Albums),
+		len(category.Artists))
 }
 
 func search(music model.Collection, query string) {
-	fmt.Println("All music:")
-	stats(music)
 	matching := model.Search(music, query)
 	fmt.Printf("Matches for '%s':\n", query)
-	stats(matching)
+	stats(&matching)
 
 	fmt.Println("\nMatching Tracks:")
 	for _, track := range matching.Tracks {
@@ -105,7 +103,7 @@ func testPlayback(conf *config.Config, music model.Collection) error {
 	playlist.Clear()
 
 	// add any old album
-	album := music.Albums[2]
+	album := music.Categories[0].Artists[3].Albums[2]
 	log.Printf("Playing album %s - %s\n", album.Artist, album.Name)
 	playlist.AddAlbum(album)
 

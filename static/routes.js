@@ -2,62 +2,91 @@
 function initRoutes(App) {
 
 	App.Route = {}
-	App.Route.allArtists = function() {
-		console.log("Route: show all artists (%d)", App.artists.length)
-		App.showView("#allArtistsView");
-	}
-
-	App.Route.artist = function(query) {
-		console.log("Route: show artist '%s'", query);
-
-		console.log("Looking in %d artists", App.artists.length);
-		var artists = App.artists.where({Name:query})
-		var artist = artists[0];
-		console.log("Found %d artists matching %s", artists.length, query);
-		var artistView = new App.ArtistView({model:artist})
-	}
-
-	App.Route.album = function(artistQuery, albumQuery) {
-		console.log("Route: show album '%s/%s'", albumQuery, artistQuery);
-
-		console.log("Looking in %d artists", App.artists.length);
-		var artists = App.artists.where({Name:artistQuery})
-		console.log("Found %d artists", artists.length);
-		if (artists.length != 1) {
-			console.log("Yikes! too may artists");
+	App.Route.category = function(categoryName) {
+		console.log("Route: show category (%s)", categoryName);
+		var categories = App.categories.where({Name:categoryName})
+		var category = categories[0];
+		if (typeof App.categoryView !== 'undefined') {
+			App.categoryView.close(); // TODO move all this to AppView
 		}
+		App.categoryView = new App.CategoryView({model:category});
+	}
+
+	App.Route.artist = function(categoryName, artistName) {
+		console.log("Route: show artist '%s/%s'", categoryName, artistName);
+		var categories = App.categories.where({Name:categoryName})
+		var category = categories[0];
+		console.log("Category has %d artists", category.artists.size());
+		var artists = category.artists.where({Name:artistName})
+		console.log("Found %d matching artists", artists.length);
 		var artist = artists[0];
-		//console.log(artist)
-		var album = new App.Album({
-					"Artist" : artist.get("Name"),
-					"Name" : albumQuery
-		})
+		if (typeof App.artistView !== 'undefined') {
+			App.artistView.close(); // TODO move all this to AppView
+		}
+
+		App.artistView = new App.ArtistView({model:artist})
+
+	}
+
+	App.Route.album = function(q1, q2, q3) {
+		var album = null;
+		if (typeof q3 !== 'undefined') {
+			// category, artist, album
+			album = App.Route.getAlbum(q1, q2, q3);
+			console.log("Route: show album '%s/%s/%s'", q1, q2, q3);
+		} else {
+			album = App.Route.getAlbum(q1, null, q3);
+			console.log("Route: show album '%s/%s'", q1, q2);
+		}
+
 		console.log("Fetching album")
 		album.fetch({
 				success: function() {
 					console.log("retrieved album")
-					var albumView = new App.AlbumView({model:album})
+					// TODO: move this into an app view
+					// Gotta kill the existing view otherwise the events fire
+					// on zombie views.
+					if (typeof App.albumView !== "undefined") {
+						App.albumView.close();
+					}
+					App.albumView = new App.AlbumView({model:album})
 				}
+		})
+	}
+
+	App.Route.getAlbum = function(categoryName, artistName, albumName) {
+		var category = App.categories.where({Name:categoryName})[0]
+		if (typeof artistName === 'undefined') {
+			// no artist, bare album
+			artistName  = "Various Artists";
+		} else {
+			var artist = category.artists.where({Name:artistName})[0]
+		}
+		return new App.Album({
+					"Category" : categoryName,
+					"Artist" : artistName,
+					"Name" : albumName
 		})
 	}
 
 	// Set up the Backbone router
 	App.Router = Backbone.Router.extend({
 		routes: {
-			"artists/:query" : "artistRoute",
-			"artists" : "allArtists",
-			"albums/:artistQuery/:albumQuery" : "albumRoute",
+			"artists/:category/:artist" : "artistRoute",
+			"categories/:category" : "category",
+			"albums/:category/:artistQuery/:albumQuery" : "albumRoute",
+			"albums/:category/:album" : "albumRoute",
 			"about": "showAbout",
 			"*other"    : "defaultRoute"
 		},
-		allArtists: App.Route.allArtists,
+		category: App.Route.category,
 		artistRoute: App.Route.artist,
 		albumRoute: App.Route.album,
 		showAbout: function() {
 			console.log("Show about");
 		},
 		defaultRoute: function(other){
-			App.Route.allArtists()
+			App.Route.category("Music")
 		}
 	});
 

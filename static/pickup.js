@@ -21,49 +21,66 @@ $(function() {
 	var t0 = new Date();
 	window.App = {}
 
-	// TODO: this isn't so pretty, I'd like to do better but without
-	// re-rendering the entire artist list when we switch to it
-	App.showView = function(viewId) {
-		console.log("Showing view '%s'", viewId);
-		$(viewId).show();
-		var allViews = ["#allArtistsView", "#artistView", "#albumView"]
-		for (i=0; i<allViews.length; i++) {
-			if (allViews[i] !== viewId) {
-				$(allViews[i]).hide();
-			}
-		}
-		console.log("Shown view '%s'", viewId);
-	}
-
 	initArtists(App);
 	initAlbums(App);
+	initCategories();
 	initControls(App);
 	initPlaylist(App);
 	initRoutes(App);
 
+	var t1 = new Date();
 	// Start the backbone router / history after we retrieve the artists
 	// collection.
-	App.artists = new App.ArtistList();
-	var t1 = new Date();
-	// fetch all data and initialize view on success
-	App.artists.fetch({
-			success: function() {
-				var t2 = new Date();
-				console.log("Fetched all artists (%d) in %d ms", 
-						App.artists.length, t2-t1);
-				console.log("Rendering the artist list");
-				App.artistListView = new App.ArtistListView({collection:App.artists});
-				console.log("Initiating the router");
-				App.router = new App.Router();
-				Backbone.history.start();
-				// render the artist list in the background, in case it's not
-				// the first thing we're looking at
-				setTimeout(function() {
-					App.artistListView.renderDontShow();
-					console.log("Rendered all artists");
-					}, 10);
-			}
+	$.ajax("/categories/", {
+		contentType: 'application/json',
+		dataType: 'json',
+		success: function(data) {
+			var t2 = new Date();
+			App.categories = {}
+			console.log("Fetched all categories in %d ms", t2-t1);
+			App.categories = new App.Categories(data);
+			console.log("Created category collection with %d members",
+				App.categories.size());
+			App.categoriesView = new App.CategoriesView({
+					collection:App.categories});
+			App.categoriesView.render();
+			console.log("Initiating the router");
+			App.router = new App.Router();
+			Backbone.history.start();
+
+			/*
+			console.log("Initiating the router");
+			App.router = new App.Router();
+			Backbone.history.start();
+			// render the artist list in the background, in case it's not
+			// the first thing we're looking at
+			setTimeout(function() {
+				//App.collectionView.renderDontShow();
+				App.collectionsView.render();
+				console.log("Rendered all artists");
+				}, 10);
+			*/
+		}
 	});
+
+
+	/*
+	App.categories = new App.Categories();
+	App.categories.fetch({
+		success: function(data) {
+			var t2 = new Date();
+			App.categories = {}
+			console.log("Fetched all categories in %d ms", t2-t1);
+			App.categories = new App.Categories(data);
+			console.log("Created category collection with %d members",
+				App.categories.size());
+			App.categoriesView = new App.CategoriesView({
+					collection:App.categories});
+			App.categoriesView.render();
+		}
+	});
+	*/
+
 	// Set up player controls
 	console.log("Initializing controls")
 	App.control = new App.Control()
@@ -73,7 +90,7 @@ $(function() {
 	setInterval(function() {
 		//console.log("Fetching controls");
 		App.control.fetch()
-	}, 2500);
+	}, 10000);
 
 	// Setup playlist polling
 	App.playlist = new App.Playlist();
@@ -82,5 +99,5 @@ $(function() {
 	 setInterval(function() {
 		//console.log("Fetching playlist");
 		App.playlist.fetch()
-	}, 2500);
+	}, 10000);
 });

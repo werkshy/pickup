@@ -7,6 +7,7 @@
 	<script type="text/javascript" src="/static/control.js"></script>
 	<script type="text/javascript" src="/static/artists.js"></script>
 	<script type="text/javascript" src="/static/albums.js"></script>
+	<script type="text/javascript" src="/static/categories.js"></script>
 	<script type="text/javascript" src="/static/playlist.js"></script>
 	<script type="text/javascript" src="/static/routes.js"></script>
 	<script type="text/javascript" src="/static/pickup.js"></script>
@@ -32,6 +33,35 @@
 			</ul>
 		</div>
 	</script>
+
+	<script id="categories-template" type="text/html">
+		<ul class="categories">
+			<li class="header">Categories:</li>
+			{{#each categories}}
+				<li>
+					<span class="title" data-name="{{Name}}">{{Name}}</span>
+				</li>
+			{{/each}}
+		</ul>
+		<br>
+		<div id="category">
+		</div>
+	</script>
+	<script id="category-template" type="text/html">
+		<div class="category multicolumn" data-category="{{Name}}">
+			<ul id="artistList">
+				{{#each Artists}}
+					<li>
+						<span class="artist-title" data-artist="{{Name}}"
+								data-category=""
+								>
+							{{Name}}</span>
+					</li>
+				{{/each}}
+			</ul>
+		</div>
+	</script>
+
 
 	<script id="control-template" type="text/html">
 		&nbsp;
@@ -60,7 +90,7 @@
 
 	<script id="album-template" type="text/html">
 		<div id="albumView" class="singlecolumn">
-			<h2>{{Artist}} - {{Name}}</h2>
+			<h2><span class="artist-name">{{Artist}}</span> - {{Name}}</h2>
 			<ul id="trackList">
 				{{#each Tracks}}
 				<li id="{{.}}">
@@ -86,17 +116,20 @@
 <div id="controls">
 </div>
 
+<!--
 <div id="allArtistsView" class="multicolumn">
 	<h1 id="home">Artists</h1>
 	<ul id="artistList"></ul>
 </div>
+-->
 
-<div id="artist">
-
+<div id="categories">
 </div>
 
-<div id="album">
+<!-- This is where the category / artist / album renders -->
+<div id="content">
 </div>
+
 
 <div id="playlist-wrapper">
 	<div class="top">
