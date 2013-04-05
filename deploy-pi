@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+GOOS=linux GOARCH=arm GOARM=5 go build
+
+rsync -av --exclude=.git --delete-excluded ./ pi:pickup/
