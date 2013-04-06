@@ -90,9 +90,9 @@ Design Approach
 Roadmap
 -------
 
-See https://trello.com/board/pickup/515a58746cbd4fd847001505
+See [Pickup on Trello](https://trello.com/board/pickup/515a58746cbd4fd847001505)
 
 
 Screenshot
 ----------
-!(http://images.ultrahigh.org/pickup_20130405.png "Optional title")
+[Screenshot](http://images.ultrahigh.org/pickup_20130405.png)
