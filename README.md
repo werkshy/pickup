@@ -9,12 +9,48 @@ large music collection, and my navigation of choice is by album, with easy
 search available. The "albums" interface in Google Play Music (web) is pretty
 close, but the google play uploader sucks and misses half of my songs.
 
-
 Status
 ------
 
 It works, just about. You can add albums and tracks to the playlist, control
-volume, skip tracks, start/stop playback. You can view the playlist. It runs on the Raspberry Pi with room to run mpd as well.
+volume, skip tracks, start/stop playback. You can view the playlist. It runs on
+the Raspberry Pi with room to run mpd as well. Because of the client-side
+architecture it is very fast. I hope to start iterating on the look-and-feel a
+bit soon now that it is functional.
+
+Getting Started In Ubuntu
+-------------------------
+
+    apt-get install golang-go
+    mkdir $HOME/go
+    export GOPATH=$HOME/go
+    go get github.com/werkshy/pickup
+
+    cd $HOME/go/src/github.com/werkshy/pickup
+    go build
+    ./pickup --help
+    ./pickup
+
+Getting Started Cross-Compiling for Raspberry Pi
+------------------------------------------------
+
+In ubuntu, you need to build go yourself to cross-compile.
+Using [these instructions](http://golang.org/doc/install/source) download the
+source, run `./all.bash` to get your native toolchain.
+
+Next run this to build the ARM toolchain for the pi:
+
+    GOOS=linux GOARCH=arm GOARM=5 ./all.bash
+
+Now you can cross compile pickup for the pi
+
+    cd ~/go/src/github.com/werkshy/pickup
+    GOOS=linux GOARCH=arm GOARM=5 go build
+
+Now copy the whole pickup directory to your pi and run
+
+    ./pickup
+
 
 Background
 -----------
@@ -24,12 +60,13 @@ trying to run it on an NSLU2 embedded Linux machine with 32MB RAM) and now Go.
 It started off as a standalone player, then grew an xmms2 backend, and now is
 going to use mpd for playback, since I already use mpd everywhere and it just
 works. I'm writing it now in Go because I want to learn Go and I want to have
-this system.
+this system. This is my first real project in go: any code review, criticism or
+contributions would be much appreciated.
 
 Design Requirements
 --------------------
 
-- Run on embedded hardware. NSLU2 would be nice, Raspberry Pi (256MB) would be
+- Run on embedded hardware. NSLU2 would be nice, Raspberry Pi would be
   fine.
 - Display results quickly even when the music is stored on a slow-ish network
   drive (i.e. some caching of available music).
@@ -41,11 +78,14 @@ Design Requirements
 - Must have: play internet streams (e.g. DI Radio)
 - Must have: responsive frontend, single-page-app feel.
 
-Design Philosophy
+Design Approach
 -----------------
 
-The Go implementation is a simple backend serving JSON to a javascript frontend,
-(single-page app in Backbone.js.)
+- The Go implementation is a simple backend serving JSON to a javascript
+  frontend, (single-page app in Backbone.js.)
+- The frontend loads the entire music collection up front. This takes less than
+  a second and makes navigating around the collection extremely fast.
+
 
 Roadmap
 -------
