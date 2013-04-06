@@ -1,7 +1,7 @@
 package model
 
 import (
-	"code.google.com/p/gompd/mpd"
+	"github.com/werkshy/gompd/mpd"
 	"log"
 	"path"
 	"pickup/config"

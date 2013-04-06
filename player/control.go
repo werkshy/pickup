@@ -1,7 +1,7 @@
 package player
 
 import (
-	"code.google.com/p/gompd/mpd"
+	"github.com/werkshy/gompd/mpd"
 	"log"
 	"strconv"
 	"pickup/config"
