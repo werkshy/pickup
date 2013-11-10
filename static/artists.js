@@ -25,6 +25,7 @@ function initArtists(App) {
 				_.bindAll(this)
 				this.template = Handlebars.compile($("#artist-template").html())
 				this.render();
+                this.name = this.model.get("Name");
 			},
 			events : {
 				"click .play" : "playAlbum",
@@ -32,31 +33,32 @@ function initArtists(App) {
 				"click .album-title" : "showAlbum"
 			},
 			render: function() {
-				console.log("Render artist '%s'", this.model.get("Name"));
+				console.log("Render artist '%s'", this.name);
 				this.$el.html(this.template(this.model.attributes))
 				//App.showView("#artistView")
 				return this;
 			},
 			playAlbum: function(event) {
 				var album = event.currentTarget.parentElement.id;
-				console.log("Play album: %s/%s", this.model.get('Name'), album);
+				console.log("Play album: %s/%s", this.name, album);
 				this.model.playAlbum(album, true)
 			},
 			addAlbum: function(event) {
 				var album = event.currentTarget.parentElement.id;
-				console.log("Add album: %s/%s", this.model.get('Name'), album);
+				console.log("Add album: %s/%s", this.name, album);
 				this.model.playAlbum(album, false)
 			},
 			showAlbum: function(event) {
 				var album = event.currentTarget.parentElement.id;
 				console.log("Navigating to album: %s/%s/%s",
 						this.model.get("Category"),
-						this.model.get('Name'), album);
+						this.name, album);
 					App.router.navigate("albums/" + this.model.get("Category")
 						+ "/" + this.model.get('Name') + "/" + album,
 						{ 'trigger' : true});
 			},
 			close: function() {
+                console.log("Closing artist view '%s'", this.name);
 				this.unbind();
 				this.undelegateEvents();
 			},

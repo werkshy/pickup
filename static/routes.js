@@ -6,10 +6,10 @@ function initRoutes(App) {
 		console.log("Route: show category (%s)", categoryName);
 		var categories = App.categories.where({Name:categoryName})
 		var category = categories[0];
-		if (typeof App.categoryView !== 'undefined') {
-			App.categoryView.close(); // TODO move all this to AppView
+		if (typeof App.appView !== 'undefined') {
+			App.appView.close();
 		}
-		App.categoryView = new App.CategoryView({model:category});
+		App.appView = new App.CategoryView({model:category});
 	}
 
 	App.Route.artist = function(categoryName, artistName) {
@@ -20,11 +20,11 @@ function initRoutes(App) {
 		var artists = category.artists.where({Name:artistName})
 		console.log("Found %d matching artists", artists.length);
 		var artist = artists[0];
-		if (typeof App.artistView !== 'undefined') {
-			App.artistView.close(); // TODO move all this to AppView
+		if (typeof App.appView !== 'undefined') {
+			App.appView.close(); // TODO move all this to AppView
 		}
 
-		App.artistView = new App.ArtistView({model:artist})
+		App.appView = new App.ArtistView({model:artist})
 
 	}
 
@@ -46,10 +46,10 @@ function initRoutes(App) {
 					// TODO: move this into an app view
 					// Gotta kill the existing view otherwise the events fire
 					// on zombie views.
-					if (typeof App.albumView !== "undefined") {
-						App.albumView.close();
+					if (typeof App.appView !== "undefined") {
+						App.appView.close();
 					}
-					App.albumView = new App.AlbumView({model:album})
+					App.appView = new App.AlbumView({model:album})
 				}
 		})
 	}

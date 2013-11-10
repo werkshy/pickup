@@ -29,6 +29,9 @@ function initCategories() {
 	});
 
 
+    /**
+     * CategoryView is the list of artists and albums in a category.
+     */
 	App.CategoryView = Backbone.View.extend({
 		className: "category",
 		el : "#content",
@@ -63,11 +66,15 @@ function initCategories() {
 					{ 'trigger' : true});
 		},
 		close: function() {
+            console.log("Closing category view '%s'", this.name);
 			this.unbind();
 			this.undelegateEvents();
 		},
 	});
 
+    /**
+     * CategoriesView is the always-visible top category/nav list
+     */
 	App.CategoriesView = Backbone.View.extend({
 		el: "#categories",
 		events: {

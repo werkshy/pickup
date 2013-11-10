@@ -48,49 +48,52 @@ function initAlbums(App) {
 		url: "/albums/"  // uh, not really
 	});
 
-	App.AlbumView = Backbone.View.extend({
-			el : "#content",
-			className : "album",
-			initialize: function() {
-				_.bindAll(this)
-				this.template = Handlebars.compile($("#album-template").html())
-				this.render();
-			},
-			render: function() {
-				console.log("Render album '%s'", this.model.get("Name"));
-				this.$el.html(this.template(this.model.attributes))
-				//App.showView("#albumView")
-				return this;
-			},
-			events : {
-				"click .play" : "playTrackNow",
-				"click .add" : "addTrack",
-				"click .artist-name" : "showArtist",
-			},
-			playTrackNow: function(event) {
-				var track = event.currentTarget.parentElement.id;
-				console.log("Play track: %s/%s/%s", this.model.get('Artist'),
-						this.model.get("Name"), track);
-				this.model.playTrack(track, true);
-			},
-			addTrack: function(event) {
-				var track = event.currentTarget.parentElement.id;
-				console.log("Add track: %s/%s/%s", this.model.get('Artist'),
-						this.model.get("Name"), track);
-				this.model.playTrack(track, false)
-			},
-			showArtist: function() {
-				console.log("Showing artist", this.model.get("Artist"));
-				App.router.navigate("artists/" + this.model.get("Category")
-					+ "/" + this.model.get('Artist'),
-					{ 'trigger' : true});
-			},
-			close: function() {
-				this.unbind();
-				this.undelegateEvents();
-			},
-	});
+    App.AlbumView = Backbone.View.extend({
+        el : "#content",
+        className : "album",
+        initialize: function() {
+            _.bindAll(this);
+            this.name = this.model.get("Name");
+            this.template = Handlebars.compile($("#album-template").html());
+            this.render();
+        },
+        render: function() {
+            console.log("Render album '%s'", this.name);
+            this.$el.html(this.template(this.model.attributes))
+        //App.showView("#albumView")
+        return this;
+        },
+        events : {
+            "click .play" : "playTrackNow",
+            "click .add" : "addTrack",
+            "click .artist-name" : "showArtist",
+        },
+        playTrackNow: function(event) {
+            var track = event.currentTarget.parentElement.id;
+            console.log("Play track: %s/%s/%s", this.model.get('Artist'),
+                    name, track);
+            this.model.playTrack(track, true);
+        },
+        addTrack: function(event) {
+            var track = event.currentTarget.parentElement.id;
+            console.log("Add track: %s/%s/%s", this.model.get('Artist'),
+                    name, track);
+            this.model.playTrack(track, false)
+        },
+        showArtist: function() {
+            console.log("Switch from album view to artist", this.model.get("Artist"));
+            App.router.navigate("artists/" + this.model.get("Category")
+                    + "/" + this.model.get('Artist'),
+                    { 'trigger' : true});
+        },
+        close: function() {
+            console.log("Closing AlbumView '%s'", this.name);
+            this.unbind();
+            this.undelegateEvents();
+        },
+    });
 
+    // FIXME: unused?
 	App.TrackListItemView = Backbone.View.extend({
 		tagName: "li",
 		className: "album-track-list-item",
@@ -110,6 +113,10 @@ function initAlbums(App) {
 			App.router.navigate("artists/" + this.model.get('Name'),
 					{ 'trigger' : true});
 		},
+        close: function() {
+            this.unbind();
+            this.undelegateEvents();
+        },
 	});
 }
 
