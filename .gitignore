@@ -1,2 +1,3 @@
 pickup
 *.json
+/deploy-gaston
