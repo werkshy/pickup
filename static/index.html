@@ -48,8 +48,20 @@
 		<div id="category">
 		</div>
 	</script>
+
 	<script id="category-template" type="text/html">
 		<div class="category multicolumn" data-category="{{Name}}">
+			<h3>Albums</h3>
+			<ul id="albumList">
+				{{#each AlbumNames}}
+					<li id="{{.}}">
+						<span class="album-title abbreviated">{{.}}</span>
+						<div class='album-actions add' title="Add '{{.}}'"></div>
+						<div class='album-actions play' title="Play '{{.}}'"></div>
+					</li>
+				{{/each}}
+			</ul>
+			<h3>Artists</h3>
 			<ul id="artistList">
 				{{#each Artists}}
 					<li>

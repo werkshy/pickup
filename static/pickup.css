@@ -70,7 +70,7 @@ ul li.header {
 }
 
 ul#albumList li span.album-title {
-	max-width: 15em;
+	max-width: 20em;
 	float: left;
 	clear: left;
 	cursor: pointer;
@@ -85,12 +85,12 @@ ul#albumList li span.album-title {
 
 #trackList,
 #albumList {
-	width: 28em;
+	width: 96em;
 }
 
 #trackList li,
 #albumList li {
-	width: 28em;
+	width: 23em;
 	height: 16px;
 }
 

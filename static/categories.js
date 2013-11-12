@@ -13,14 +13,17 @@ function initCategories() {
 			this.artists.each(function(artist, index, list) {
 				artist.set("Category", this.name)
 			}, this);
-			console.log("Category %s has %d artists",
-				this.name, this.artists.size())
-			// TODO: handle bare albums (missing server side)
+			console.log("Category %s has %d artists and %d albums",
+				this.name, this.artists.size(), this.attributes.AlbumNames)
 		},
 		urlRoot: "/cateories/",
 		url: function() {
 			return this.urlRoot;
 		},
+		playAlbum: function(albumName, immediate) {
+			var album = App.Route.getAlbum(this.get("Name"), undefined, albumName);
+			album.play(immediate);
+		}
 	});
 
 	App.Categories = Backbone.Collection.extend({
@@ -37,6 +40,9 @@ function initCategories() {
 		el : "#content",
 		events : {
 			"click .artist-title" : "viewArtist",
+            "click .play" : "playAlbum",
+            "click .add" : "addAlbum",
+            "click .album-title" : "showAlbum"
 		},
 		// render on change to collection
 		initialize: function() {
@@ -50,6 +56,7 @@ function initCategories() {
 		render: function () {
 			// Render and show the artist list view for a single category
 			console.log("Rendering category ", this.name);
+            console.log("Category model: ", this.model);
 			t0 = new Date();
 			var el = this.template(this.model.toJSON())
 			this.$el.html(el);
@@ -65,6 +72,23 @@ function initCategories() {
 			App.router.navigate("artists/" + category + "/" + artist,
 					{ 'trigger' : true});
 		},
+        playAlbum: function(event) {
+            var album = event.currentTarget.parentElement.id;
+            console.log("Play album: %s/%s", this.name, album);
+            this.model.playAlbum(album, true)
+        },
+        addAlbum: function(event) {
+            var album = event.currentTarget.parentElement.id;
+            console.log("Add album: %s/%s", this.name, album);
+            this.model.playAlbum(album, false)
+        },
+        showAlbum: function(event) {
+            var album = event.currentTarget.parentElement.id;
+            console.log("Navigating to album: %s/%s/%s",
+                    this.name, album);
+                App.router.navigate("albums/" + this.model.get('Name') + "/" + album,
+                    { 'trigger' : true});
+        },
 		close: function() {
             console.log("Closing category view '%s'", this.name);
 			this.unbind();

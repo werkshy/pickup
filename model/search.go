@@ -73,6 +73,13 @@ func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
 func GetAlbum(music Collection, categoryName string, artistName string, albumName string) (*Album, error) {
 	for _, category := range music.Categories {
 		if category.Name == categoryName {
+			if artistName == "" {
+				for _, album := range category.Albums {
+					if album.Name == albumName {
+						return album, nil
+					}
+				}
+			}
 			for _, artist := range category.Artists {
 				if artist.Name == artistName {
 					for _, album := range artist.Albums {
@@ -90,19 +97,31 @@ func GetAlbum(music Collection, categoryName string, artistName string, albumNam
 
 func GetTrack(music Collection, categoryName string,
 	artistName string, albumName string, trackName string) (*Track, error) {
+	var theAlbum *Album = nil
 	for _, category := range music.Categories {
 		if category.Name == categoryName {
-			for _, artist := range category.Artists {
-				if artist.Name == artistName {
-					for _, album := range artist.Albums {
-						if album.Name == albumName {
-							for _, track := range album.Tracks {
-								if track.Name == trackName {
-									return track, nil
-								}
+			if artistName == "" {
+				for _, album := range category.Albums {
+					if album.Name == albumName {
+						theAlbum = album
+					}
+				}
+			} else {
+				for _, artist := range category.Artists {
+					if artist.Name == artistName {
+						for _, album := range artist.Albums {
+							if album.Name == albumName {
+								theAlbum = album;
 							}
 						}
 					}
+				}
+			}
+		}
+		if theAlbum != nil {
+			for _, track := range theAlbum.Tracks {
+				if track.Name == trackName {
+					return track, nil
 				}
 			}
 		}

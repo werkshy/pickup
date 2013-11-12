@@ -3,12 +3,20 @@ function initAlbums(App) {
 
 	App.Album = Backbone.Model.extend({
 		initialize: function() {
+            this.name = this.get("Name");
+            this.artist = this.get("Artist");
+            this.category = this.get("Category");
 		},
 		urlRoot: "/albums/",
 		url: function() {
 			_.bindAll(this)
-			return this.urlRoot + this.get("Category") + "/"
-					+ this.get("Artist") + "/" + this.get('Name');
+            if (typeof this.artist === 'undefined') {
+                return this.urlRoot + this.category + "/"
+					+ this.name;
+            } else {
+                return this.urlRoot + this.category + "/"
+					+ this.artist + "/" + this.name;
+            }
 		},
 		play: function(immediate) {
 			console.log("Playing album %s/%s (%s)", this.get('Artist'),

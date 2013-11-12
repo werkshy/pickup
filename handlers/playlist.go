@@ -88,7 +88,7 @@ func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
 
 func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 	data PlaylistCommand) (err error) {
-	if data.Artist == "" || data.Album == "" {
+	if data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
 	}

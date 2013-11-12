@@ -31,15 +31,21 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.listAllAlbums(w)
 		}
 		return
+	} else if len(parts) == 2 {
+		// category/album
+		h.getAlbum(w, parts[0], "", parts[1])
+	} else {
+		// Otherwise we assume category/artist/album
+		h.getAlbum(w, parts[0], parts[1], parts[2])
 	}
-	// Otherwise we assume category/artist/album
-	categoryName := parts[0]
-	artistName := parts[1]
-	albumName := parts[2]
+}
 
+func (h AlbumHandler) getAlbum(w http.ResponseWriter,
+	categoryName string, artistName string, albumName string) {
 	log.Printf("Looking up album '%s/%s/%s\n", categoryName,
-			artistName, albumName)
+		artistName, albumName)
 	album, err := model.GetAlbum(h.Music, categoryName, artistName, albumName)
+
 	if err == nil {
 		log.Printf("Found album: %s/%s; %d tracks", album.Artist, album.Name, len(album.Tracks))
 		summary := model.NewAlbumSummary(album)
@@ -48,7 +54,7 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("Did not find album: %s/%s/%s (%v)", categoryName, artistName,
-			albumName, err)
+		albumName, err)
 
 	//fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
 	writeError(w, http.StatusNotFound, fmt.Sprintf("Album not found '%s'",
@@ -57,20 +63,20 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	// TODO: list all albums
-	log.Printf("TOOD: list all albums\n");
+	log.Printf("TOOD: list all albums\n")
 	/*
-	t0 := time.Now()
-	fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
-	// Convert to Album Summary to save on info
-	albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
-	for i := 0; i < len(h.Music.Albums); i++ {
-		albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
-	}
-	j, _ := json.Marshal(albumSummaries)
-	fmt.Println("Time to marshall all albums:", time.Since(t0))
-	t1 := time.Now()
-	w.Write(j)
-	fmt.Println("Time to send all albums:", time.Since(t1))
+		t0 := time.Now()
+		fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
+		// Convert to Album Summary to save on info
+		albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
+		for i := 0; i < len(h.Music.Albums); i++ {
+			albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
+		}
+		j, _ := json.Marshal(albumSummaries)
+		fmt.Println("Time to marshall all albums:", time.Since(t0))
+		t1 := time.Now()
+		w.Write(j)
+		fmt.Println("Time to send all albums:", time.Since(t1))
 	*/
 }
 

@@ -35,10 +35,9 @@ function initRoutes(App) {
 			album = App.Route.getAlbum(q1, q2, q3);
 			console.log("Route: show album '%s/%s/%s'", q1, q2, q3);
 		} else {
-			album = App.Route.getAlbum(q1, null, q3);
+			album = App.Route.getAlbum(q1, undefined, q2);
 			console.log("Route: show album '%s/%s'", q1, q2);
 		}
-
 		console.log("Fetching album")
 		album.fetch({
 				success: function() {
@@ -56,12 +55,6 @@ function initRoutes(App) {
 
 	App.Route.getAlbum = function(categoryName, artistName, albumName) {
 		var category = App.categories.where({Name:categoryName})[0]
-		if (typeof artistName === 'undefined') {
-			// no artist, bare album
-			artistName  = "Various Artists";
-		} else {
-			var artist = category.artists.where({Name:artistName})[0]
-		}
 		return new App.Album({
 					"Category" : categoryName,
 					"Artist" : artistName,
