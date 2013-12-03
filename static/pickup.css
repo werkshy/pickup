@@ -88,17 +88,22 @@ ul#albumList li span.album-title {
 	width: 96em;
 }
 
-#trackList li,
 #albumList li {
 	width: 23em;
 	height: 16px;
 }
 
+#trackList li {
+	width: 28em;
+	height: 16px;
+}
+
 ul#trackList li span.track-title {
-	max-width: 20em;
+	max-width: 22em;
 	margin-left: 20px;
 	float: left;
 	clear: left;
+	cursor: pointer;
 }
 
 .track-actions {
