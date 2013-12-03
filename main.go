@@ -2,7 +2,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"pickup/handlers"
 	"pickup/model"
 	"pickup/player"
+	flag "launchpad.net/gnuflag"
 )
 
 var Port = 8080
@@ -23,7 +23,7 @@ func main() {
 	conf.MpdPassword = flag.String("mpd-password", "", "MPD Password")
 
 	var query = flag.String("query", "", "Search query")
-	flag.Parse()
+	flag.Parse(true)
 
 	fmt.Println("Action is:", *action)
 	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
