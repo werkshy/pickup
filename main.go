@@ -13,12 +13,11 @@ import (
 	flag "launchpad.net/gnuflag"
 )
 
-var Port = 8080
-
 func main() {
 	var action = flag.String("action", "serve", "Action to perform (serve|refresh)")
 	conf := config.Config{}
 	conf.MusicDir = flag.String("music-dir", "/music", "Music dir")
+	conf.Port = flag.Int("port", 8080, "Pickup port")
 	conf.MpdAddress = flag.String("mpd-address", "localhost:6600", "MPD address")
 	conf.MpdPassword = flag.String("mpd-password", "", "MPD Password")
 
@@ -70,7 +69,7 @@ func serve(conf *config.Config, music model.Collection) bool {
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir(staticDir))))
 	http.HandleFunc("/", handlers.Index)
-	var bind = fmt.Sprintf(":%d", Port)
+	var bind = fmt.Sprintf(":%d", *conf.Port)
 	fmt.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
 	return true
