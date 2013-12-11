@@ -4,7 +4,7 @@ import (
 	"github.com/werkshy/gompd/mpd"
 	"log"
 	"path"
-	"pickup/config"
+	"github.com/werkshy/pickup/config"
 	"strings"
 	"time"
 )

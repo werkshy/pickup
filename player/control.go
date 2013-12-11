@@ -4,7 +4,7 @@ import (
 	"github.com/werkshy/gompd/mpd"
 	"log"
 	"strconv"
-	"pickup/config"
+	"github.com/werkshy/pickup/config"
 )
 
 type PlayerStatus struct {

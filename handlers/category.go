@@ -5,7 +5,7 @@ import (
 	"net/http"
 	//"io/ioutil"
 	"log"
-	"pickup/model"
+	"github.com/werkshy/pickup/model"
 	"time"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"pickup/model"
+	"github.com/werkshy/pickup/model"
 	"strings"
 	//"time"
 )

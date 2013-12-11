@@ -6,10 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"pickup/config"
-	"pickup/handlers"
-	"pickup/model"
-	"pickup/player"
+	"github.com/werkshy/pickup/config"
+	"github.com/werkshy/pickup/handlers"
+	"github.com/werkshy/pickup/model"
+	"github.com/werkshy/pickup/player"
 	flag "launchpad.net/gnuflag"
 )
 
