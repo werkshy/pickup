@@ -8,9 +8,9 @@ import (
 	//"io/ioutil"
 	//"strings"
 	//"time"
-	"pickup/config"
-	"pickup/model"
-	"pickup/player"
+	"github.com/werkshy/pickup/config"
+	"github.com/werkshy/pickup/model"
+	"github.com/werkshy/pickup/player"
 )
 
 type PlaylistHandler struct {

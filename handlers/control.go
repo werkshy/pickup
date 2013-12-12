@@ -8,8 +8,8 @@ import (
 	//"io/ioutil"
 	//"strings"
 	//"time"
-	"pickup/config"
-	"pickup/player"
+	"github.com/werkshy/pickup/config"
+	"github.com/werkshy/pickup/player"
 )
 
 type ControlHandler struct {

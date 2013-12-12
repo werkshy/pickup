@@ -4,8 +4,8 @@ package player
 import (
 	"github.com/werkshy/gompd/mpd"
 	"log"
-	"pickup/config"
-	"pickup/model"
+	"github.com/werkshy/pickup/config"
+	"github.com/werkshy/pickup/model"
 )
 
 type PlaylistTrack struct {
