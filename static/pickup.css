@@ -27,7 +27,6 @@ ul li {
 	column-break-inside:avoid;
 }
 
-
 ul#artistList,
 ul#albumList,
 ul#trackList {
@@ -99,11 +98,12 @@ ul#albumList li span.album-title {
 }
 
 ul#trackList li span.track-title {
-	max-width: 22em;
+	width: 18em;
 	margin-left: 20px;
 	float: left;
 	clear: left;
 	cursor: pointer;
+	padding: 1px;
 }
 
 .track-actions {
@@ -132,6 +132,18 @@ ul#trackList li span.track-title {
 
 #albumView .artist-name {
 	cursor: pointer;
+}
+
+#albumView h2 {
+	width: 25em;
+}
+
+#albumView h2 span {
+	float: left;
+}
+
+#albumView h2 .album-actions {
+	float: right;
 }
 
 #controls {

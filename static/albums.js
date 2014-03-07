@@ -72,9 +72,19 @@ function initAlbums(App) {
             return this;
         },
         events : {
-            "click .play" : "playTrackNow",
-            "click .add" : "addTrack",
-            "click .artist-name" : "showArtist",
+            "click .track-actions.play" : "playTrackNow",
+            "click .track-actions.add" : "addTrack",
+            "click .album-actions.play" : "playAlbum",
+            "click .album-actions.add" : "addAlbum",
+            "click .artist-name" : "showArtist"
+        },
+        playAlbum: function(event) {
+            console.log("Play album: %s/%s", this.model.get('Artist'), name);
+            this.model.play(true)
+        },
+        addAlbum: function(event) {
+            console.log("Play album: %s/%s", this.model.get('Artist'), name);
+            this.model.play(false)
         },
         playTrackNow: function(event) {
             var track = event.currentTarget.parentElement.id;

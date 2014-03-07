@@ -103,7 +103,10 @@
 
 	<script id="album-template" type="text/html">
 		<div id="albumView" class="singlecolumn">
-			<h2><span class="artist-name">{{Artist}}</span> - {{Name}}</h2>
+			<h2><span class="artist-name">{{Artist}}</span><span> - {{Name}} </span>
+				<span class='album-actions add'></span>
+				<span class='album-actions play'></span>
+			</h2>
 			<ul id="trackList">
 				{{#each Tracks}}
 				<li id="{{.}}">
