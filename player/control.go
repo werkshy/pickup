@@ -38,8 +38,6 @@ type MpdControls struct {
 
 func NewMpdControls(conf *config.Config) (controls MpdControls,
 			err error) {
-	log.Printf("Creating MpdControls instance (%s / %s)\n", *conf.MpdAddress,
-			*conf.MpdPassword)
 	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
 			*conf.MpdPassword)
 	if err != nil {
@@ -51,7 +49,6 @@ func NewMpdControls(conf *config.Config) (controls MpdControls,
 }
 
 func (controls MpdControls) Close() (err error) {
-	log.Println("Closing mpd connection (controls)")
 	return controls.conn.Close()
 }
 
@@ -135,7 +132,6 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 		log.Println(err)
 		return status, err
 	}
-	log.Printf("mpd 'current song': %v\n", attrs)
 	status.CurrentArtist = attrs["Artist"]
 	status.CurrentAlbum = attrs["Album"]
 	status.CurrentTrack = attrs["Title"]

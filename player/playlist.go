@@ -47,7 +47,6 @@ func NewMpdPlaylist(conf *config.Config) MpdPlaylist {
 }
 
 func (playlist MpdPlaylist) Close() (err error) {
-	log.Println("Closing mpd connection (playlist)")
 	return playlist.conn.Close()
 }
 
@@ -55,13 +54,11 @@ func (playlist MpdPlaylist) Close() (err error) {
  * Implement playlist interface via mpd
  */
 func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
-	log.Printf("Listing playlist\n")
 	info, err := playlist.conn.PlaylistInfo(-1, -1)
 	if (err != nil) {
-		log.Printf("Failed to get playlist info\n")
+		log.Printf("Failed to get playlist info from mpd\n")
 		return nil, err
 	}
-	log.Printf("mpd returned %d tracks in playlist\n", len(info))
 	for _, entry := range info {
 		//log.Printf("%q\n", entry)
 		track := PlaylistTrack{

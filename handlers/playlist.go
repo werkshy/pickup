@@ -52,7 +52,6 @@ func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
 		log.Printf("Error getting playlist: %s", err)
 		return err
 	}
-	log.Printf("Current playlist: (%d tracks)", len(currentTracks))
 	j, _ := json.Marshal(currentTracks)
 	w.Write(j)
 	return err
