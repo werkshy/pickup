@@ -2,19 +2,26 @@ package model
 
 import (
 	"github.com/werkshy/gompd/mpd"
+	"github.com/werkshy/pickup/config"
 	"log"
 	"path"
-	"github.com/werkshy/pickup/config"
 	"strings"
 	"time"
 )
 
 func RefreshMpd(conf *config.Config) (Collection, error) {
-	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
-		*conf.MpdPassword)
+	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress, *conf.MpdPassword)
+	if err != nil {
+		return Collection{}, err
+	}
+
 	log.Println("Getting mpd files")
 	t0 := time.Now()
 	files, err := conn.GetFiles()
+	if err != nil {
+		return Collection{}, err
+	}
+
 	log.Printf("Getting %v files from mpd took %d ms", len(files),
 		time.Since(t0)/time.Millisecond)
 	t1 := time.Now()
@@ -22,7 +29,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 	// Files come back from mpd sorted, so we can track the current
 	// artists/albums as we iterate through the files.
 	rootCategory := NewCategory("Music")
-	collection := Collection {
+	collection := Collection{
 		make([]*Category, 0),
 	}
 	collection.addCategory(rootCategory)
@@ -109,7 +116,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 			}
 			currentCategory = rootCategory
 		}
-		track := Track {thisTrack, file, currentAlbum.Name, ""}
+		track := Track{thisTrack, file, currentAlbum.Name, ""}
 		if currentAlbum != nil {
 			track.Album = currentAlbum.Name
 		}
@@ -139,7 +146,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 
 func wrapUpAlbum(album *Album, artist *Artist, category *Category) {
 	album.Category = category.Name
-	if (artist != nil) {
+	if artist != nil {
 		album.Artist = artist.Name
 		artist.Albums = append(artist.Albums, album)
 	} else { // bare album, no artist

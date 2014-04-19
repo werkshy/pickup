@@ -3,14 +3,14 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"net/http"
-	"os"
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/handlers"
 	"github.com/werkshy/pickup/model"
 	"github.com/werkshy/pickup/player"
 	flag "launchpad.net/gnuflag"
+	"log"
+	"net/http"
+	"os"
 )
 
 func main() {
@@ -30,8 +30,8 @@ func main() {
 
 	//collection := loadOrRefresh(*conf.MusicDir)
 	music, err := model.RefreshMpd(&conf)
-	if (err != nil) {
-		log.Fatalln("Couldn't get files from mpd");
+	if err != nil {
+		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
 	}
 
 	switch *action {
@@ -44,7 +44,7 @@ func main() {
 	case "test-playback":
 		testPlayback(&conf, music)
 	case "refresh":
-		os.Exit(0);
+		os.Exit(0)
 	default:
 		fmt.Println("Unknown action", *action)
 	}
