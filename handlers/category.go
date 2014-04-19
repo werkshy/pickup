@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	//"io/ioutil"
-	"log"
 	"github.com/werkshy/pickup/model"
+	"log"
 	"time"
 )
 
@@ -27,4 +27,3 @@ func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(j)
 	log.Println("Time to send entire collection:", time.Since(t1))
 }
-

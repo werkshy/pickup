@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/werkshy/pickup/model"
 	"log"
 	"net/http"
-	"github.com/werkshy/pickup/model"
 	"strings"
 	//"time"
 )

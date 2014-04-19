@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/werkshy/pickup/model"
 	"log"
 	"net/http"
-	"github.com/werkshy/pickup/model"
 	"strings"
 	//"time"
 )
@@ -38,20 +38,20 @@ func (h ArtistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	// TODO: list all artists
-	log.Printf("TOOD: list all artists\n");
+	log.Printf("TOOD: list all artists\n")
 	/*
-	t0 := time.Now()
-	fmt.Printf("All artists (%d)\n", len(h.Music.Artists))
-	// Convert to Artist Summary to save on info
-	artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
-	for i := 0; i < len(h.Music.Artists); i++ {
-		artistSummaries[i] = h.Music.Artists[i].GetSummary()
-	}
-	j, _ := json.Marshal(artistSummaries)
-	fmt.Println("Time to marshall all artists:", time.Since(t0))
-	t1 := time.Now()
-	w.Write(j)
-	fmt.Println("Time to send all artists:", time.Since(t1))
+		t0 := time.Now()
+		fmt.Printf("All artists (%d)\n", len(h.Music.Artists))
+		// Convert to Artist Summary to save on info
+		artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
+		for i := 0; i < len(h.Music.Artists); i++ {
+			artistSummaries[i] = h.Music.Artists[i].GetSummary()
+		}
+		j, _ := json.Marshal(artistSummaries)
+		fmt.Println("Time to marshall all artists:", time.Since(t0))
+		t1 := time.Now()
+		w.Write(j)
+		fmt.Println("Time to send all artists:", time.Since(t1))
 	*/
 }
 
