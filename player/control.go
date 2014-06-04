@@ -2,19 +2,19 @@ package player
 
 import (
 	"github.com/werkshy/gompd/mpd"
+	"github.com/werkshy/pickup/config"
 	"log"
 	"strconv"
-	"github.com/werkshy/pickup/config"
 )
 
 type PlayerStatus struct {
-	State string
-	Volume int
+	State         string
+	Volume        int
 	CurrentArtist string
-	CurrentAlbum string
-	CurrentTrack string
-	Elapsed int
-	Length int
+	CurrentAlbum  string
+	CurrentTrack  string
+	Elapsed       int
+	Length        int
 }
 
 // Define the interface for a player
@@ -25,9 +25,9 @@ type Controls interface {
 	Prev() error
 	Next() error
 	VolumeDelta(volumeDelta int) error
-//	VolumeDown() error
-//	VolumeUp() error
-//	GetVolume() (int, error)
+	//	VolumeDown() error
+	//	VolumeUp() error
+	//	GetVolume() (int, error)
 	Status() (status PlayerStatus, err error)
 }
 
@@ -37,14 +37,14 @@ type MpdControls struct {
 }
 
 func NewMpdControls(conf *config.Config) (controls MpdControls,
-			err error) {
+	err error) {
 	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
-			*conf.MpdPassword)
+		*conf.MpdPassword)
 	if err != nil {
 		log.Println("Error trying to get MPD client")
 		log.Println(err)
 	}
-	controls = MpdControls { conn }
+	controls = MpdControls{conn}
 	return controls, err
 }
 
@@ -72,10 +72,10 @@ func (controls MpdControls) Pause() (err error) {
 		log.Println(err)
 		return err
 	}
-	if (attrs["state"] == "pause") {
+	if attrs["state"] == "pause" {
 		log.Printf("Resuming playback")
 		return controls.conn.Pause(false)
-	} else if (attrs["state"] == "play") {
+	} else if attrs["state"] == "play" {
 		log.Printf("Pausing playback")
 		return controls.conn.Pause(true)
 	}
@@ -121,7 +121,7 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 	//var nextId = attrs["nextsongid"]
 	status.Volume, err = strconv.Atoi(attrs["volume"])
 	status.State = attrs["state"]
-	if attrs["elapsed"] != ""  {
+	if attrs["elapsed"] != "" {
 		elapsed, _ := strconv.ParseFloat(attrs["elapsed"], 64)
 		status.Elapsed = int(elapsed)
 	}
@@ -139,7 +139,6 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 		length, _ := strconv.ParseFloat(attrs["Time"], 64)
 		status.Length = int(length)
 	}
-
 
 	return status, err
 }

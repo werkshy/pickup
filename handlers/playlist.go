@@ -92,7 +92,7 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		return errors.New("Playing artists is not implemented")
 	}
 
-	log.Printf("Trying to add %s/%s/%s/%s to playlist (%v)\n", 
+	log.Printf("Trying to add %s/%s/%s/%s to playlist (%v)\n",
 		data.Category, data.Artist, data.Album, data.Track, data.Immediate)
 
 	var album *model.Album = nil

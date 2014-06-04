@@ -111,7 +111,7 @@ func GetTrack(music Collection, categoryName string,
 					if artist.Name == artistName {
 						for _, album := range artist.Albums {
 							if album.Name == albumName {
-								theAlbum = album;
+								theAlbum = album
 							}
 						}
 					}

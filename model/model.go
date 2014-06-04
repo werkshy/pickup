@@ -1,15 +1,14 @@
 package model
 
-import (
-)
+import ()
 
 type Collection struct {
-	Categories		[]*Category
+	Categories []*Category
 }
 
 func (c *Collection) GetSummary() []CategorySummary {
 	summaries := make([]CategorySummary, len(c.Categories))
-	for i:=0; i<len(c.Categories); i++ {
+	for i := 0; i < len(c.Categories); i++ {
 		summaries[i] = c.Categories[i].GetSummary()
 	}
 	return summaries
@@ -20,10 +19,10 @@ func (c *Collection) addCategory(category *Category) {
 }
 
 type Category struct {
-	Name           string
-	Artists        []*Artist
-	Albums         []*Album
-	Tracks         []*Track
+	Name    string
+	Artists []*Artist
+	Albums  []*Album
+	Tracks  []*Track
 }
 
 func NewCategory(name string) *Category {
@@ -33,9 +32,9 @@ func NewCategory(name string) *Category {
 }
 
 type CategorySummary struct {
-	Name           string
-	Artists        []ArtistSummary
-	AlbumNames     []string
+	Name       string
+	Artists    []ArtistSummary
+	AlbumNames []string
 }
 
 func (c *Category) GetSummary() CategorySummary {
@@ -50,7 +49,6 @@ func (c *Category) GetSummary() CategorySummary {
 	return CategorySummary{c.Name, artistSummaries, albumNames}
 
 }
-
 
 type Item interface {
 	GetName() string
@@ -79,10 +77,10 @@ func (t Track) GetName() string {
  * Album struct
  */
 type Album struct {
-	Name   string
-	Path	string
-	Tracks []*Track
-	Artist string
+	Name     string
+	Path     string
+	Tracks   []*Track
+	Artist   string
 	Category string
 }
 
