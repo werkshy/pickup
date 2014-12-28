@@ -1,10 +1,11 @@
 package player
 
 import (
-	"github.com/werkshy/gompd/mpd"
-	"github.com/werkshy/pickup/config"
 	"log"
 	"strconv"
+
+	"github.com/werkshy/gompd/mpd"
+	"github.com/werkshy/pickup/config"
 )
 
 type PlayerStatus struct {

@@ -1,7 +1,5 @@
 package model
 
-import ()
-
 type Collection struct {
 	Categories []*Category
 }

@@ -1,12 +1,13 @@
 package model
 
 import (
-	"github.com/werkshy/gompd/mpd"
-	"github.com/werkshy/pickup/config"
 	"log"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/werkshy/gompd/mpd"
+	"github.com/werkshy/pickup/config"
 )
 
 func RefreshMpd(conf *config.Config) (Collection, error) {

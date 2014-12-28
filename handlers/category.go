@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	//"io/ioutil"
-	"github.com/werkshy/pickup/model"
 	"log"
 	"time"
+
+	"github.com/werkshy/pickup/model"
 )
 
 type CategoryHandler struct {
