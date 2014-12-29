@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/handlers"
@@ -49,25 +50,41 @@ func main() {
 }
 
 func initializeMpd(mpdChannel chan model.Collection, conf *config.Config) {
-	var music model.Collection
-	var err error
-	times := 0
+	updateInterval := 60 * time.Second
+	// TODO: should be passing a pointer to a collection I think
+	//       and then update the pointer if it is valid on refresh, then
+	//       delete the memory
+	music, err := model.RefreshMpd(conf)
+	if err != nil {
+		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
+	}
+	lastUpdated := time.Now()
+	bkgCollectionChannel := make(chan model.Collection)
 	for {
-		// First channel version, refresh every n times.
-		// TODO: manage state and refresh if older than x minutes
-		// TODO v2: refresh in background
-		if times%3 == 0 {
-			log.Printf("Refreshing mpd collections after %d times\n", times)
-			music, err = model.RefreshMpd(conf)
-			if err != nil {
-				log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
+		select {
+		case mpdChannel <- music:
+			log.Printf("MPD GOROUTINE: Returned music collection\n")
+		case newMusic := <-bkgCollectionChannel:
+			log.Printf("MPD GOROUTINE: UPDATE COMPLETE\n")
+			music = newMusic
+		case <-time.After(100 * time.Millisecond):
+			since := time.Since(lastUpdated)
+			if time.Since(lastUpdated) > updateInterval {
+				log.Printf("MPD GOROUTINE: Kicking off refresh after %v\n", since)
+				go backgroundRefresh(bkgCollectionChannel, conf)
+				lastUpdated = time.Now()
 			}
 		}
-		mpdChannel <- music
-		times++
-		log.Printf("Returned music collection %d times\n", times)
 	}
 
+}
+
+func backgroundRefresh(bkgCollectionChannel chan model.Collection, conf *config.Config) {
+	music, err := model.RefreshMpd(conf)
+	if err != nil {
+		log.Printf("Couldn't get files from mpd: \n%s\n", err)
+	}
+	bkgCollectionChannel <- music
 }
 
 func serve(conf *config.Config, mpdChannel chan model.Collection) bool {
