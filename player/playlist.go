@@ -32,6 +32,26 @@ type Playlist interface {
 type MpdPlaylist struct {
 	conn *mpd.Client
 }
+
+func (t *PlaylistTrack) CleanUp(file string) {
+	if t.Name != "" {
+		return
+	}
+	_, artist, album, track, err := model.PathToParts(file)
+	if err != nil {
+		track = "unknown"
+		artist = "unknown"
+		album = "unknown"
+	}
+	if t.Name == "" {
+		t.Name = track
+	}
+	if t.Artist == "" {
+		t.Artist = artist
+	}
+	if t.Album == "" {
+		t.Album = album
+	}
 }
 
 /**
@@ -60,13 +80,14 @@ func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 		return nil, err
 	}
 	for _, entry := range info {
-		//log.Printf("%q\n", entry)
+		log.Printf("%q\n", entry)
 		track := PlaylistTrack{
 			entry["Pos"],
 			entry["Title"],
 			entry["Artist"],
 			entry["Album"],
 			entry["Path"]}
+		track.CleanUp(entry["file"])
 		results = append(results, track)
 	}
 	return results, nil
