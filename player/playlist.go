@@ -30,8 +30,8 @@ type Playlist interface {
 // In practice I only care about mpd for playback at the moment, aside from
 // potential memory issues on low-end hardware.
 type MpdPlaylist struct {
-	conn     *mpd.Client
-	musicDir string
+	conn *mpd.Client
+}
 }
 
 /**
@@ -43,7 +43,7 @@ func NewMpdPlaylist(conf *config.Config) MpdPlaylist {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return MpdPlaylist{conn, *conf.MusicDir}
+	return MpdPlaylist{conn}
 }
 
 func (playlist MpdPlaylist) Close() (err error) {
@@ -75,15 +75,11 @@ func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 func (playlist MpdPlaylist) AddAlbum(album *model.Album) (err error) {
 	log.Printf("Adding album %s - %s (%s)\n", album.Artist, album.Name,
 		album.Path)
-	//uri := playlist.pathToUri(path)
-	log.Printf("uri: %s\n", album.Path)
 	return playlist.conn.Add(album.Path)
 }
 
 func (playlist MpdPlaylist) AddTrack(track *model.Track) (err error) {
 	log.Printf("Adding track %v\n", track)
-	//uri := playlist.pathToUri(track.Path)
-	log.Printf("Uri: %s\n", track.Path)
 	return playlist.conn.Add(track.Path)
 }
 
@@ -102,9 +98,4 @@ func (playlist MpdPlaylist) Clear() (err error) {
 	log.Println("Clearing playlist")
 	playlist.conn.Clear()
 	return nil
-}
-
-func (playlist MpdPlaylist) pathToUri(path string) (uri string) {
-	log.Printf("pathToUri: musicDir is '%s'\n", playlist.musicDir)
-	return path[len(playlist.musicDir)+1:]
 }
