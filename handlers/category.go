@@ -11,16 +11,18 @@ import (
 )
 
 type CategoryHandler struct {
-	Music model.Collection
+	MpdChannel chan model.Collection
 }
 
 // Return a list of all artists, albums etc
+//func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Retrieving entire collection\n")
 	t0 := time.Now()
+	music := <-h.MpdChannel
 
 	// Convert to Summary to save on data passing etc
-	summary := h.Music.GetSummary()
+	summary := music.GetSummary()
 	log.Printf("Marshalling %d category summaries", len(summary))
 	j, _ := json.Marshal(summary)
 	log.Println("Time to marshall entire collection:", time.Since(t0))

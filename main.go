@@ -29,21 +29,18 @@ func main() {
 	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
 		*conf.MpdPassword)
 
-	//collection := loadOrRefresh(*conf.MusicDir)
-	music, err := model.RefreshMpd(&conf)
-	if err != nil {
-		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
-	}
+	mpdChannel := make(chan model.Collection)
+	go initializeMpd(mpdChannel, &conf)
 
 	switch *action {
 	case "stats":
-		stats(music.Categories[0])
+		stats(mpdChannel)
 	case "search":
-		search(music, *query)
+		search(mpdChannel, *query)
 	case "serve":
-		serve(&conf, music)
+		serve(&conf, mpdChannel)
 	case "test-playback":
-		testPlayback(&conf, music)
+		testPlayback(mpdChannel, &conf)
 	case "refresh":
 		os.Exit(0)
 	default:
@@ -51,8 +48,31 @@ func main() {
 	}
 }
 
-func serve(conf *config.Config, music model.Collection) bool {
-	categoryHandler := handlers.CategoryHandler{music}
+func initializeMpd(mpdChannel chan model.Collection, conf *config.Config) {
+	var music model.Collection
+	var err error
+	times := 0
+	for {
+		// First channel version, refresh every n times.
+		// TODO: manage state and refresh if older than x minutes
+		// TODO v2: refresh in background
+		if times%3 == 0 {
+			log.Printf("Refreshing mpd collections after %d times\n", times)
+			music, err = model.RefreshMpd(conf)
+			if err != nil {
+				log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
+			}
+		}
+		mpdChannel <- music
+		times++
+		log.Printf("Returned music collection %d times\n", times)
+	}
+
+}
+
+func serve(conf *config.Config, mpdChannel chan model.Collection) bool {
+	music := <-mpdChannel
+	categoryHandler := handlers.CategoryHandler{mpdChannel}
 	albumHandler := handlers.AlbumHandler{music}
 	artistHandler := handlers.ArtistHandler{music}
 	playlistHandler := handlers.NewPlaylistHandler(music, conf)
@@ -76,16 +96,18 @@ func serve(conf *config.Config, music model.Collection) bool {
 	return true
 }
 
-func stats(category *model.Category) {
+func stats(mpdChannel chan model.Collection) {
+	music := <-mpdChannel
+	category := music.Categories[0]
 	fmt.Printf("Stats: %d tracks, %d albums, %d artists\n",
 		len(category.Tracks), len(category.Albums),
 		len(category.Artists))
 }
 
-func search(music model.Collection, query string) {
+func search(mpdChannel chan model.Collection, query string) {
+	music := <-mpdChannel
 	matching := model.Search(music, query)
 	fmt.Printf("Matches for '%s':\n", query)
-	stats(&matching)
 
 	fmt.Println("\nMatching Tracks:")
 	for _, track := range matching.Tracks {
@@ -98,7 +120,8 @@ func search(music model.Collection, query string) {
 	}
 }
 
-func testPlayback(conf *config.Config, music model.Collection) error {
+func testPlayback(mpdChannel chan model.Collection, conf *config.Config) error {
+	music := <-mpdChannel
 	playlist := player.NewMpdPlaylist(conf)
 	playlist.Clear()
 
