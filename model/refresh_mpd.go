@@ -1,6 +1,7 @@
 package model
 
 import (
+	"errors"
 	"log"
 	"path"
 	"strings"
@@ -39,55 +40,38 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 	var currentAlbum *Album
 	var currentCategory *Category = rootCategory
 	for _, file := range files {
-		parts := strings.Split(file, "/")
-		nparts := len(parts)
-		if nparts < 2 {
-			log.Printf("Can't handle '%s'\n", file)
+		category, artist, album, track, err := PathToParts(file)
+		if err != nil {
+			log.Printf("Error at %s: %v\n", file, err)
 			continue
 		}
-		thisTrack := parts[nparts-1]
-		thisAlbum := parts[nparts-2]
-		//thisTrack += "" // leave me alone golang!
 
 		// Occassionally I have e.g. _mp3/ folders that I want to ignore
-		if strings.HasPrefix(thisAlbum, "_") {
-			//log.Printf("Ignoring album '%s'\n", file)
-			continue
-		}
-
-		npartsWithArtist := 3 // expect artist, album, track
-		// If the path begins with _, it's a subcategory e.g. _Soundtracks
-		if strings.HasPrefix(file, "_") {
-			npartsWithArtist = 4 // category, artist, album, track
-		}
-		// Sanity check the path for too many or too few parts
-		// one less that nparts is OK, it means a bare album
-		if len(parts) < npartsWithArtist-1 || len(parts) > npartsWithArtist {
-			log.Printf("%s has %d parts", file, len(parts))
+		if strings.HasPrefix(album, "_") {
+			log.Printf("Ignoring album '%s'\n", file)
 			continue
 		}
 
 		// handle currentAlbum
 		if currentAlbum == nil {
-			currentAlbum = NewAlbum(thisAlbum)
+			currentAlbum = NewAlbum(album)
 			currentAlbum.Path = path.Dir(file)
-		} else if currentAlbum.Name != thisAlbum {
+		} else if currentAlbum.Name != album {
 			// handle finished album
 			wrapUpAlbum(currentAlbum, currentArtist, currentCategory)
-			currentAlbum = NewAlbum(thisAlbum)
+			currentAlbum = NewAlbum(album)
 			currentAlbum.Path = path.Dir(file)
 		}
 
 		// Handle currentArtist
-		if nparts == npartsWithArtist {
-			thisArtist := parts[nparts-3]
+		if artist != "" {
 			// Create a new artist if the artist has changed
 			if currentArtist == nil {
-				currentArtist = NewArtist(thisArtist)
-			} else if currentArtist.Name != thisArtist {
+				currentArtist = NewArtist(artist)
+			} else if currentArtist.Name != artist {
 				// handle finished artist
 				wrapUpArtist(currentArtist, currentCategory)
-				currentArtist = NewArtist(thisArtist)
+				currentArtist = NewArtist(artist)
 			}
 		} else {
 			// Looking at a bare album
@@ -99,15 +83,14 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		}
 
 		// handle currentCategory
-		if strings.HasPrefix(file, "_") {
+		if category != "" {
 			// This file is part of a subcategory
-			thisCategory := parts[0]
 			if currentCategory == rootCategory {
-				currentCategory = NewCategory(thisCategory)
-			} else if currentCategory.Name != thisCategory {
+				currentCategory = NewCategory(category)
+			} else if currentCategory.Name != category {
 				// handle finished subcategory
 				wrapUpCategory(currentCategory, &collection)
-				currentCategory = NewCategory(thisCategory)
+				currentCategory = NewCategory(category)
 			}
 		} else {
 			// this file is not in a subcategory, revert to root category
@@ -117,11 +100,11 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 			}
 			currentCategory = rootCategory
 		}
-		track := Track{thisTrack, file, currentAlbum.Name, ""}
+		currentTrack := Track{track, file, currentAlbum.Name, ""}
 		if currentAlbum != nil {
-			track.Album = currentAlbum.Name
+			currentTrack.Album = currentAlbum.Name
 		}
-		currentAlbum.Tracks = append(currentAlbum.Tracks, &track)
+		currentAlbum.Tracks = append(currentAlbum.Tracks, &currentTrack)
 	}
 
 	// handle final category, artist and album
@@ -143,6 +126,47 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		log.Printf("    %s\n", category.Name)
 	}
 	return collection, err
+}
+
+func PathToParts(path string) (category string, artist string, album string, track string, err error) {
+	parts := strings.Split(path, "/")
+	nparts := len(parts)
+	if nparts < 2 {
+		log.Printf("Can't handle '%s'\n", path)
+		return "", "", "", "", errors.New("Too few parts")
+	}
+	track = parts[nparts-1]
+	album = parts[nparts-2]
+
+	// Occassionally I have e.g. _mp3/ folders that I want to ignore
+	if strings.HasPrefix(album, "_") {
+		//log.Printf("Ignoring album '%s'\n", file)
+		return "", "", album, track, nil
+	}
+
+	npartsWithArtist := 3 // expect artist, album, track
+	// If the path begins with _, it's a subcategory e.g. _Soundtracks
+	if strings.HasPrefix(path, "_") {
+		npartsWithArtist = 4 // category, artist, album, track
+	}
+	// Sanity check the path for too many or too few parts
+	// one less that nparts is OK, it means a bare album
+	if len(parts) < npartsWithArtist-1 || len(parts) > npartsWithArtist {
+		log.Printf("%s has %d parts", path, len(parts))
+		return "", "", "", "", errors.New("Wrong number of parts")
+	}
+
+	// Handle currentArtist
+	if nparts == npartsWithArtist {
+		artist = parts[nparts-3]
+	}
+
+	// handle currentCategory
+	if strings.HasPrefix(path, "_") {
+		// This file is part of a subcategory
+		category = parts[0]
+	}
+	return
 }
 
 func wrapUpAlbum(album *Album, artist *Artist, category *Category) {
