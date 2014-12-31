@@ -11,6 +11,7 @@ import (
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/handlers"
 	"github.com/werkshy/pickup/model"
+	"github.com/werkshy/pickup/player"
 	flag "launchpad.net/gnuflag"
 )
 
@@ -27,50 +28,14 @@ func main() {
 	log.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
 		*conf.MpdPassword)
 
-	mpdChannel := make(chan *model.Collection)
-	go initializeMpd(mpdChannel, &conf)
-	music := <-mpdChannel
+	plyr, err := player.NewMpdPlayer(&conf)
+	if err != nil {
+		log.Fatalln("Failed to initialize mpd player", err)
+	}
+	music := plyr.GetMusic()
 	log.Printf("Player with %d categories initialized in %v\n", len(music.Categories), time.Since(t0))
 
-	serve(&conf, mpdChannel)
-}
-
-func initializeMpd(mpdChannel chan *model.Collection, conf *config.Config) {
-	updateInterval := 60 * time.Second
-	// TODO: should be passing a pointer to a collection I think
-	//       and then update the pointer if it is valid on refresh, then
-	//       delete the memory
-	music, err := model.RefreshMpd(conf)
-	if err != nil {
-		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
-	}
-	lastUpdated := time.Now()
-	bkgCollectionChannel := make(chan model.Collection)
-	for {
-		select {
-		case mpdChannel <- &music:
-			continue
-		case newMusic := <-bkgCollectionChannel:
-			log.Printf("MPD GOROUTINE: UPDATE COMPLETE\n")
-			music = newMusic
-		case <-time.After(100 * time.Millisecond):
-			since := time.Since(lastUpdated)
-			if time.Since(lastUpdated) > updateInterval {
-				log.Printf("MPD GOROUTINE: Kicking off refresh after %v\n", since)
-				go backgroundRefresh(bkgCollectionChannel, conf)
-				lastUpdated = time.Now()
-			}
-		}
-	}
-
-}
-
-func backgroundRefresh(bkgCollectionChannel chan model.Collection, conf *config.Config) {
-	music, err := model.RefreshMpd(conf)
-	if err != nil {
-		log.Printf("Couldn't get files from mpd: \n%s\n", err)
-	}
-	bkgCollectionChannel <- music
+	serve(&conf, plyr.GetChannel())
 }
 
 func serve(conf *config.Config, mpdChannel chan *model.Collection) bool {
