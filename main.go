@@ -30,8 +30,9 @@ func main() {
 	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
 		*conf.MpdPassword)
 
-	mpdChannel := make(chan model.Collection)
+	mpdChannel := make(chan *model.Collection)
 	go initializeMpd(mpdChannel, &conf)
+	music := <-mpdChannel
 
 	switch *action {
 	case "stats":
@@ -49,7 +50,7 @@ func main() {
 	}
 }
 
-func initializeMpd(mpdChannel chan model.Collection, conf *config.Config) {
+func initializeMpd(mpdChannel chan *model.Collection, conf *config.Config) {
 	updateInterval := 60 * time.Second
 	// TODO: should be passing a pointer to a collection I think
 	//       and then update the pointer if it is valid on refresh, then
@@ -62,8 +63,8 @@ func initializeMpd(mpdChannel chan model.Collection, conf *config.Config) {
 	bkgCollectionChannel := make(chan model.Collection)
 	for {
 		select {
-		case mpdChannel <- music:
-			log.Printf("MPD GOROUTINE: Returned music collection\n")
+		case mpdChannel <- &music:
+			continue
 		case newMusic := <-bkgCollectionChannel:
 			log.Printf("MPD GOROUTINE: UPDATE COMPLETE\n")
 			music = newMusic
@@ -87,12 +88,11 @@ func backgroundRefresh(bkgCollectionChannel chan model.Collection, conf *config.
 	bkgCollectionChannel <- music
 }
 
-func serve(conf *config.Config, mpdChannel chan model.Collection) bool {
-	music := <-mpdChannel
+func serve(conf *config.Config, mpdChannel chan *model.Collection) bool {
 	categoryHandler := handlers.CategoryHandler{mpdChannel}
-	albumHandler := handlers.AlbumHandler{music}
-	artistHandler := handlers.ArtistHandler{music}
-	playlistHandler := handlers.NewPlaylistHandler(music, conf)
+	albumHandler := handlers.AlbumHandler{mpdChannel}
+	artistHandler := handlers.ArtistHandler{mpdChannel}
+	playlistHandler := handlers.PlaylistHandler{mpdChannel, conf}
 	controlHandler := handlers.NewControlHandler(conf)
 	http.Handle("/categories/", categoryHandler)
 	http.Handle("/albums/", albumHandler)
@@ -113,7 +113,7 @@ func serve(conf *config.Config, mpdChannel chan model.Collection) bool {
 	return true
 }
 
-func stats(mpdChannel chan model.Collection) {
+func stats(mpdChannel chan *model.Collection) {
 	music := <-mpdChannel
 	category := music.Categories[0]
 	fmt.Printf("Stats: %d tracks, %d albums, %d artists\n",
@@ -121,7 +121,7 @@ func stats(mpdChannel chan model.Collection) {
 		len(category.Artists))
 }
 
-func search(mpdChannel chan model.Collection, query string) {
+func search(mpdChannel chan *model.Collection, query string) {
 	music := <-mpdChannel
 	matching := model.Search(music, query)
 	fmt.Printf("Matches for '%s':\n", query)
@@ -137,7 +137,7 @@ func search(mpdChannel chan model.Collection, query string) {
 	}
 }
 
-func testPlayback(mpdChannel chan model.Collection, conf *config.Config) error {
+func testPlayback(mpdChannel chan *model.Collection, conf *config.Config) error {
 	music := <-mpdChannel
 	playlist := player.NewMpdPlaylist(conf)
 	playlist.Clear()

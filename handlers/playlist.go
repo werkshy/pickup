@@ -14,20 +14,14 @@ import (
 )
 
 type PlaylistHandler struct {
-	Music model.Collection
-	conf  *config.Config
-}
-
-func NewPlaylistHandler(music model.Collection, conf *config.Config) (
-	h PlaylistHandler) {
-	return PlaylistHandler{music, conf}
+	MpdChannel chan *model.Collection
+	Conf       *config.Config
 }
 
 // Return a list of albums or a specific album
 func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	controls, err := player.NewMpdControls(h.conf)
 	defer controls.Close()
-	playlist := player.NewMpdPlaylist(h.conf)
+	playlist := player.NewMpdPlaylist(h.Conf)
 	defer playlist.Close()
 
 	switch r.Method {
@@ -87,6 +81,7 @@ func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
 
 func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 	data PlaylistCommand) (err error) {
+	music := <-h.MpdChannel
 	if data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -98,10 +93,10 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 	var album *model.Album = nil
 	var track *model.Track = nil
 	if data.Track == "" {
-		album, err = model.GetAlbum(h.Music, data.Category, data.Artist,
+		album, err = model.GetAlbum(music, data.Category, data.Artist,
 			data.Album)
 	} else {
-		track, err = model.GetTrack(h.Music, data.Category, data.Artist,
+		track, err = model.GetTrack(music, data.Category, data.Artist,
 			data.Album, data.Track)
 	}
 	if err != nil {

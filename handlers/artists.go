@@ -12,7 +12,7 @@ import (
 )
 
 type ArtistHandler struct {
-	Music model.Collection
+	MpdChannel chan *model.Collection
 }
 
 // Return a list of albums or a specific album
@@ -41,12 +41,13 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	// TODO: list all artists
 	log.Printf("TOOD: list all artists\n")
 	/*
+		music := <-h.MpdChannel
 		t0 := time.Now()
-		fmt.Printf("All artists (%d)\n", len(h.Music.Artists))
+		fmt.Printf("All artists (%d)\n", len(music.Artists))
 		// Convert to Artist Summary to save on info
-		artistSummaries := make([]model.ArtistSummary, len(h.Music.Artists))
-		for i := 0; i < len(h.Music.Artists); i++ {
-			artistSummaries[i] = h.Music.Artists[i].GetSummary()
+		artistSummaries := make([]model.ArtistSummary, len(music.Artists))
+		for i := 0; i < len(music.Artists); i++ {
+			artistSummaries[i] = music.Artists[i].GetSummary()
 		}
 		j, _ := json.Marshal(artistSummaries)
 		fmt.Println("Time to marshall all artists:", time.Since(t0))
@@ -57,7 +58,8 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 }
 
 func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
-	matches := model.SearchArtists(h.Music, query)
+	music := <-h.MpdChannel
+	matches := model.SearchArtists(music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {
 		fmt.Printf("\t%s\n", item.Name)
@@ -68,7 +70,8 @@ func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
 }
 
 func (h ArtistHandler) showArtist(w http.ResponseWriter, query string) {
-	matches := model.SearchArtists(h.Music, query)
+	music := <-h.MpdChannel
+	matches := model.SearchArtists(music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {
 		if item.Name == query {

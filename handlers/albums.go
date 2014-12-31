@@ -12,7 +12,7 @@ import (
 )
 
 type AlbumHandler struct {
-	Music model.Collection
+	MpdChannel chan *model.Collection
 }
 
 // Return a list of albums or a specific album
@@ -45,7 +45,8 @@ func (h AlbumHandler) getAlbum(w http.ResponseWriter,
 	categoryName string, artistName string, albumName string) {
 	log.Printf("Looking up album '%s/%s/%s\n", categoryName,
 		artistName, albumName)
-	album, err := model.GetAlbum(h.Music, categoryName, artistName, albumName)
+	music := <-h.MpdChannel
+	album, err := model.GetAlbum(music, categoryName, artistName, albumName)
 
 	if err == nil {
 		log.Printf("Found album: %s/%s; %d tracks", album.Artist, album.Name, len(album.Tracks))
@@ -66,12 +67,13 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	// TODO: list all albums
 	log.Printf("TOOD: list all albums\n")
 	/*
+		music := <-h.MpdChannel
 		t0 := time.Now()
-		fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
+		fmt.Printf("All albums (%d)\n", len(music.Albums))
 		// Convert to Album Summary to save on info
-		albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
-		for i := 0; i < len(h.Music.Albums); i++ {
-			albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
+		albumSummaries := make([]model.AlbumSummary, len(music.Albums))
+		for i := 0; i < len(music.Albums); i++ {
+			albumSummaries[i] = model.NewAlbumSummary(music.Albums[i])
 		}
 		j, _ := json.Marshal(albumSummaries)
 		fmt.Println("Time to marshall all albums:", time.Since(t0))
@@ -82,7 +84,8 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 }
 
 func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {
-	matches := model.SearchAlbums(h.Music, query)
+	music := <-h.MpdChannel
+	matches := model.SearchAlbums(music, query)
 	fmt.Printf("Found %d results\n", len(matches))
 	for _, item := range matches {
 		fmt.Printf("%s - %s\n", item.Artist, item.Name)

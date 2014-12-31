@@ -11,7 +11,7 @@ import (
 )
 
 type CategoryHandler struct {
-	MpdChannel chan model.Collection
+	MpdChannel chan *model.Collection
 }
 
 // Return a list of all artists, albums etc
