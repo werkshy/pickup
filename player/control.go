@@ -117,7 +117,7 @@ func (controls MpdControls) Status() (status PlayerStatus, err error) {
 		log.Println(err)
 		return status, err
 	}
-	log.Printf("mpd 'status': %v\n", attrs)
+	//log.Printf("mpd 'status': %v\n", attrs)
 	//var currentId = attrs["songid"]
 	//var nextId = attrs["nextsongid"]
 	status.Volume, err = strconv.Atoi(attrs["volume"])

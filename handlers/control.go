@@ -5,50 +5,40 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 	//"io/ioutil"
 	//"strings"
 	//"time"
-	"github.com/werkshy/pickup/config"
+
 	"github.com/werkshy/pickup/player"
 )
 
 type ControlHandler struct {
-	conf *config.Config
-}
-
-func NewControlHandler(conf *config.Config) (h ControlHandler) {
-	return ControlHandler{conf}
+	player.Player
 }
 
 // Return a list of albums or a specific album
 func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	controls, err := player.NewMpdControls(h.conf)
-	defer controls.Close()
+	t0 := time.Now()
+	var err error
 	switch r.Method {
 	case "GET":
-		log.Printf("GET: return current status\n")
-		err = h.currentStatus(w, controls)
+		err = h.currentStatus(w)
 	case "POST":
-		err = h.command(w, r, controls)
+		err = h.command(w, r)
 	}
 
 	if err != nil {
 		log.Printf("Error detected in /control: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
-func (h ControlHandler) currentStatus(w http.ResponseWriter,
-	controls player.Controls) (err error) {
-	/*
-		controls, err := player.NewMpdControls()
-		if (err != nil) {
-			return err
-		}
-		defer controls.Close()
-	*/
+func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 
 	// get the status
+	controls := h.GetControls()
 	status, err := controls.Status()
 	if err != nil {
 		return err
@@ -64,21 +54,15 @@ type ControlCommand struct {
 }
 
 // dispatch control commands (vol, prev, next)
-func (h ControlHandler) command(w http.ResponseWriter,
-	r *http.Request, controls player.Controls) (err error) {
+func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err error) {
+	controls := h.GetControls()
 	var data ControlCommand
-	/*
-		controls, err := player.NewMpdControls()
-		if (err != nil) {
-			return err
-		}
-		defer controls.Close()
-	*/
 	err = JsonRequestToType(w, r, &data)
 	if err != nil {
 		return err
 	}
 
+	// TODO move this into Player
 	log.Printf("Received control command '%s'\n", data.Command)
 	switch data.Command {
 	case "prev":

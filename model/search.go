@@ -11,7 +11,7 @@ import (
 	For now an in-memory linear scan is fine (about 4ms for album searches on my
 	laptop)
 */
-func Search(music Collection, query string) (matching Category) {
+func Search(music *Collection, query string) (matching Category) {
 
 	lQuery := strings.ToLower(query)
 	t0 := time.Now()
@@ -42,7 +42,7 @@ func Search(music Collection, query string) (matching Category) {
 	return matching
 }
 
-func SearchAlbums(music Collection, query string) (matching []AlbumSummary) {
+func SearchAlbums(music *Collection, query string) (matching []AlbumSummary) {
 	t0 := time.Now()
 	lQuery := strings.ToLower(query)
 	for _, category := range music.Categories {
@@ -56,7 +56,7 @@ func SearchAlbums(music Collection, query string) (matching []AlbumSummary) {
 	return matching
 }
 
-func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
+func SearchArtists(music *Collection, query string) (matching []ArtistSummary) {
 	t0 := time.Now()
 	lQuery := strings.ToLower(query)
 	for _, category := range music.Categories {
@@ -70,7 +70,7 @@ func SearchArtists(music Collection, query string) (matching []ArtistSummary) {
 	return matching
 }
 
-func GetAlbum(music Collection, categoryName string, artistName string, albumName string) (*Album, error) {
+func GetAlbum(music *Collection, categoryName string, artistName string, albumName string) (*Album, error) {
 	for _, category := range music.Categories {
 		if category.Name == categoryName {
 			if artistName == "" {
@@ -95,7 +95,7 @@ func GetAlbum(music Collection, categoryName string, artistName string, albumNam
 		artistName, albumName)
 }
 
-func GetTrack(music Collection, categoryName string,
+func GetTrack(music *Collection, categoryName string,
 	artistName string, albumName string, trackName string) (*Track, error) {
 	var theAlbum *Album = nil
 	for _, category := range music.Categories {

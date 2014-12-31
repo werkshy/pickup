@@ -90,7 +90,7 @@ $(function() {
     setInterval(function() {
         //console.log("Fetching controls");
         App.control.fetch();
-    }, 10000);
+    }, 2000);
 
     // Setup playlist polling
     App.playlist = new App.Playlist();
@@ -99,5 +99,5 @@ $(function() {
     setInterval(function() {
         //console.log("Fetching playlist");
         App.playlist.fetch()
-    }, 10000);
+    }, 2000);
 });

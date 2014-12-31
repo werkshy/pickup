@@ -6,32 +6,31 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/werkshy/pickup/model"
-	//"time"
+	"github.com/werkshy/pickup/player"
 )
 
 type AlbumHandler struct {
-	Music model.Collection
+	player.Player
 }
 
 // Return a list of albums or a specific album
 func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t0 := time.Now()
 	path := r.URL.Path[len("/albums/"):]
 	parts := strings.SplitN(path, "/", 3)
-	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
+	log.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
 		len(parts))
 	// If only one part, we'll search for it
 	if len(parts) == 1 {
 		query := parts[0]
 		if query != "" {
-			fmt.Printf("Showing album search results for '%s'\n", query)
 			h.searchAlbums(w, query)
 		} else {
-			fmt.Printf("Showing all albums\n")
 			h.listAllAlbums(w)
 		}
-		return
 	} else if len(parts) == 2 {
 		// category/album
 		h.getAlbum(w, parts[0], "", parts[1])
@@ -39,13 +38,15 @@ func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Otherwise we assume category/artist/album
 		h.getAlbum(w, parts[0], parts[1], parts[2])
 	}
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
 func (h AlbumHandler) getAlbum(w http.ResponseWriter,
 	categoryName string, artistName string, albumName string) {
 	log.Printf("Looking up album '%s/%s/%s\n", categoryName,
 		artistName, albumName)
-	album, err := model.GetAlbum(h.Music, categoryName, artistName, albumName)
+	music := h.GetMusic()
+	album, err := model.GetAlbum(music, categoryName, artistName, albumName)
 
 	if err == nil {
 		log.Printf("Found album: %s/%s; %d tracks", album.Artist, album.Name, len(album.Tracks))
@@ -57,7 +58,6 @@ func (h AlbumHandler) getAlbum(w http.ResponseWriter,
 	log.Printf("Did not find album: %s/%s/%s (%v)", categoryName, artistName,
 		albumName, err)
 
-	//fmt.Fprintf(w, "\n<h1>Hello</h1><div>world</div>\n")
 	writeError(w, http.StatusNotFound, fmt.Sprintf("Album not found '%s'",
 		albumName))
 }
@@ -66,12 +66,13 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 	// TODO: list all albums
 	log.Printf("TOOD: list all albums\n")
 	/*
+		music := h.GetMusic()
 		t0 := time.Now()
-		fmt.Printf("All albums (%d)\n", len(h.Music.Albums))
+		fmt.Printf("All albums (%d)\n", len(music.Albums))
 		// Convert to Album Summary to save on info
-		albumSummaries := make([]model.AlbumSummary, len(h.Music.Albums))
-		for i := 0; i < len(h.Music.Albums); i++ {
-			albumSummaries[i] = model.NewAlbumSummary(h.Music.Albums[i])
+		albumSummaries := make([]model.AlbumSummary, len(music.Albums))
+		for i := 0; i < len(music.Albums); i++ {
+			albumSummaries[i] = model.NewAlbumSummary(music.Albums[i])
 		}
 		j, _ := json.Marshal(albumSummaries)
 		fmt.Println("Time to marshall all albums:", time.Since(t0))
@@ -82,10 +83,12 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 }
 
 func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {
-	matches := model.SearchAlbums(h.Music, query)
-	fmt.Printf("Found %d results\n", len(matches))
+	log.Printf("Searching for albums matching  '%s'\n", query)
+	music := h.GetMusic()
+	matches := model.SearchAlbums(music, query)
+	log.Printf("Found %d results\n", len(matches))
 	for _, item := range matches {
-		fmt.Printf("%s - %s\n", item.Artist, item.Name)
+		log.Printf("%s - %s\n", item.Artist, item.Name)
 	}
 	j, _ := json.Marshal(matches)
 	w.Write(j)

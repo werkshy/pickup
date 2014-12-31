@@ -7,24 +7,22 @@ import (
 	"log"
 	"time"
 
-	"github.com/werkshy/pickup/model"
+	"github.com/werkshy/pickup/player"
 )
 
 type CategoryHandler struct {
-	Music model.Collection
+	player.Player
 }
 
 // Return a list of all artists, albums etc
+//func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Retrieving entire collection\n")
 	t0 := time.Now()
+	music := h.GetMusic()
 
 	// Convert to Summary to save on data passing etc
-	summary := h.Music.GetSummary()
-	log.Printf("Marshalling %d category summaries", len(summary))
+	summary := music.GetSummary()
 	j, _ := json.Marshal(summary)
-	log.Println("Time to marshall entire collection:", time.Since(t0))
-	t1 := time.Now()
 	w.Write(j)
-	log.Println("Time to send entire collection:", time.Since(t1))
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
