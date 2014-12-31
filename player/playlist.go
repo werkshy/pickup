@@ -33,27 +33,6 @@ type MpdPlaylist struct {
 	conn *mpd.Client
 }
 
-func (t *PlaylistTrack) CleanUp(file string) {
-	if t.Name != "" {
-		return
-	}
-	_, artist, album, track, err := model.PathToParts(file)
-	if err != nil {
-		track = "unknown"
-		artist = "unknown"
-		album = "unknown"
-	}
-	if t.Name == "" {
-		t.Name = track
-	}
-	if t.Artist == "" {
-		t.Artist = artist
-	}
-	if t.Album == "" {
-		t.Album = album
-	}
-}
-
 /**
  * Constructor of MpdPlaylist
  */
@@ -87,7 +66,7 @@ func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 			entry["Artist"],
 			entry["Album"],
 			entry["Path"]}
-		track.CleanUp(entry["file"])
+		track.cleanUp(entry["file"])
 		results = append(results, track)
 	}
 	return results, nil
@@ -119,4 +98,25 @@ func (playlist MpdPlaylist) Clear() (err error) {
 	log.Println("Clearing playlist")
 	playlist.conn.Clear()
 	return nil
+}
+
+func (t *PlaylistTrack) cleanUp(file string) {
+	if t.Name != "" {
+		return
+	}
+	_, artist, album, track, err := model.PathToParts(file)
+	if err != nil {
+		track = "unknown"
+		artist = "unknown"
+		album = "unknown"
+	}
+	if t.Name == "" {
+		t.Name = track
+	}
+	if t.Artist == "" {
+		t.Artist = artist
+	}
+	if t.Album == "" {
+		t.Album = album
+	}
 }
