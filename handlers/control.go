@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
 	//"io/ioutil"
 	//"strings"
 	//"time"
@@ -22,11 +23,11 @@ func NewControlHandler(conf *config.Config) (h ControlHandler) {
 
 // Return a list of albums or a specific album
 func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t0 := time.Now()
 	controls, err := player.NewMpdControls(h.conf)
 	defer controls.Close()
 	switch r.Method {
 	case "GET":
-		log.Printf("GET: return current status\n")
 		err = h.currentStatus(w, controls)
 	case "POST":
 		err = h.command(w, r, controls)
@@ -36,6 +37,7 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error detected in /control: %s\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
 func (h ControlHandler) currentStatus(w http.ResponseWriter,

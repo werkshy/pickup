@@ -80,7 +80,7 @@ func (playlist MpdPlaylist) List() (results []PlaylistTrack, err error) {
 		return nil, err
 	}
 	for _, entry := range info {
-		log.Printf("%q\n", entry)
+		//log.Printf("%q\n", entry)
 		track := PlaylistTrack{
 			entry["Pos"],
 			entry["Title"],

@@ -5,9 +5,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
-	//"io/ioutil"
-	//"strings"
-	//"time"
+	"time"
+
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/model"
 	"github.com/werkshy/pickup/player"
@@ -20,13 +19,14 @@ type PlaylistHandler struct {
 
 // Return a list of albums or a specific album
 func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t0 := time.Now()
+	controls, err := player.NewMpdControls(h.Conf)
 	defer controls.Close()
 	playlist := player.NewMpdPlaylist(h.Conf)
 	defer playlist.Close()
 
 	switch r.Method {
 	case "GET":
-		log.Printf("GET: Showing current playlist\n")
 		err = h.currentPlaylist(w, playlist)
 	case "POST":
 		err = h.command(w, r, playlist, controls)
@@ -36,6 +36,7 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error detected in /playlist: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
 func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,

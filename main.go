@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+	t0 := time.Now()
 	var action = flag.String("action", "serve", "Action to perform (serve|refresh)")
 	conf := config.Config{}
 	conf.MusicDir = flag.String("music-dir", "/music", "Music dir")
@@ -26,13 +27,14 @@ func main() {
 	var query = flag.String("query", "", "Search query")
 	flag.Parse(true)
 
-	fmt.Println("Action is:", *action)
-	fmt.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
+	log.Println("Action is:", *action)
+	log.Printf("Mpd address: '%s'  password: '%s'\n", *conf.MpdAddress,
 		*conf.MpdPassword)
 
 	mpdChannel := make(chan *model.Collection)
 	go initializeMpd(mpdChannel, &conf)
 	music := <-mpdChannel
+	log.Printf("Player with %d categories initialized in %v\n", len(music.Categories), time.Since(t0))
 
 	switch *action {
 	case "stats":
@@ -101,7 +103,7 @@ func serve(conf *config.Config, mpdChannel chan *model.Collection) bool {
 	http.Handle("/control/", controlHandler)
 	staticDir, _ := os.Getwd()
 	staticDir = staticDir + "/static"
-	fmt.Printf("Serving static files from %s\n", staticDir)
+	log.Printf("Serving static files from %s\n", staticDir)
 	// strip '/static' from the url to get the name of the file within the
 	// static dir.
 	http.Handle("/static/", http.StripPrefix("/static/",

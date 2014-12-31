@@ -122,9 +122,9 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 
 	log.Printf("Sorting mpd results took %d ms\n", time.Since(t1)/time.Millisecond)
 	log.Printf("Found %d categories\n", len(collection.Categories))
-	for _, category := range collection.Categories {
-		log.Printf("    %s\n", category.Name)
-	}
+	//for _, category := range collection.Categories {
+	//	log.Printf("    %s\n", category.Name)
+	//}
 	return collection, err
 }
 
