@@ -10,7 +10,6 @@ import (
 
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/handlers"
-	"github.com/werkshy/pickup/model"
 	"github.com/werkshy/pickup/player"
 	flag "launchpad.net/gnuflag"
 )
@@ -35,15 +34,15 @@ func main() {
 	music := plyr.GetMusic()
 	log.Printf("Player with %d categories initialized in %v\n", len(music.Categories), time.Since(t0))
 
-	serve(&conf, plyr.GetChannel())
+	serve(&conf, &plyr)
 }
 
-func serve(conf *config.Config, mpdChannel chan *model.Collection) bool {
-	categoryHandler := handlers.CategoryHandler{mpdChannel}
-	albumHandler := handlers.AlbumHandler{mpdChannel}
-	artistHandler := handlers.ArtistHandler{mpdChannel}
-	playlistHandler := handlers.PlaylistHandler{mpdChannel, conf}
-	controlHandler := handlers.NewControlHandler(conf)
+func serve(conf *config.Config, plyr player.Player) {
+	categoryHandler := handlers.CategoryHandler{plyr}
+	albumHandler := handlers.AlbumHandler{plyr}
+	artistHandler := handlers.ArtistHandler{plyr}
+	playlistHandler := handlers.PlaylistHandler{plyr}
+	controlHandler := handlers.ControlHandler{plyr}
 
 	http.Handle("/categories/", categoryHandler)
 	http.Handle("/albums/", albumHandler)
@@ -62,5 +61,4 @@ func serve(conf *config.Config, mpdChannel chan *model.Collection) bool {
 	var bind = fmt.Sprintf(":%d", *conf.Port)
 	log.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
-	return true
 }

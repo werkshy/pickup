@@ -6,42 +6,43 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/werkshy/pickup/model"
-	//"time"
+	"github.com/werkshy/pickup/player"
 )
 
 type ArtistHandler struct {
-	MpdChannel chan *model.Collection
+	player.Player
 }
 
-// Return a list of albums or a specific album
+// Return a list of artists or search for an artist
 func (h ArtistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t0 := time.Now()
 	path := r.URL.Path[len("/artists/"):]
 	parts := strings.SplitN(path, "/", 2)
-	fmt.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
+	log.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
 		len(parts))
 	// If only one part, we'll search for it
 	if len(parts) == 1 {
 		query := parts[0]
 		if query != "" {
-			fmt.Printf("Showing artist search results for '%s'\n", query)
 			h.searchArtists(w, query)
 		} else {
-			fmt.Printf("Showing all artists\n")
 			h.listAllArtists(w)
 		}
-		return
+	} else {
+		// Trailing slash gets you here
+		h.showArtist(w, parts[0])
 	}
-	fmt.Printf("Artist '%s' specified\n", parts[0])
-	h.showArtist(w, parts[0])
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
 func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 	// TODO: list all artists
 	log.Printf("TOOD: list all artists\n")
 	/*
-		music := <-h.MpdChannel
+		music := h.GetMusic()
 		t0 := time.Now()
 		fmt.Printf("All artists (%d)\n", len(music.Artists))
 		// Convert to Artist Summary to save on info
@@ -58,9 +59,9 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 }
 
 func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
-	music := <-h.MpdChannel
+	music := h.GetMusic()
 	matches := model.SearchArtists(music, query)
-	fmt.Printf("Found %d artist results:\n", len(matches))
+	log.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {
 		fmt.Printf("\t%s\n", item.Name)
 	}
@@ -70,18 +71,18 @@ func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
 }
 
 func (h ArtistHandler) showArtist(w http.ResponseWriter, query string) {
-	music := <-h.MpdChannel
+	music := h.GetMusic()
 	matches := model.SearchArtists(music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {
 		if item.Name == query {
-			fmt.Printf("Found artist: '%s'\n", item.Name)
+			log.Printf("Found artist: '%s'\n", item.Name)
 			j, _ := json.Marshal(item)
 			w.Write(j)
 			return
 		}
 	}
-	fmt.Printf("Artist not found: %s %s\n", query)
+	log.Printf("Artist not found: %s %s\n", query)
 	writeError(w, http.StatusNotFound, fmt.Sprintf("No artist found '%s'",
 		query))
 }

@@ -7,29 +7,24 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/model"
 	"github.com/werkshy/pickup/player"
 )
 
 type PlaylistHandler struct {
-	MpdChannel chan *model.Collection
-	Conf       *config.Config
+	player.Player
 }
 
 // Return a list of albums or a specific album
 func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	controls, err := player.NewMpdControls(h.Conf)
-	defer controls.Close()
-	playlist := player.NewMpdPlaylist(h.Conf)
-	defer playlist.Close()
+	var err error
 
 	switch r.Method {
 	case "GET":
-		err = h.currentPlaylist(w, playlist)
+		err = h.currentPlaylist(w)
 	case "POST":
-		err = h.command(w, r, playlist, controls)
+		err = h.command(w, r)
 	}
 
 	if err != nil {
@@ -39,9 +34,9 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
 
-func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter,
-	playlist player.Playlist) error {
+func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter) error {
 	// get the contents of the playlist
+	playlist := h.GetPlaylist()
 	currentTracks, err := playlist.List()
 	if err != nil {
 		log.Printf("Error getting playlist: %s", err)
@@ -62,27 +57,25 @@ type PlaylistCommand struct {
 }
 
 // dispatch playlist commands (add, clear etc)
-func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request,
-	playlist player.Playlist, controls player.Controls) (err error) {
+func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request) (err error) {
 	var data PlaylistCommand
 	err = JsonRequestToType(w, r, &data)
 	if err != nil {
 		return err
 	}
-
 	log.Printf("Received playlist command '%s'\n", data.Command)
+
 	switch data.Command {
 	case "add":
-		err = h.add(playlist, controls, data)
+		err = h.add(data)
 	case "clear":
-		err = h.clear(playlist)
+		err = h.clear()
 	}
 	return err
 }
 
-func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
-	data PlaylistCommand) (err error) {
-	music := <-h.MpdChannel
+func (h PlaylistHandler) add(data PlaylistCommand) (err error) {
+	music := h.Player.GetMusic()
 	if data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -105,6 +98,7 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		return err
 	}
 
+	playlist := h.GetPlaylist()
 	if data.Immediate {
 		err = playlist.Clear()
 		if err != nil {
@@ -124,11 +118,13 @@ func (h PlaylistHandler) add(playlist player.Playlist, controls player.Controls,
 		return err
 	}
 	if data.Immediate {
+		controls := h.GetControls()
 		err = controls.Play()
 	}
 	return err
 }
 
-func (h PlaylistHandler) clear(playlist player.Playlist) (err error) {
+func (h PlaylistHandler) clear() (err error) {
+	playlist := h.GetPlaylist()
 	return playlist.Clear()
 }

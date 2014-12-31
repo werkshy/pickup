@@ -7,18 +7,18 @@ import (
 	"log"
 	"time"
 
-	"github.com/werkshy/pickup/model"
+	"github.com/werkshy/pickup/player"
 )
 
 type CategoryHandler struct {
-	MpdChannel chan *model.Collection
+	player.Player
 }
 
 // Return a list of all artists, albums etc
 //func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	music := <-h.MpdChannel
+	music := h.GetMusic()
 
 	// Convert to Summary to save on data passing etc
 	summary := music.GetSummary()

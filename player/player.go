@@ -9,16 +9,29 @@ import (
 	"github.com/werkshy/pickup/model"
 )
 
-// TODO: merge interface of Playlist and Controls into this (or compose)
+// TODO: merge interface of Playlist andMpdControls into this (or compose)
 type Player interface {
-	GetMusic()
-	Close()
+	GetMusic() *model.Collection
+	GetControls() Controls
+	GetPlaylist() Playlist
+	Close() error
 }
 
+/*
+TODO:
+	GetPlaylist()
+	GetStatus()
+	GetMusic() -> GetCollection()
+	PlaylistCommand()
+	ControlCommand()
+*/
+
 type MpdPlayer struct {
-	conn       *mpd.Client
-	conf       *config.Config
-	mpdChannel chan *model.Collection
+	conn              *mpd.Client
+	conf              *config.Config
+	collectionChannel chan *model.Collection
+	controlsChannel   chan *MpdControls
+	playlistChannel   chan *MpdPlaylist
 }
 
 func NewMpdPlayer(conf *config.Config) (player MpdPlayer, err error) {
@@ -27,8 +40,10 @@ func NewMpdPlayer(conf *config.Config) (player MpdPlayer, err error) {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	mpdChannel := make(chan *model.Collection)
-	player = MpdPlayer{conn, conf, mpdChannel}
+	collectionChannel := make(chan *model.Collection)
+	controlsChannel := make(chan *MpdControls)
+	playlistChannel := make(chan *MpdPlaylist)
+	player = MpdPlayer{conn, conf, collectionChannel, controlsChannel, playlistChannel}
 	go player.begin()
 	return player, err
 }
@@ -43,11 +58,21 @@ func (player MpdPlayer) begin() {
 	if err != nil {
 		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
 	}
+	controls, err := NewMpdControls(player.conf)
+	if err != nil {
+		log.Fatalf("Couldn't initialize  from mpd: \n%s\n", err)
+	}
+	playlist := NewMpdPlaylist(player.conf)
 	lastUpdated := time.Now()
 	bkgCollectionChannel := make(chan model.Collection)
 	for {
 		select {
-		case player.mpdChannel <- &music:
+		case player.collectionChannel <- &music:
+			continue
+		// TODO this'll go away, replace with CommandChannel etc
+		case player.controlsChannel <- &controls:
+			continue
+		case player.playlistChannel <- &playlist:
 			continue
 		case newMusic := <-bkgCollectionChannel:
 			log.Printf("MPD GOROUTINE: UPDATE COMPLETE\n")
@@ -65,11 +90,15 @@ func (player MpdPlayer) begin() {
 }
 
 func (player MpdPlayer) GetMusic() *model.Collection {
-	return <-player.mpdChannel
+	return <-player.collectionChannel
 }
 
-func (player MpdPlayer) GetChannel() chan *model.Collection {
-	return player.mpdChannel
+func (player MpdPlayer) GetControls() Controls {
+	return <-player.controlsChannel
+}
+
+func (player MpdPlayer) GetPlaylist() Playlist {
+	return <-player.playlistChannel
 }
 
 func backgroundRefresh(bkgCollectionChannel chan model.Collection, conf *config.Config) {
