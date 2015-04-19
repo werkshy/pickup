@@ -31,7 +31,10 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to initialize mpd player", err)
 	}
-	music := plyr.GetMusic()
+	music, err := plyr.GetCollection()
+	if err != nil {
+		log.Fatalln("Failed to retrieve collection", err)
+	}
 	log.Printf("Player with %d categories initialized in %v\n", len(music.Categories), time.Since(t0))
 
 	serve(&conf, &plyr)

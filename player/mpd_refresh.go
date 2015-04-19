@@ -1,27 +1,21 @@
-package model
+package player
 
 import (
-	"errors"
 	"log"
 	"path"
 	"strings"
 	"time"
 
-	"github.com/werkshy/gompd/mpd"
-	"github.com/werkshy/pickup/config"
+	"github.com/werkshy/pickup/model"
 )
 
-func RefreshMpd(conf *config.Config) (Collection, error) {
-	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress, *conf.MpdPassword)
-	if err != nil {
-		return Collection{}, err
-	}
+func (player *MpdPlayer) RefreshCollection() (model.Collection, error) {
 
 	log.Println("Getting mpd files")
 	t0 := time.Now()
-	files, err := conn.GetFiles()
+	files, err := player.conn.GetFiles()
 	if err != nil {
-		return Collection{}, err
+		return model.Collection{}, err
 	}
 
 	log.Printf("Getting %v files from mpd took %d ms", len(files),
@@ -30,17 +24,17 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 
 	// Files come back from mpd sorted, so we can track the current
 	// artists/albums as we iterate through the files.
-	rootCategory := NewCategory("Music")
-	collection := Collection{
-		make([]*Category, 0),
+	rootCategory := model.NewCategory("Music")
+	collection := model.Collection{
+		make([]*model.Category, 0),
 	}
-	collection.addCategory(rootCategory)
+	collection.AddCategory(rootCategory)
 
-	var currentArtist *Artist
-	var currentAlbum *Album
-	var currentCategory *Category = rootCategory
+	var currentArtist *model.Artist
+	var currentAlbum *model.Album
+	var currentCategory *model.Category = rootCategory
 	for _, file := range files {
-		category, artist, album, track, err := PathToParts(file)
+		category, artist, album, track, err := model.PathToParts(file)
 		if err != nil {
 			log.Printf("Error at %s: %v\n", file, err)
 			continue
@@ -54,12 +48,12 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 
 		// handle currentAlbum
 		if currentAlbum == nil {
-			currentAlbum = NewAlbum(album)
+			currentAlbum = model.NewAlbum(album)
 			currentAlbum.Path = path.Dir(file)
 		} else if currentAlbum.Name != album {
 			// handle finished album
 			wrapUpAlbum(currentAlbum, currentArtist, currentCategory)
-			currentAlbum = NewAlbum(album)
+			currentAlbum = model.NewAlbum(album)
 			currentAlbum.Path = path.Dir(file)
 		}
 
@@ -67,11 +61,11 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		if artist != "" {
 			// Create a new artist if the artist has changed
 			if currentArtist == nil {
-				currentArtist = NewArtist(artist)
+				currentArtist = model.NewArtist(artist)
 			} else if currentArtist.Name != artist {
 				// handle finished artist
 				wrapUpArtist(currentArtist, currentCategory)
-				currentArtist = NewArtist(artist)
+				currentArtist = model.NewArtist(artist)
 			}
 		} else {
 			// Looking at a bare album
@@ -86,11 +80,11 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 		if category != "" {
 			// This file is part of a subcategory
 			if currentCategory == rootCategory {
-				currentCategory = NewCategory(category)
+				currentCategory = model.NewCategory(category)
 			} else if currentCategory.Name != category {
 				// handle finished subcategory
 				wrapUpCategory(currentCategory, &collection)
-				currentCategory = NewCategory(category)
+				currentCategory = model.NewCategory(category)
 			}
 		} else {
 			// this file is not in a subcategory, revert to root category
@@ -100,7 +94,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 			}
 			currentCategory = rootCategory
 		}
-		currentTrack := Track{track, file, currentAlbum.Name, ""}
+		currentTrack := model.Track{track, file, currentAlbum.Name, ""}
 		if currentAlbum != nil {
 			currentTrack.Album = currentAlbum.Name
 		}
@@ -128,48 +122,7 @@ func RefreshMpd(conf *config.Config) (Collection, error) {
 	return collection, err
 }
 
-func PathToParts(path string) (category string, artist string, album string, track string, err error) {
-	parts := strings.Split(path, "/")
-	nparts := len(parts)
-	if nparts < 2 {
-		log.Printf("Can't handle '%s'\n", path)
-		return "", "", "", "", errors.New("Too few parts")
-	}
-	track = parts[nparts-1]
-	album = parts[nparts-2]
-
-	// Occassionally I have e.g. _mp3/ folders that I want to ignore
-	if strings.HasPrefix(album, "_") {
-		//log.Printf("Ignoring album '%s'\n", file)
-		return "", "", album, track, nil
-	}
-
-	npartsWithArtist := 3 // expect artist, album, track
-	// If the path begins with _, it's a subcategory e.g. _Soundtracks
-	if strings.HasPrefix(path, "_") {
-		npartsWithArtist = 4 // category, artist, album, track
-	}
-	// Sanity check the path for too many or too few parts
-	// one less that nparts is OK, it means a bare album
-	if len(parts) < npartsWithArtist-1 || len(parts) > npartsWithArtist {
-		log.Printf("%s has %d parts", path, len(parts))
-		return "", "", "", "", errors.New("Wrong number of parts")
-	}
-
-	// Handle currentArtist
-	if nparts == npartsWithArtist {
-		artist = parts[nparts-3]
-	}
-
-	// handle currentCategory
-	if strings.HasPrefix(path, "_") {
-		// This file is part of a subcategory
-		category = parts[0]
-	}
-	return
-}
-
-func wrapUpAlbum(album *Album, artist *Artist, category *Category) {
+func wrapUpAlbum(album *model.Album, artist *model.Artist, category *model.Category) {
 	album.Category = category.Name
 	if artist != nil {
 		album.Artist = artist.Name
@@ -179,11 +132,11 @@ func wrapUpAlbum(album *Album, artist *Artist, category *Category) {
 	}
 }
 
-func wrapUpArtist(artist *Artist, category *Category) {
+func wrapUpArtist(artist *model.Artist, category *model.Category) {
 	category.Artists = append(category.Artists, artist)
 }
 
-func wrapUpCategory(category *Category, collection *Collection) {
+func wrapUpCategory(category *model.Category, collection *model.Collection) {
 	log.Printf("Wrapping up category: %s", category.Name)
-	collection.addCategory(category)
+	collection.AddCategory(category)
 }

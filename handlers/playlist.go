@@ -36,8 +36,7 @@ func (h PlaylistHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (h PlaylistHandler) currentPlaylist(w http.ResponseWriter) error {
 	// get the contents of the playlist
-	playlist := h.GetPlaylist()
-	currentTracks, err := playlist.List()
+	currentTracks, err := h.List()
 	if err != nil {
 		log.Printf("Error getting playlist: %s", err)
 		return err
@@ -75,7 +74,11 @@ func (h PlaylistHandler) command(w http.ResponseWriter, r *http.Request) (err er
 }
 
 func (h PlaylistHandler) add(data PlaylistCommand) (err error) {
-	music := h.Player.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		return err
+	}
 	if data.Album == "" {
 		log.Printf("Don't play artists (or nulls)\n")
 		return errors.New("Playing artists is not implemented")
@@ -98,9 +101,8 @@ func (h PlaylistHandler) add(data PlaylistCommand) (err error) {
 		return err
 	}
 
-	playlist := h.GetPlaylist()
 	if data.Immediate {
-		err = playlist.Clear()
+		err = h.Clear()
 		if err != nil {
 			log.Printf("Error clearing playlist")
 			return err
@@ -108,23 +110,21 @@ func (h PlaylistHandler) add(data PlaylistCommand) (err error) {
 	}
 
 	if track != nil {
-		err = playlist.AddTrack(track)
+		err = h.AddTrack(track)
 	}
 	if album != nil {
-		err = playlist.AddAlbum(album)
+		err = h.AddAlbum(album)
 	}
 	if err != nil {
 		log.Printf("Error adding album or track %s/%s", data.Album, data.Track)
 		return err
 	}
 	if data.Immediate {
-		controls := h.GetControls()
-		err = controls.Play()
+		err = h.Play()
 	}
 	return err
 }
 
 func (h PlaylistHandler) clear() (err error) {
-	playlist := h.GetPlaylist()
-	return playlist.Clear()
+	return h.Clear()
 }

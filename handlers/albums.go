@@ -45,7 +45,11 @@ func (h AlbumHandler) getAlbum(w http.ResponseWriter,
 	categoryName string, artistName string, albumName string) {
 	log.Printf("Looking up album '%s/%s/%s\n", categoryName,
 		artistName, albumName)
-	music := h.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		writeError(w, http.StatusNotFound, "Problem with mpd")
+	}
 	album, err := model.GetAlbum(music, categoryName, artistName, albumName)
 
 	if err == nil {
@@ -84,7 +88,11 @@ func (h AlbumHandler) listAllAlbums(w http.ResponseWriter) {
 
 func (h AlbumHandler) searchAlbums(w http.ResponseWriter, query string) {
 	log.Printf("Searching for albums matching  '%s'\n", query)
-	music := h.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		writeError(w, http.StatusNotFound, "Problem with mpd")
+	}
 	matches := model.SearchAlbums(music, query)
 	log.Printf("Found %d results\n", len(matches))
 	for _, item := range matches {

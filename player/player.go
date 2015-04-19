@@ -1,110 +1,63 @@
 package player
 
-import (
-	"log"
-	"time"
+// Define an interface for a goroutine-separated player
 
-	"github.com/werkshy/gompd/mpd"
-	"github.com/werkshy/pickup/config"
-	"github.com/werkshy/pickup/model"
-)
+import "github.com/werkshy/pickup/model"
 
-// TODO: merge interface of Playlist andMpdControls into this (or compose)
+// What we return to describe the current playlist
+type PlaylistTrack struct {
+	Pos     string
+	Name    string
+	Artist  string
+	Album   string
+	Path    string
+	Backend string
+}
+
+// What we return when we ask for current status
+type PlayerStatus struct {
+	State         string
+	Volume        int
+	CurrentArtist string
+	CurrentAlbum  string
+	CurrentTrack  string
+	Elapsed       int
+	Length        int
+}
+
+type PlaylistCommand struct {
+}
+
+type ControlCommand struct {
+}
+
+// In theory we could have different backends, so define an interface that will
+// allow for that.
 type Player interface {
-	GetMusic() *model.Collection
-	GetControls() Controls
-	GetPlaylist() Playlist
+	GetCollection() (*model.Collection, error)
+	RefreshCollection() (model.Collection, error)
+
+	// Playlist methods
+	List() ([]PlaylistTrack, error)
+	AddAlbum(*model.Album) error
+	AddTrack(*model.Track) error
+	AddTracks([]*model.Track) error
+	Clear() error
+	DoPlaylistCommand(cmd PlaylistCommand) error
+
+	// Player control methods
+	Play() error
+	Stop() error
+	Pause() error
+	Prev() error
+	Next() error
+	VolumeDelta(volumeDelta int) error
+	//	VolumeDown() error
+	//	VolumeUp() error
+	//	GetVolume() (int, error)
+	Status() (status PlayerStatus, err error)
+	DoControlCommand(cmd ControlCommand) error
+
+	// Cleanup
 	Close() error
-}
-
-/*
-TODO:
-	GetPlaylist()
-	GetStatus()
-	GetMusic() -> GetCollection()
-	PlaylistCommand()
-	ControlCommand()
-*/
-
-type MpdPlayer struct {
-	conn              *mpd.Client
-	conf              *config.Config
-	collectionChannel chan *model.Collection
-	controlsChannel   chan *MpdControls
-	playlistChannel   chan *MpdPlaylist
-}
-
-func NewMpdPlayer(conf *config.Config) (player MpdPlayer, err error) {
-	conn, err := mpd.DialAuthenticated("tcp", *conf.MpdAddress,
-		*conf.MpdPassword)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	collectionChannel := make(chan *model.Collection)
-	controlsChannel := make(chan *MpdControls)
-	playlistChannel := make(chan *MpdPlaylist)
-	player = MpdPlayer{conn, conf, collectionChannel, controlsChannel, playlistChannel}
-	go player.begin()
-	return player, err
-}
-
-func (player MpdPlayer) Close() (err error) {
-	return player.conn.Close()
-}
-
-func (player MpdPlayer) begin() {
-	updateInterval := 60 * time.Second
-	music, err := model.RefreshMpd(player.conf)
-	if err != nil {
-		log.Fatalf("Couldn't get files from mpd: \n%s\n", err)
-	}
-	controls, err := NewMpdControls(player.conf)
-	if err != nil {
-		log.Fatalf("Couldn't initialize  from mpd: \n%s\n", err)
-	}
-	playlist := NewMpdPlaylist(player.conf)
-	lastUpdated := time.Now()
-	bkgCollectionChannel := make(chan model.Collection)
-	for {
-		select {
-		case player.collectionChannel <- &music:
-			continue
-		// TODO this'll go away, replace with CommandChannel etc
-		case player.controlsChannel <- &controls:
-			continue
-		case player.playlistChannel <- &playlist:
-			continue
-		case newMusic := <-bkgCollectionChannel:
-			log.Printf("MPD GOROUTINE: UPDATE COMPLETE\n")
-			music = newMusic
-		case <-time.After(100 * time.Millisecond):
-			since := time.Since(lastUpdated)
-			if time.Since(lastUpdated) > updateInterval {
-				log.Printf("MPD GOROUTINE: Kicking off refresh after %v\n", since)
-				go backgroundRefresh(bkgCollectionChannel, player.conf)
-				lastUpdated = time.Now()
-			}
-		}
-	}
-
-}
-
-func (player MpdPlayer) GetMusic() *model.Collection {
-	return <-player.collectionChannel
-}
-
-func (player MpdPlayer) GetControls() Controls {
-	return <-player.controlsChannel
-}
-
-func (player MpdPlayer) GetPlaylist() Playlist {
-	return <-player.playlistChannel
-}
-
-func backgroundRefresh(bkgCollectionChannel chan model.Collection, conf *config.Config) {
-	music, err := model.RefreshMpd(conf)
-	if err != nil {
-		log.Printf("Couldn't get files from mpd: \n%s\n", err)
-	}
-	bkgCollectionChannel <- music
 }

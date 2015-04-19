@@ -38,8 +38,7 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 
 	// get the status
-	controls := h.GetControls()
-	status, err := controls.Status()
+	status, err := h.Status()
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,6 @@ type ControlCommand struct {
 
 // dispatch control commands (vol, prev, next)
 func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err error) {
-	controls := h.GetControls()
 	var data ControlCommand
 	err = JsonRequestToType(w, r, &data)
 	if err != nil {
@@ -66,17 +64,17 @@ func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err err
 	log.Printf("Received control command '%s'\n", data.Command)
 	switch data.Command {
 	case "prev":
-		err = controls.Prev()
+		err = h.Prev()
 	case "next":
-		err = controls.Next()
+		err = h.Next()
 	case "stop":
-		err = controls.Stop()
+		err = h.Stop()
 	case "play":
-		err = controls.Play()
+		err = h.Play()
 	case "pause":
-		err = controls.Pause()
+		err = h.Pause()
 	case "volumeDelta":
-		err = controls.VolumeDelta(data.VolumeDelta)
+		err = h.VolumeDelta(data.VolumeDelta)
 	default:
 		log.Printf("Unknown command: %s\n", data.Command)
 		err = errors.New("Unknown command " + data.Command)
