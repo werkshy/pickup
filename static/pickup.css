@@ -35,8 +35,16 @@ ul#trackList {
 	margin: 20px 0px;
 }
 
+#trackList,
+#albumList {
+	width: 96em;
+	float: left;
+	clear: both;
+}
+
 ul#artistList li,
-ul#albumList li {
+ul#albumList li,
+ul#trackList li {
 	margin-left: 3px;
 }
 
@@ -68,6 +76,11 @@ ul li.header {
 	text-overflow: ellipsis;
 }
 
+ul#albumList li {
+	width: 23em;
+	height: 16px;
+}
+
 ul#albumList li span.album-title {
 	max-width: 20em;
 	float: left;
@@ -75,37 +88,21 @@ ul#albumList li span.album-title {
 	cursor: pointer;
 }
 
-.album-actions {
-	font-weight: bold;
-	cursor: pointer;
-	float: right;
-	margin-right: 4px;
-}
 
-#trackList,
-#albumList {
-	width: 96em;
-}
-
-#albumList li {
+ul#trackList li {
 	width: 23em;
 	height: 16px;
 }
 
-#trackList li {
-	width: 28em;
-	height: 16px;
-}
-
 ul#trackList li span.track-title {
-	width: 18em;
-	margin-left: 20px;
+	max-width: 20em;
 	float: left;
 	clear: left;
 	cursor: pointer;
-	padding: 1px;
 }
 
+
+.album-actions,
 .track-actions {
 	font-weight: bold;
 	cursor: pointer;
@@ -135,7 +132,7 @@ ul#trackList li span.track-title {
 }
 
 #albumView h2 {
-	width: 25em;
+	width: 30em;
 }
 
 #albumView h2 span {
