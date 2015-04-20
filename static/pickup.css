@@ -42,6 +42,10 @@ ul#trackList {
 	clear: both;
 }
 
+h3 {
+	clear: both;
+}
+
 ul#artistList li,
 ul#albumList li,
 ul#trackList li {
@@ -132,7 +136,7 @@ ul#trackList li span.track-title {
 }
 
 #albumView h2 {
-	width: 30em;
+	width: 20em;
 }
 
 #albumView h2 span {
