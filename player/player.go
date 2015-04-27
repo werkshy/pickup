@@ -26,9 +26,17 @@ type PlayerStatus struct {
 }
 
 type PlaylistCommand struct {
+	Command   string
+	Category  string
+	Artist    string
+	Album     string
+	Track     string
+	Immediate bool
 }
 
 type ControlCommand struct {
+	Command     string
+	VolumeDelta int
 }
 
 // In theory we could have different backends, so define an interface that will
@@ -43,20 +51,11 @@ type Player interface {
 	AddTrack(*model.Track) error
 	AddTracks([]*model.Track) error
 	Clear() error
-	DoPlaylistCommand(cmd PlaylistCommand) error
 
 	// Player control methods
-	Play() error
-	Stop() error
-	Pause() error
-	Prev() error
-	Next() error
-	VolumeDelta(volumeDelta int) error
-	//	VolumeDown() error
-	//	VolumeUp() error
-	//	GetVolume() (int, error)
 	Status() (status PlayerStatus, err error)
-	DoControlCommand(cmd ControlCommand) error
+	HandleControlCommand(cmd *ControlCommand) error
+	HandlePlaylistCommand(cmd *PlaylistCommand) error
 
 	// Cleanup
 	Close() error

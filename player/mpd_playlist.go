@@ -3,6 +3,7 @@ package player
 // Implement playlist functions for MPD backand
 
 import (
+	"errors"
 	"log"
 
 	"github.com/werkshy/pickup/model"
@@ -81,7 +82,59 @@ func (t *PlaylistTrack) cleanUp(file string) {
 	}
 }
 
-func (player *MpdPlayer) DoPlaylistCommand(PlaylistCommand) (err error) {
-	// TODO
+func (player *MpdPlayer) doPlaylistCommand(cmd *PlaylistCommand, music model.Collection) (err error) {
+	switch cmd.Command {
+	case "add":
+		err = player.doAddCommand(cmd, music)
+	case "clear":
+		err = player.Clear()
+	}
+	return err
+}
+
+func (player *MpdPlayer) doAddCommand(cmd *PlaylistCommand, music model.Collection) (err error) {
+	if cmd.Album == "" {
+		log.Printf("Don't play artists (or nulls)\n")
+		return errors.New("Playing artists is not implemented")
+	}
+
+	log.Printf("Trying to add %s/%s/%s/%s to playlist (%v)\n",
+		cmd.Category, cmd.Artist, cmd.Album, cmd.Track, cmd.Immediate)
+
+	var album *model.Album = nil
+	var track *model.Track = nil
+	if cmd.Track == "" {
+		album, err = model.GetAlbum(&music, cmd.Category, cmd.Artist,
+			cmd.Album)
+	} else {
+		track, err = model.GetTrack(&music, cmd.Category, cmd.Artist,
+			cmd.Album, cmd.Track)
+	}
+	if err != nil {
+		log.Printf("Album not found.")
+		return err
+	}
+
+	if cmd.Immediate {
+		err = player.Clear()
+		if err != nil {
+			log.Printf("Error clearing playlist")
+			return err
+		}
+	}
+
+	if track != nil {
+		err = player.AddTrack(track)
+	}
+	if album != nil {
+		err = player.AddAlbum(album)
+	}
+	if err != nil {
+		log.Printf("Error adding album or track %s/%s", cmd.Album, cmd.Track)
+		return err
+	}
+	if cmd.Immediate {
+		err = player.Play()
+	}
 	return err
 }

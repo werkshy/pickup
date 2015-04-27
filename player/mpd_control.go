@@ -3,6 +3,7 @@ package player
 // Implement control methods for MpdPlayer
 
 import (
+	"errors"
 	"log"
 	"strconv"
 )
@@ -103,7 +104,24 @@ func (player *MpdPlayer) Status() (status PlayerStatus, err error) {
 	return status, err
 }
 
-func (player *MpdPlayer) DoControlCommand(cmd ControlCommand) (err error) {
-	// TODO
+func (player *MpdPlayer) doControlCommand(cmd *ControlCommand) (err error) {
+
+	switch cmd.Command {
+	case "prev":
+		err = player.Prev()
+	case "next":
+		err = player.Next()
+	case "stop":
+		err = player.Stop()
+	case "play":
+		err = player.Play()
+	case "pause":
+		err = player.Pause()
+	case "volumeDelta":
+		err = player.VolumeDelta(cmd.VolumeDelta)
+	default:
+		log.Printf("Unknown command: %s\n", cmd.Command)
+		err = errors.New("Unknown command " + cmd.Command)
+	}
 	return nil
 }

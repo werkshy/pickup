@@ -2,13 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
-	//"io/ioutil"
-	//"strings"
-	//"time"
 
 	"github.com/werkshy/pickup/player"
 )
@@ -47,37 +43,15 @@ func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 	return err
 }
 
-type ControlCommand struct {
-	Command     string
-	VolumeDelta int
-}
-
 // dispatch control commands (vol, prev, next)
 func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err error) {
-	var data ControlCommand
-	err = JsonRequestToType(w, r, &data)
+	var cmd player.ControlCommand
+	err = JsonRequestToType(w, r, &cmd)
 	if err != nil {
 		return err
 	}
+	log.Printf("Received control command '%s'\n", cmd.Command)
+	err = h.HandleControlCommand(&cmd)
 
-	// TODO move this into Player
-	log.Printf("Received control command '%s'\n", data.Command)
-	switch data.Command {
-	case "prev":
-		err = h.Prev()
-	case "next":
-		err = h.Next()
-	case "stop":
-		err = h.Stop()
-	case "play":
-		err = h.Play()
-	case "pause":
-		err = h.Pause()
-	case "volumeDelta":
-		err = h.VolumeDelta(data.VolumeDelta)
-	default:
-		log.Printf("Unknown command: %s\n", data.Command)
-		err = errors.New("Unknown command " + data.Command)
-	}
 	return err
 }

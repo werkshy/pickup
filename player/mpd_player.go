@@ -78,12 +78,12 @@ func (player *MpdPlayer) begin() {
 		case player.collectionChannel <- &music:
 			continue
 		case controlCommand := <-player.controlChannel:
-			log.Printf("Received control command %v\n", controlCommand)
-			// TODO
+			log.Printf("Received control command from channel: %v\n", controlCommand)
+			player.doControlCommand(controlCommand)
 			continue
 		case playlistCommand := <-player.playlistChannel:
-			log.Printf("Received playlist command %v\n", playlistCommand)
-			// TODO
+			log.Printf("Received playlist command from channel: %v\n", playlistCommand)
+			player.doPlaylistCommand(playlistCommand, music)
 			continue
 		case newMusic := <-bkgCollectionChannel:
 			log.Printf("PLAYER GOROUTINE: UPDATE COMPLETE\n")
@@ -102,6 +102,16 @@ func (player *MpdPlayer) begin() {
 // these can all be defined on Player
 func (player *MpdPlayer) GetCollection() (collection *model.Collection, err error) {
 	return <-player.collectionChannel, nil
+}
+
+func (player *MpdPlayer) HandleControlCommand(cmd *ControlCommand) (err error) {
+	player.controlChannel <- cmd
+	return err
+}
+
+func (player *MpdPlayer) HandlePlaylistCommand(cmd *PlaylistCommand) (err error) {
+	player.playlistChannel <- cmd
+	return err
 }
 
 func backgroundRefresh(bkgCollectionChannel chan model.Collection, player *MpdPlayer) {
