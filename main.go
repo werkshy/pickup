@@ -41,11 +41,11 @@ func main() {
 }
 
 func serve(conf *config.Config, plyr player.Player) {
-	categoryHandler := handlers.CategoryHandler{plyr}
-	albumHandler := handlers.AlbumHandler{plyr}
-	artistHandler := handlers.ArtistHandler{plyr}
-	playlistHandler := handlers.PlaylistHandler{plyr}
-	controlHandler := handlers.ControlHandler{plyr}
+	categoryHandler := handlers.CategoryHandler{Player: plyr}
+	albumHandler := handlers.AlbumHandler{Player: plyr}
+	artistHandler := handlers.ArtistHandler{Player: plyr}
+	playlistHandler := handlers.PlaylistHandler{Player: plyr}
+	controlHandler := handlers.ControlHandler{Player: plyr}
 
 	http.Handle("/categories/", categoryHandler)
 	http.Handle("/albums/", albumHandler)
