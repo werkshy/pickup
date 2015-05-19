@@ -51,6 +51,16 @@ Now copy the whole pickup directory to your pi and run
 
     ./pickup
 
+Install As A Service
+--------------------
+
+Copy init.d/pickup to /etc/init.d
+
+Edit the script and set these vars to suit your setup. I'm lazy and just run as
+my main user, definitely don't do this on the internet!
+
+	SCRIPT=/home/oneill/pickup/pickup
+	RUNAS=oneill
 
 Background
 -----------
