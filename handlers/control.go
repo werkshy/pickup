@@ -2,13 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
-	//"io/ioutil"
-	//"strings"
-	//"time"
 
 	"github.com/werkshy/pickup/player"
 )
@@ -38,8 +34,7 @@ func (h ControlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 
 	// get the status
-	controls := h.GetControls()
-	status, err := controls.Status()
+	status, err := h.Status()
 	if err != nil {
 		return err
 	}
@@ -48,38 +43,15 @@ func (h ControlHandler) currentStatus(w http.ResponseWriter) (err error) {
 	return err
 }
 
-type ControlCommand struct {
-	Command     string
-	VolumeDelta int
-}
-
 // dispatch control commands (vol, prev, next)
 func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err error) {
-	controls := h.GetControls()
-	var data ControlCommand
-	err = JsonRequestToType(w, r, &data)
+	var cmd player.ControlCommand
+	err = JsonRequestToType(w, r, &cmd)
 	if err != nil {
 		return err
 	}
+	log.Printf("Received control command '%s'\n", cmd.Command)
+	err = h.HandleControlCommand(&cmd)
 
-	// TODO move this into Player
-	log.Printf("Received control command '%s'\n", data.Command)
-	switch data.Command {
-	case "prev":
-		err = controls.Prev()
-	case "next":
-		err = controls.Next()
-	case "stop":
-		err = controls.Stop()
-	case "play":
-		err = controls.Play()
-	case "pause":
-		err = controls.Pause()
-	case "volumeDelta":
-		err = controls.VolumeDelta(data.VolumeDelta)
-	default:
-		log.Printf("Unknown command: %s\n", data.Command)
-		err = errors.New("Unknown command " + data.Command)
-	}
 	return err
 }

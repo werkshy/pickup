@@ -12,7 +12,7 @@ func (c *Collection) GetSummary() []CategorySummary {
 	return summaries
 }
 
-func (c *Collection) addCategory(category *Category) {
+func (c *Collection) AddCategory(category *Category) {
 	c.Categories = append(c.Categories, category)
 }
 

@@ -59,7 +59,11 @@ func (h ArtistHandler) listAllArtists(w http.ResponseWriter) {
 }
 
 func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
-	music := h.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		writeError(w, http.StatusNotFound, "Problem with mpd")
+	}
 	matches := model.SearchArtists(music, query)
 	log.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {
@@ -71,7 +75,11 @@ func (h ArtistHandler) searchArtists(w http.ResponseWriter, query string) {
 }
 
 func (h ArtistHandler) showArtist(w http.ResponseWriter, query string) {
-	music := h.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		writeError(w, http.StatusNotFound, "Problem with mpd")
+	}
 	matches := model.SearchArtists(music, query)
 	fmt.Printf("Found %d artist results:\n", len(matches))
 	for _, item := range matches {

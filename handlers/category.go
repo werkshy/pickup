@@ -18,7 +18,11 @@ type CategoryHandler struct {
 //func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h CategoryHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	music := h.GetMusic()
+	music, err := h.GetCollection()
+	if err != nil {
+		log.Printf("Failed to connect to mpd")
+		writeError(w, http.StatusNotFound, "Problem with mpd")
+	}
 
 	// Convert to Summary to save on data passing etc
 	summary := music.GetSummary()

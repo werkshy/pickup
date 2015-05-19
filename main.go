@@ -31,18 +31,21 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to initialize mpd player", err)
 	}
-	music := plyr.GetMusic()
+	music, err := plyr.GetCollection()
+	if err != nil {
+		log.Fatalln("Failed to retrieve collection", err)
+	}
 	log.Printf("Player with %d categories initialized in %v\n", len(music.Categories), time.Since(t0))
 
 	serve(&conf, &plyr)
 }
 
 func serve(conf *config.Config, plyr player.Player) {
-	categoryHandler := handlers.CategoryHandler{plyr}
-	albumHandler := handlers.AlbumHandler{plyr}
-	artistHandler := handlers.ArtistHandler{plyr}
-	playlistHandler := handlers.PlaylistHandler{plyr}
-	controlHandler := handlers.ControlHandler{plyr}
+	categoryHandler := handlers.CategoryHandler{Player: plyr}
+	albumHandler := handlers.AlbumHandler{Player: plyr}
+	artistHandler := handlers.ArtistHandler{Player: plyr}
+	playlistHandler := handlers.PlaylistHandler{Player: plyr}
+	controlHandler := handlers.ControlHandler{Player: plyr}
 
 	http.Handle("/categories/", categoryHandler)
 	http.Handle("/albums/", albumHandler)
