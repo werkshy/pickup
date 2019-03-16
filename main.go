@@ -60,7 +60,16 @@ func serve(conf *config.Config, plyr player.Player) {
 	// static dir.
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.Dir(staticDir))))
+
+	reactDir, _ := os.Getwd()
+	reactDir = reactDir + "/react/dist"
+	log.Printf("Serving react files from %s\n", reactDir)
+	// strip '/react-static' from the url to get the name of the file within the
+	// static dir.
+	http.Handle("/react-static/", http.StripPrefix("/react-static/",
+		http.FileServer(http.Dir(reactDir))))
 	http.HandleFunc("/", handlers.Index)
+	http.HandleFunc("/react", handlers.ReactIndex)
 	var bind = fmt.Sprintf(":%d", *conf.Port)
 	log.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
