@@ -1,0 +1,6 @@
+github.com/fhs/gompd v2.0.0+incompatible h1:pv5XKTatya1k3r1woaWLwFQiF0BfAsgWSe5ev2XZ0UM=
+github.com/fhs/gompd v2.0.0+incompatible/go.mod h1:UVZXd9wmFBH5tIXLYeI+CGUIt15ZvtGQvVO6SDHy1os=
+github.com/werkshy/gompd v0.0.0-20130409015631-a141a250496a h1:J+WLLnlXl2FQa9PdaA/e77E/s4+Lf2KdwTAU11uhGbE=
+github.com/werkshy/gompd v0.0.0-20130409015631-a141a250496a/go.mod h1:5E1uhEmb7m11FE+QP00Lri5zgf5qAUX7xTqyFM9M/Ns=
+launchpad.net/gnuflag v0.0.0-20150127164241-000000000014 h1:pBh3NXZ2Hn1LU7FzGz/hWpdJri/xHbKfSLLRzST3B/w=
+launchpad.net/gnuflag v0.0.0-20150127164241-000000000014/go.mod h1:A9x6d9FRgZ+DAO8P+z8pEEJFoiCZisHAQHYFgLN7+ag=
