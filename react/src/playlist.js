@@ -3,24 +3,45 @@ import React, { Component } from 'react';
 
 class PlaylistTrack extends Component {
   render() {
-    return <li key={this.props.name}>{this.props.name}</li>;
+		let posInt = Math.trunc(this.props.track.Pos) + 1;
+    return <li>{posInt} - {this.props.track.Artist} - {this.props.name}</li>;
   }
 }
 
 class Playlist extends Component {
   constructor(props) {
     super(props);
-    this.state = {isVisible: false};
+    this.state = {isVisible: false, tracks: []};
 
     // This binding is necessary to make `this` work in the callback
     this.toggleVisibility = this.toggleVisibility.bind(this);
   }
 
+	componentDidMount() {
+		this.timerID = setInterval(
+			() => this.updateTracks(),
+			2000
+		);
+
+	}
+
+	componentWillUnmount() {
+		clearInterval(this.timerID);
+	}
+
+  updateTracks() {
+		fetch('/api/playlist/')
+          .then(response => response.json())
+          .then(data => {
+					  console.log(data)
+						this.setState({ tracks: data })
+					});
+	}
+
   toggleVisibility() {
     this.setState(state => ({
       isVisible: !state.isVisible
     }));
-    console.log("Toggled playlist visibility: " + this.state.isVisible)
   }
 
   render() {
@@ -31,8 +52,8 @@ class Playlist extends Component {
           <div id="playlist">
             <ul id="playlist-tracks">
             <>
-            { this.props.tracks.map(track => (
-              <PlaylistTrack name={track} />
+            { this.state.tracks.map(track => (
+              <PlaylistTrack key={track.Pos} name={track.Name} track={track}/>
             ))}
             </>
             </ul>
