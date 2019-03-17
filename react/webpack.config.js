@@ -37,7 +37,7 @@ module.exports = {
     contentBase: './dist',
     hot: true,
 		proxy: {
-			'/': {
+			'/api': {
 				target: 'http://localhost:8080',
 				secure: false
 			}

@@ -53,6 +53,14 @@ func serve(conf *config.Config, plyr player.Player) {
 	http.Handle("/playlist/", playlistHandler)
 	http.Handle("/control/", controlHandler)
 
+	// Repeat the above handlers for the React URLs, which are nested under '/api' to allow for proxying
+	// through webpack-dev-server
+	http.Handle("/api/categories/", categoryHandler)
+	http.Handle("/api/albums/", albumHandler)
+	http.Handle("/api/artists/", artistHandler)
+	http.Handle("/api/playlist/", playlistHandler)
+	http.Handle("/api/control/", controlHandler)
+
 	staticDir, _ := os.Getwd()
 	staticDir = staticDir + "/static"
 	log.Printf("Serving static files from %s\n", staticDir)
