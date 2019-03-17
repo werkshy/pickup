@@ -116,7 +116,7 @@ ul#trackList li span.track-title {
 
 .track-actions.play,
 .album-actions.play {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -560px -100px;
 	width: 14px;
 	height: 16px;
@@ -124,7 +124,7 @@ ul#trackList li span.track-title {
 
 .track-actions.add,
 .album-actions.add {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -200px -100px;
 	width: 14px;
 	height: 16px;
@@ -181,37 +181,37 @@ ul#trackList li span.track-title {
 }
 
 #controls #play {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -557px -100px;
 }
 
 #controls #stop {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -581px -100px;
 }
 
 #controls #pause {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -535px -100px;
 }
 
 #controls #prev-track {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -54px -123px;
 }
 
 #controls #next-track {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -78px -123px;
 }
 
 #controls #vol-down {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -460px -4px;
 }
 
 #controls #vol-up {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -437px -4px;
 	width: 16px;
 }
@@ -252,7 +252,7 @@ ul#trackList li span.track-title {
 
 /* Arrow by default implies up arrow */
 #playlist-wrapper .arrow {
-	background-image: url("/static/images/tango-feet-small.png");
+	background-image: url("/assets/tango-feet-small.png");
 	background-position: -510px -76px;
 	width: 16px;
 	height: 16px;
