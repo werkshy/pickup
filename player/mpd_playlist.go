@@ -13,6 +13,7 @@ import (
  * Implement playlist interface via mpd
  */
 func (player MpdPlayer) List() (results []PlaylistTrack, err error) {
+	results = []PlaylistTrack{} // initialize to empty array otherwise it gets marshalled to null.
 	info, err := player.conn.PlaylistInfo(-1, -1)
 	if err != nil {
 		log.Printf("Failed to get playlist info from mpd\n")
