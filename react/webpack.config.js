@@ -1,11 +1,17 @@
 const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+const CopyPlugin = require('copy-webpack-plugin');
+
+
 
 const htmlPlugin = new HtmlWebPackPlugin({
   template: "./src/index.html",
   filename: "./index.html"
 });
 
+const copyPlugin = new CopyPlugin([
+        { from: 'src/assets', to: 'assets' },
+]);
 
 const hotLoader = new webpack.HotModuleReplacementPlugin();
 
@@ -29,7 +35,7 @@ module.exports = {
   resolve: {
     extensions: ['*', '.js', '.jsx']
   },
-  plugins: [htmlPlugin, hotLoader],
+  plugins: [htmlPlugin, hotLoader, copyPlugin],
   output: {
     publicPath: "/react-static"
   },
