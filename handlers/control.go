@@ -52,6 +52,16 @@ func (h ControlHandler) command(w http.ResponseWriter, r *http.Request) (err err
 	}
 	log.Printf("Received control command '%s'\n", cmd.Command)
 	err = h.HandleControlCommand(&cmd)
+	if err != nil {
+		return err
+	}
+
+	status, err := h.Status()
+	if err != nil {
+		return err
+	}
+	j, _ := json.Marshal(status)
+	w.Write(j)
 
 	return err
 }

@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import Playlist from './playlist';
+import Controls from './controls';
 
 import './styles/app.css';
 
@@ -45,10 +46,11 @@ class Clock extends React.Component {
 
 function init() {
   const element = (
-    <div>
+    <>
+      <Controls />
 			<Clock />
       <Playlist />
-    </div>
+    </>
   );
   ReactDOM.render(element, document.getElementById('index'));
 }
