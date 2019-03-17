@@ -288,8 +288,12 @@ ul#trackList li span.track-title {
 	margin-left: 5px;
 }
 
-#playlist span.track-title {
+#playlist span.track-number {
 	clear: left;
+	width: 2em;
+}
+
+#playlist span.track-title {
 	width: 15em;
 }
 
