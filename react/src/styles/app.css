@@ -5,6 +5,16 @@ body {
 	color: #eeeeee;
 }
 
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration:none;
+	cursor:pointer;
+}
+
 div.multicolumn ul {
 	-moz-column-count: 4;
 	-moz-column-gap: 20px;

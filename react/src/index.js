@@ -2,10 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Route, Link, BrowserRouter as Router, Switch, Redirect } from 'react-router-dom'
 
-import Playlist from './playlist';
-import Controls from './controls';
-import Category from './category';
-import Clock from './clock'; // FIXME dummy component for dev only
+import Playlist from './playlist'
+import Controls from './controls'
+import Category from './category'
+import Artist from './artist'
+import Clock from './clock'         // FIXME dummy component for dev only
 import NotFound from './notfound';
 
 import './styles/app.css';
@@ -31,7 +32,8 @@ function init() {
       {nav}
       <Switch>
         <Route exact path="/" component={RedirectToDefault} />
-        <Route path="/category/:name" component={Category} />
+        <Route path="/category/:category" component={Category} />
+        <Route path="/artist/:category/:artist" component={Artist} />
         <Route path="/clock" component={Clock} />
         <Route component={NotFound} />
       </Switch>
