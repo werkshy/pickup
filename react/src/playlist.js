@@ -4,7 +4,14 @@ import React, { Component } from 'react';
 class PlaylistTrack extends Component {
   render() {
 		let posInt = Math.trunc(this.props.track.Pos) + 1;
-    return <li>{posInt} - {this.props.track.Artist} - {this.props.name}</li>;
+    return (
+      <li>
+        <span className="track-number">{ posInt}</span>
+        <span className="track-title abbreviated">{this.props.track.Name}</span> 
+        <span className="track-artist abbreviated">{this.props.track.Artist}</span>
+        <span className="track-album abbreviated">{this.props.track.Album}</span>
+      </li>
+    );
   }
 }
 
@@ -33,7 +40,6 @@ class Playlist extends Component {
 		fetch('/api/playlist/')
           .then(response => response.json())
           .then(data => {
-					  console.log(data)
 						this.setState({ tracks: data })
 					});
 	}
@@ -47,13 +53,16 @@ class Playlist extends Component {
   render() {
     return (
       <div id="playlist-wrapper" className={ this.state.isVisible ? 'open' : 'none'} >
-        <div className="top" onClick={this.toggleVisibility}>Playlist</div>
+        <div className="top" onClick={this.toggleVisibility}>
+          <span>Playlist</span>
+          <div className="arrow up-arrow"></div>
+        </div>
         <div id="playlist-slider" style={{display: this.state.isVisible ? 'block' : 'none' }} >
           <div id="playlist">
             <ul id="playlist-tracks">
             <>
             { this.state.tracks.map(track => (
-              <PlaylistTrack key={track.Pos} name={track.Name} track={track}/>
+              <PlaylistTrack key={track.Pos} track={track}/>
             ))}
             </>
             </ul>
