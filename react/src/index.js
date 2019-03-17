@@ -1,58 +1,44 @@
-console.log("hello world!");
-
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { Route, Link, BrowserRouter as Router, Switch, Redirect } from 'react-router-dom'
 
 import Playlist from './playlist';
 import Controls from './controls';
+import Category from './category';
+import Clock from './clock'; // FIXME dummy component for dev only
+import NotFound from './notfound';
 
 import './styles/app.css';
 
-const tracks = ["track 1", "track 2"];
-
-class Clock extends React.Component {
-	constructor(props) {
-		super(props);
-		this.state = {date: new Date()};
-	}
-
-	componentDidMount() {
-		this.timerID = setInterval(
-			() => this.tick(),
-			1000
-		);
-
-	}
-
-	componentWillUnmount() {
-		clearInterval(this.timerID);
-	}
-
-	tick() {
-		this.setState({
-			date: new Date()
-		});
-	}
-
+class RedirectToDefault extends React.Component {
 	render() {
-		return (
-			<div>
-			<h1>Hello, world!</h1>
-			<h2>It is {this.state.date.toLocaleTimeString()}.</h2>
-			</div>
-		);
+		return <Redirect to='/category/Music' />
 	}
 }
 
 function init() {
-  const element = (
-    <>
+	const nav = (
+		<ul>
+			<li><Link to="/category/Music">Home</Link></li>
+			<li><Link to="/category/_Metal">Metal</Link></li>
+			<li><Link to="/clock">Clock</Link></li>
+		</ul>
+	)
+
+  const routing = (
+    <Router>
       <Controls />
-			<Clock />
+      {nav}
+      <Switch>
+        <Route exact path="/" component={RedirectToDefault} />
+        <Route path="/category/:name" component={Category} />
+        <Route path="/clock" component={Clock} />
+        <Route component={NotFound} />
+      </Switch>
       <Playlist />
-    </>
+    </Router>
   );
-  ReactDOM.render(element, document.getElementById('index'));
+  ReactDOM.render(routing, document.getElementById('index'));
 }
 
 init()
