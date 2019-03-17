@@ -5,6 +5,7 @@ import { Route, Link, BrowserRouter as Router, Switch, Redirect } from 'react-ro
 import Playlist from './playlist'
 import Controls from './controls'
 import Category from './category'
+import CategoryList from './category_list'
 import Artist from './artist'
 import Clock from './clock'         // FIXME dummy component for dev only
 import NotFound from './notfound';
@@ -29,7 +30,7 @@ function init() {
   const routing = (
     <Router>
       <Controls />
-      {nav}
+      <CategoryList />
       <Switch>
         <Route exact path="/" component={RedirectToDefault} />
         <Route path="/category/:category" component={Category} />
