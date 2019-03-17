@@ -1,11 +1,13 @@
 import React, { Component } from 'react';
+import { Link } from 'react-router-dom'
 
 class CategoryArtist extends Component {
   render() {
+    let target = "/artist/" + this.props.category + "/" + this.props.artist.Name
     return (
       <li>
-        <span className="artist-title" data-artist="{this.props.artist.Name}}" data-category="">
-        {this.props.artist.Name}
+        <span className="artist-title" data-artist="{this.props.artist.Name}" data-category="">
+        <Link to={target}>{this.props.artist.Name}</Link>
         </span>
       </li>
     )
@@ -28,7 +30,6 @@ class Category extends Component {
   constructor(props) {
     super(props);
     console.log(props);
-    this.name = this.props.match.params.name;
     this.state = {Artists: [], AlbumNames: []}
   }
 
@@ -41,26 +42,30 @@ class Category extends Component {
 	}
 
 	componentDidUpdate(prevProps) {
-		let oldName = prevProps.match.params.name;
-		let newName = this.props.match.params.name;
-		if (newName !== oldName) {
+		let oldCategory = prevProps.match.params.category;
+		let newCategory = this.props.match.params.category;
+		if (newCategory !== oldCategory) {
 			this.getData()
 		}
-		this.name = this.props.match.params.name;
 	}
+
+  category() {
+    return this.props.match.params.category
+  }
 
 	// FIXME: make an endpoint that returns just one category
   getData() {
 		fetch('/api/categories/')
           .then(response => response.json())
           .then(data => {
-            let category = data.find(category => category.Name === this.name)
+            let category = data.find(category => category.Name === this.category())
 					  console.log("category", category)
 						this.setState(category)
 					});
 	}
 
   render() {
+    // Handle category albums without an artist:
     let albums;
     if (this.state.AlbumNames.length) {
       albums = (
@@ -83,7 +88,7 @@ class Category extends Component {
         <h3>Artists</h3>
         <ul id="artistList">
               { this.state.Artists.map(artist => (
-                <CategoryArtist artist={artist} key={artist.Name}/>
+                <CategoryArtist category={this.category()} artist={artist} key={artist.Name}/>
               ))}
         </ul>
       </div>
