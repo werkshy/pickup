@@ -19,7 +19,12 @@ type AlbumHandler struct {
 // Return a list of albums or a specific album
 func (h AlbumHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	path := r.URL.Path[len("/albums/"):]
+	var path string
+	if strings.HasPrefix(r.URL.Path, "/api/albums") {
+		path = r.URL.Path[len("/api/albums/"):]
+	} else {
+		path = r.URL.Path[len("/albums/"):]
+	}
 	parts := strings.SplitN(path, "/", 3)
 	log.Printf("Path: %s  parts: %q   len(parts): %d\n", r.URL.Path, parts,
 		len(parts))

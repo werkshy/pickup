@@ -7,6 +7,7 @@ import Controls from './controls'
 import Category from './category'
 import CategoryList from './category_list'
 import Artist from './artist'
+import Album from './album'
 import Clock from './clock'         // FIXME dummy component for dev only
 import NotFound from './notfound';
 
@@ -35,6 +36,7 @@ function init() {
         <Route exact path="/" component={RedirectToDefault} />
         <Route path="/category/:category" component={Category} />
         <Route path="/artist/:category/:artist" component={Artist} />
+        <Route path="/album/:category/:artist/:album" component={Album} />
         <Route path="/clock" component={Clock} />
         <Route component={NotFound} />
       </Switch>
