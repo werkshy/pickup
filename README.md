@@ -21,12 +21,9 @@ bit soon now that it is functional.
 Getting Started In Ubuntu
 -------------------------
 
-    apt-get install golang-go
-    mkdir $HOME/go
-    export GOPATH=$HOME/go
-    go get github.com/werkshy/pickup
+    # Requires go > v1.12, which is best installed via `snap`.
+    sudo snap install --classic go
 
-    cd $HOME/go/src/github.com/werkshy/pickup
     go build
     ./pickup --help
     ./pickup
@@ -34,17 +31,9 @@ Getting Started In Ubuntu
 Getting Started Cross-Compiling for Raspberry Pi
 ------------------------------------------------
 
-In ubuntu, you need to build go yourself to cross-compile.
-Using [these instructions](http://golang.org/doc/install/source) download the
-source, run `./all.bash` to get your native toolchain.
+Assuming you installed go as a snap, you should be able to cross-compile for
+the Pi like this:
 
-Next run this to build the ARM toolchain for the pi:
-
-    GOOS=linux GOARCH=arm GOARM=5 ./all.bash
-
-Now you can cross compile pickup for the pi
-
-    cd ~/go/src/github.com/werkshy/pickup
     GOOS=linux GOARCH=arm GOARM=5 go build
 
 Now copy the whole pickup directory to your pi and run
