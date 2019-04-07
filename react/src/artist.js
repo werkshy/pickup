@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import { Link } from "react-router-dom";
 
 import { playAlbum } from "./actions";
 
@@ -19,9 +20,18 @@ class ArtistAlbum extends Component {
   }
 
   render() {
+    let target =
+      "/album/" +
+      this.props.category +
+      "/" +
+      this.props.artist +
+      "/" +
+      this.props.name;
     return (
       <li id={this.props.name}>
-        <span className="album-title abbreviated">{this.props.name}</span>
+        <span className="album-title abbreviated">
+          <Link to={target}>{this.props.name}</Link>
+        </span>
         <div
           className="album-actions add"
           title="Add {this.props.name}"
