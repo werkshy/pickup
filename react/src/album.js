@@ -135,9 +135,6 @@ class Album extends Component {
       <div id="albumView" className="singlecolumn">
         <h2 className="artist-name">
           {this.artist()} - {this.album()}
-        </h2>
-        <h2>
-          <span>{this.album()}</span>
           <span className="album-actions add" onClick={this.add} />
           <span className="album-actions play" onClick={this.play} />
         </h2>
