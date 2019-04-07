@@ -93,4 +93,4 @@ See [Pickup on Trello](https://trello.com/board/pickup/515a58746cbd4fd847001505)
 
 Screenshot
 ----------
-![Screenshot](http://images.ultrahigh.org/pickup_20130405.png)
+![Screenshot](./screenshot.png)
