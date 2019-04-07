@@ -1,6 +1,7 @@
 const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require('copy-webpack-plugin');
+const PrettierPlugin = require("prettier-webpack-plugin");
 
 
 
@@ -14,6 +15,8 @@ const copyPlugin = new CopyPlugin([
 ]);
 
 const hotLoader = new webpack.HotModuleReplacementPlugin();
+
+const prettierPlugin = new PrettierPlugin()
 
 module.exports = {
   module: {
@@ -35,7 +38,7 @@ module.exports = {
   resolve: {
     extensions: ['*', '.js', '.jsx']
   },
-  plugins: [htmlPlugin, hotLoader, copyPlugin],
+  plugins: [htmlPlugin, hotLoader, copyPlugin, prettierPlugin],
   output: {
     publicPath: "/react-static"
   },
