@@ -91,8 +91,7 @@ Design Requirements
 Design Approach
 -----------------
 
-- The Go implementation is a simple backend serving JSON to a javascript
-  frontend, (single-page app in Backbone.js.)
+- The Go implementation is a simple backend serving JSON to a React frontend.
 - The frontend loads the entire music collection up front. This takes less than
   a second and makes navigating around the collection extremely fast.
 
@@ -105,4 +104,4 @@ See [Pickup on Trello](https://trello.com/board/pickup/515a58746cbd4fd847001505)
 
 Screenshot
 ----------
-[Screenshot](http://images.ultrahigh.org/pickup_20130405.png)
+![Screenshot](http://images.ultrahigh.org/pickup_20130405.png)
