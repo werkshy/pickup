@@ -14,7 +14,6 @@ import Category from "./category";
 import CategoryList from "./category_list";
 import Artist from "./artist";
 import Album from "./album";
-import Clock from "./clock"; // FIXME dummy component for dev only
 import NotFound from "./notfound";
 
 import "./styles/app.css";
@@ -26,20 +25,6 @@ class RedirectToDefault extends React.Component {
 }
 
 function init() {
-  const nav = (
-    <ul>
-      <li>
-        <Link to="/category/Music">Home</Link>
-      </li>
-      <li>
-        <Link to="/category/_Metal">Metal</Link>
-      </li>
-      <li>
-        <Link to="/clock">Clock</Link>
-      </li>
-    </ul>
-  );
-
   const routing = (
     <Router>
       <Controls />
@@ -49,7 +34,6 @@ function init() {
         <Route path="/category/:category" component={Category} />
         <Route path="/artist/:category/:artist" component={Artist} />
         <Route path="/album/:category/:artist/:album" component={Album} />
-        <Route path="/clock" component={Clock} />
         <Route component={NotFound} />
       </Switch>
       <Playlist />
