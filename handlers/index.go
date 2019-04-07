@@ -9,13 +9,6 @@ import (
 
 func Index(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	index, _ := ioutil.ReadFile("static/index.html")
-	w.Write(index)
-	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
-}
-
-func ReactIndex(w http.ResponseWriter, r *http.Request) {
-	t0 := time.Now()
 	index, _ := ioutil.ReadFile("react/dist/index.html")
 	w.Write(index)
 	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))

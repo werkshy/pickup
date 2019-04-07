@@ -61,23 +61,21 @@ func serve(conf *config.Config, plyr player.Player) {
 	http.Handle("/api/playlist/", playlistHandler)
 	http.Handle("/api/control/", controlHandler)
 
-	staticDir, _ := os.Getwd()
-	staticDir = staticDir + "/static"
-	log.Printf("Serving static files from %s\n", staticDir)
-	// strip '/static' from the url to get the name of the file within the
-	// static dir.
-	http.Handle("/static/", http.StripPrefix("/static/",
-		http.FileServer(http.Dir(staticDir))))
+	// Serve static assets from at path /assets/ from dir react/dist/assets
+	assetsDir, _ := os.Getwd()
+	assetsDir = assetsDir + "/react/dist/assets"
+	// strip '/static' from the url to get the name of the file within the static dir.
+	http.Handle("/assets/", http.StripPrefix("/assets/",
+		http.FileServer(http.Dir(assetsDir))))
 
+	// Serve webpack-built js files at path /react-static
 	reactDir, _ := os.Getwd()
 	reactDir = reactDir + "/react/dist"
-	log.Printf("Serving react files from %s\n", reactDir)
-	// strip '/react-static' from the url to get the name of the file within the
-	// static dir.
+	// strip '/react-static' from the url to get the name of the file within the static dir.
 	http.Handle("/react-static/", http.StripPrefix("/react-static/",
 		http.FileServer(http.Dir(reactDir))))
+
 	http.HandleFunc("/", handlers.Index)
-	http.HandleFunc("/react", handlers.ReactIndex)
 	var bind = fmt.Sprintf(":%d", *conf.Port)
 	log.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
