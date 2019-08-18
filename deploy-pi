@@ -2,6 +2,12 @@
 
 set -e
 
+DEST="nes:pickup/"
+
 GOOS=linux GOARCH=arm GOARM=5 go build
 
-rsync -av --exclude=.git --delete-excluded ./ pi:pickup/
+rsync -av \
+	--exclude=.git \
+	--exclude=react/node_modules \
+	--delete-excluded \
+	./ "$DEST"
