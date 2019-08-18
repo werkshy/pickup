@@ -7,9 +7,12 @@ pickup: main.go $(GO_FILES)
 	go build
 
 react:
-	cd react && npm run build
+	cd react && yarn build
 
-.PHONY: react clean
+deps:
+	cd react && yarn install
+
+.PHONY: react clean deps
 clean:
 	rm -rf react/dist
 	go clean
