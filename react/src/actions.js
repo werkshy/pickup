@@ -5,15 +5,15 @@ export function playAlbum(category, artist, album, immediate) {
     Category: category,
     Artist: artist,
     Album: album,
-    Immediate: immediate
+    Immediate: immediate,
   };
   fetch("/api/playlist/", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(data)
-  }).then(response => {
+    body: JSON.stringify(data),
+  }).then((response) => {
     console.log("Play success", response.status);
   });
 }
@@ -26,15 +26,15 @@ export function playTrack(category, artist, album, track, immediate) {
     Artist: artist,
     Album: album,
     Track: track,
-    Immediate: immediate
+    Immediate: immediate,
   };
   fetch("/api/playlist/", {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(data)
-  }).then(response => {
+    body: JSON.stringify(data),
+  }).then((response) => {
     console.log("Play success", response.status);
   });
 }

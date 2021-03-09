@@ -59,7 +59,7 @@ class Album extends Component {
       category: this.category(),
       artist: this.artist(),
       album: this.album(),
-      Tracks: []
+      Tracks: [],
     };
 
     this.add = this.add.bind(this);
@@ -114,8 +114,8 @@ class Album extends Component {
       "/" +
       this.album();
     fetch(url)
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         console.log("album data", data);
         this.setState(data);
       });
@@ -139,7 +139,7 @@ class Album extends Component {
           <span className="album-actions play" onClick={this.play} />
         </h2>
         <ul id="trackList">
-          {this.state.Tracks.map(track => (
+          {this.state.Tracks.map((track) => (
             <AlbumTrack
               key={track}
               category={this.category()}

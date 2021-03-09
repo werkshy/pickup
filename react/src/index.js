@@ -5,7 +5,7 @@ import {
   Link,
   BrowserRouter as Router,
   Switch,
-  Redirect
+  Redirect,
 } from "react-router-dom";
 
 import Playlist from "./playlist";
