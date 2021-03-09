@@ -30,9 +30,9 @@ class CategoryList extends Component {
   // FIXME: use global state for this
   getData() {
     fetch("/api/categories/")
-      .then(response => response.json())
-      .then(data => {
-        let categories = data.map(category => category.Name);
+      .then((response) => response.json())
+      .then((data) => {
+        let categories = data.map((category) => category.Name);
         this.setState({ categories: categories });
       });
   }
@@ -41,7 +41,7 @@ class CategoryList extends Component {
     return (
       <ul className="categories">
         <li className="header">Categories:</li>
-        {this.state.categories.map(category => (
+        {this.state.categories.map((category) => (
           <Category category={category} key={category} />
         ))}
       </ul>

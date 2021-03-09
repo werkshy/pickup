@@ -37,15 +37,15 @@ class Playlist extends Component {
 
   updateTracks() {
     fetch("/api/playlist/")
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         this.setState({ tracks: data });
       });
   }
 
   toggleVisibility() {
-    this.setState(state => ({
-      isVisible: !state.isVisible
+    this.setState((state) => ({
+      isVisible: !state.isVisible,
     }));
   }
 
@@ -66,7 +66,7 @@ class Playlist extends Component {
           <div id="playlist">
             <ul id="playlist-tracks">
               <>
-                {this.state.tracks.map(track => (
+                {this.state.tracks.map((track) => (
                   <PlaylistTrack key={track.Pos} track={track} />
                 ))}
               </>

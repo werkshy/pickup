@@ -82,11 +82,13 @@ class Artist extends Component {
   // or, perhaps we could assign a unique id to each artist, album and maybe even track
   getData() {
     fetch("/api/categories/")
-      .then(response => response.json())
-      .then(data => {
-        let category = data.find(category => category.Name === this.category());
+      .then((response) => response.json())
+      .then((data) => {
+        let category = data.find(
+          (category) => category.Name === this.category()
+        );
         let artist = category.Artists.find(
-          artist => artist.Name === this.artist()
+          (artist) => artist.Name === this.artist()
         );
         console.log("artist", artist);
         this.setState(artist);
@@ -99,7 +101,7 @@ class Artist extends Component {
       <div id="artistView" className="singlecolumn">
         <h2>{this.state.Name}</h2>
         <ul id="albumList">
-          {this.state.AlbumNames.map(album => (
+          {this.state.AlbumNames.map((album) => (
             <ArtistAlbum
               key={album}
               category={this.category()}

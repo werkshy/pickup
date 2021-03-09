@@ -7,10 +7,10 @@ let initialData = {
   CurrentAlbum: "...",
   CurrentTrack: "...",
   Elapsed: 0,
-  Length: 0
+  Length: 0,
 };
 
-Number.prototype.toMMSS = function() {
+Number.prototype.toMMSS = function () {
   let rounded = Math.floor(this);
   let minutes = Math.floor(rounded / 60);
   var seconds = Math.floor(rounded % 60);
@@ -49,8 +49,8 @@ class Controls extends Component {
 
   updateStatus() {
     fetch("/api/control/")
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         //console.log("Control: ", data)
         this.setState(data);
       });
@@ -60,7 +60,7 @@ class Controls extends Component {
     console.log("Posting command: ", command, opts);
     let data = Object.assign(
       {
-        command: command
+        command: command,
       },
       opts
     );
@@ -68,11 +68,11 @@ class Controls extends Component {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/json",
+      },
     })
-      .then(response => response.json())
-      .then(data => {
+      .then((response) => response.json())
+      .then((data) => {
         this.setState(data);
       });
   }

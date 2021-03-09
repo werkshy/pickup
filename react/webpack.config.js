@@ -10,9 +10,11 @@ const htmlPlugin = new HtmlWebPackPlugin({
   filename: "./index.html"
 });
 
-const copyPlugin = new CopyPlugin([
+const copyPlugin = new CopyPlugin({
+  patterns: [
         { from: 'src/assets', to: 'assets' },
-]);
+  ]
+});
 
 const hotLoader = new webpack.HotModuleReplacementPlugin();
 
@@ -31,8 +33,11 @@ module.exports = {
       {
         test:/\.css$/,
         use:['style-loader','css-loader']
+      },
+      {
+        test: /\.(png|jpg)$/,
+        loader: 'url-loader'
       }
-
     ]
   },
   resolve: {
@@ -46,6 +51,7 @@ module.exports = {
     contentBase: './dist',
     hot: true,                 // Hot reloading
     historyApiFallback: true,  // Make react router work by using index.html to handle 404s.
+    port: 8081,
     // Proxy requests to /api/* to the go server on port 8080
 		proxy: {
 			'/api': {

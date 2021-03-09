@@ -59,9 +59,11 @@ class Category extends Component {
   // FIXME: make an endpoint that returns just one category
   getData() {
     fetch("/api/categories/")
-      .then(response => response.json())
-      .then(data => {
-        let category = data.find(category => category.Name === this.category());
+      .then((response) => response.json())
+      .then((data) => {
+        let category = data.find(
+          (category) => category.Name === this.category()
+        );
         console.log("category", category);
         this.setState(category);
       });
@@ -75,7 +77,7 @@ class Category extends Component {
         <>
           <h3>Albums</h3>
           <ul id="albumList">
-            {this.state.AlbumsNames.map(album => (
+            {this.state.AlbumsNames.map((album) => (
               <CategoryAlbum name={album} />
             ))}
           </ul>
@@ -90,7 +92,7 @@ class Category extends Component {
           {albums}
           <h3>Artists</h3>
           <ul id="artistList">
-            {this.state.Artists.map(artist => (
+            {this.state.Artists.map((artist) => (
               <CategoryArtist
                 category={this.category()}
                 artist={artist}
