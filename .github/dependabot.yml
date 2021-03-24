@@ -9,4 +9,6 @@ updates:
     directory: "/react/" # Location of package manifests
     schedule:
       interval: "daily"
+    reviewers:
+      - werkshy
 
