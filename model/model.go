@@ -1,5 +1,7 @@
 package model
 
+import "log"
+
 type Collection struct {
 	Categories []*Category
 }
@@ -13,6 +15,13 @@ func (c *Collection) GetSummary() []CategorySummary {
 }
 
 func (c *Collection) AddCategory(category *Category) {
+	// Why doesn't Go have sets? Grrr
+	for _, found := range c.Categories {
+		if found.Name == category.Name {
+			log.Printf("Warning: Already have category %s, skipping", category.Name)
+			return
+		}
+	}
 	c.Categories = append(c.Categories, category)
 }
 
