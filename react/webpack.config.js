@@ -53,12 +53,12 @@ module.exports = {
     historyApiFallback: true,  // Make react router work by using index.html to handle 404s.
     port: 8081,
     // Proxy requests to /api/* to the go server on port 8080
-		proxy: {
-			'/api': {
-				target: 'http://localhost:8080',
-				secure: false
-			}
-		}
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        secure: false
+      }
+    }
   }
 };
 
