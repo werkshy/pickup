@@ -6,7 +6,7 @@ build: pickup react
 pickup: main.go $(GO_FILES)
 	go build
 
-react:
+react: deps
 	cd react && yarn build
 
 deps:
