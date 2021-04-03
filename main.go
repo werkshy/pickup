@@ -2,10 +2,11 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/werkshy/pickup/config"
@@ -40,6 +41,10 @@ func main() {
 	serve(&conf, &plyr)
 }
 
+// Embed the compiled frontend files
+//go:embed react/dist
+var embedded embed.FS
+
 func serve(conf *config.Config, plyr player.Player) {
 	categoryHandler := handlers.CategoryHandler{Player: plyr}
 	albumHandler := handlers.AlbumHandler{Player: plyr}
@@ -62,21 +67,29 @@ func serve(conf *config.Config, plyr player.Player) {
 	http.Handle("/api/control/", controlHandler)
 
 	// Serve static assets from at path /assets/ from dir react/dist/assets
-	assetsDir, _ := os.Getwd()
-	assetsDir = assetsDir + "/react/dist/assets"
+	assetsDir, err := fs.Sub(embedded, "react/dist/assets")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// strip '/static' from the url to get the name of the file within the static dir.
 	http.Handle("/assets/", http.StripPrefix("/assets/",
-		http.FileServer(http.Dir(assetsDir))))
+		http.FileServer(http.FS(assetsDir))))
 
 	// Serve webpack-built js files at path /react-static
-	reactDir, _ := os.Getwd()
-	reactDir = reactDir + "/react/dist"
+	distDir, err := fs.Sub(embedded, "react/dist")
 	// strip '/react-static' from the url to get the name of the file within the static dir.
-	http.Handle("/react-static/", http.StripPrefix("/react-static/",
-		http.FileServer(http.Dir(reactDir))))
+	http.Handle("/static/", http.StripPrefix("/static/",
+		http.FileServer(http.FS(distDir))))
 
-	http.HandleFunc("/", handlers.Index)
+	http.HandleFunc("/", index_handler)
 	var bind = fmt.Sprintf(":%d", *conf.Port)
 	log.Printf("Serving from %s on %s\n", *conf.MusicDir, bind)
 	http.ListenAndServe(bind, nil)
+}
+
+func index_handler(w http.ResponseWriter, r *http.Request) {
+	t0 := time.Now()
+	index, _ := embedded.ReadFile("react/dist/index.html")
+	w.Write(index)
+	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }

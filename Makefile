@@ -1,9 +1,9 @@
 
 GO_FILES = $(shell find . -iname '*.go')
 
-build: pickup react
+build: pickup
 
-pickup: main.go $(GO_FILES)
+pickup: main.go $(GO_FILES) react
 	go build
 
 react: deps
