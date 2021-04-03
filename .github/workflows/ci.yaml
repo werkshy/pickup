@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: 15.x
+    - run: make react
+
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.x
+
+    - name: Go build (Linux, AMD64)
+      run: go build -o pickup.$GOOS.$GOARCH
+      env:
+        GOOS: linux
+        GOARCH: amd64
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pickup (Linux, AMD64)
+        path: pickup.linux.amd64
+
+    - name: Go build (Linux, ARM5)
+      run: go build -o pickup.$GOOS.$GOARCH$GOARM
+      env:
+        GOOS: linux
+        GOARCH: arm
+        GOARM: 5
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pickup (Linux, ARM5)
+        path: pickup.linux.arm5
+
+    - name: Go build (Darwin, ARM5)
+      run: go build -o pickup.$GOOS.$GOARCH
+      env:
+        GOOS: darwin
+        GOARCH: amd64
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v2
+      with:
+        name: pickup (Darwin, AMD64)
+        path: pickup.darwin.amd64
+
