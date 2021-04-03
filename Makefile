@@ -1,9 +1,10 @@
 
 GO_FILES = $(shell find . -iname '*.go')
 
-build: pickup
+pickup: react
+	make pickup-only
 
-pickup: main.go $(GO_FILES) react
+pickup-only: main.go $(GO_FILES)
 	go build
 
 react: deps
@@ -12,7 +13,7 @@ react: deps
 deps:
 	cd react && yarn install
 
-.PHONY: react clean deps
+.PHONY: react clean deps pickup
 clean:
 	rm -rf react/dist
 	go clean
