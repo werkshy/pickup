@@ -42,7 +42,7 @@ module.exports = (_env, argv) => {
     },
     plugins: [htmlPlugin, hotLoader, copyPlugin, prettierPlugin],
     output: {
-      publicPath: "/react-static",
+      publicPath: "/static",
     },
     devtool: argv.mode == "development" ? "eval-source-map" : "source-map",
     devServer: {
