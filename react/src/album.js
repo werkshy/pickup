@@ -34,15 +34,17 @@ class AlbumTrack extends Component {
   render() {
     return (
       <li id="{{.}}">
-        <span className="track-title abbreviated">{this.props.track}</span>
+        <span className="track-title abbreviated" onClick={this.play}>
+          {this.props.track}
+        </span>
         <div
           className="track-actions add"
-          title="Add {this.props.track}"
+          title={`Add ${this.props.track}`}
           onClick={this.add}
         />
         <div
           className="track-actions play"
-          title="Play {this.props.track}"
+          title={`Play ${this.props.track}`}
           onClick={this.play}
         >
           &nbsp;
@@ -106,13 +108,11 @@ class Album extends Component {
   // e.g. /api/artist/:category/:artist
   // or, perhaps we could assign a unique id to each artist, album and maybe even track
   getData() {
-    let url =
-      "/api/albums/" +
-      this.category() +
-      "/" +
-      this.artist() +
-      "/" +
-      this.album();
+    let url = "/api/albums/" + this.category() + "/";
+    if (this.artist()) {
+      url += this.artist() + "/";
+    }
+    url += this.album();
     fetch(url)
       .then((response) => response.json())
       .then((data) => {
@@ -134,9 +134,18 @@ class Album extends Component {
     return (
       <div id="albumView" className="singlecolumn">
         <h2 className="artist-name">
-          {this.artist()} - {this.album()}
-          <span className="album-actions add" onClick={this.add} />
-          <span className="album-actions play" onClick={this.play} />
+          {this.artist() ? this.artist() + " - " : ""}
+          {this.album()}
+          <span
+            className="album-actions add"
+            onClick={this.add}
+            title={`Add album '${this.album()}'`}
+          />
+          <span
+            className="album-actions play"
+            onClick={this.play}
+            title={`Play album '${this.album()}'`}
+          />
         </h2>
         <ul id="trackList">
           {this.state.Tracks.map((track) => (

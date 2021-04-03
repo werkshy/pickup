@@ -34,6 +34,7 @@ function init() {
         <Route path="/category/:category" component={Category} />
         <Route path="/artist/:category/:artist" component={Artist} />
         <Route path="/album/:category/:artist/:album" component={Album} />
+        <Route path="/album/:category/:album" component={Album} />
         <Route component={NotFound} />
       </Switch>
       <Playlist />

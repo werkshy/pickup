@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
+import { playAlbum, playTrack } from "./actions";
 
 class CategoryArtist extends Component {
   render() {
@@ -20,14 +21,39 @@ class CategoryArtist extends Component {
 }
 
 class CategoryAlbum extends Component {
+  constructor(props) {
+    super(props);
+    this.add = this.add.bind(this);
+    this.play = this.play.bind(this);
+  }
+
   render() {
+    const target = "/album/" + this.props.category + "/" + this.props.name;
     return (
-      <li id="{this.props.name}">
-        <span className="album-title abbreviated">{this.props.name}</span>
-        <div className="album-actions add" title="Add '{this.props.name}'" />
-        <div className="album-actions play" title="Play '{this.props.name}'" />
+      <li id={this.props.name}>
+        <span className="album-title abbreviated">
+          <Link to={target}>{this.props.name}</Link>
+        </span>
+        <div
+          className="album-actions add"
+          title={`Add '${this.props.name}'`}
+          onClick={this.add}
+        />
+        <div
+          className="album-actions play"
+          title={`Play '${this.props.name}'`}
+          onClick={this.play}
+        />
       </li>
     );
+  }
+
+  add() {
+    playAlbum(this.props.category, undefined, this.props.name, false);
+  }
+
+  play() {
+    playAlbum(this.props.category, undefined, this.props.name, true);
   }
 }
 
@@ -77,8 +103,12 @@ class Category extends Component {
         <>
           <h3>Albums</h3>
           <ul id="albumList">
-            {this.state.AlbumsNames.map((album) => (
-              <CategoryAlbum name={album} />
+            {this.state.AlbumNames.map((album) => (
+              <CategoryAlbum
+                name={album}
+                category={this.category()}
+                key={"album__" + album}
+              />
             ))}
           </ul>
         </>
