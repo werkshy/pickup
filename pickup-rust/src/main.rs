@@ -6,10 +6,8 @@ use std::thread;
 
 mod app_state;
 mod index;
-//mod file_manager;
 mod player;
 
-//use file_manager::FileManager;
 use app_state::AppState;
 use player::Player;
 
@@ -47,6 +45,5 @@ fn spawn_player() -> Sender<String> {
             player.command(command);
         }
     });
-
-    return tx;
+    tx
 }

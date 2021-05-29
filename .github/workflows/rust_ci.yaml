@@ -1,0 +1,38 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - $default-branch
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+#   - name: Use Node.js ${{ matrix.node-version }}
+#     uses: actions/setup-node@v1
+#     with:
+#        node-version: 15.x
+#    - run: make react
+
+    - name: install libraries
+      run: sudo apt-get install libasound2-dev
+
+    - uses: Swatinem/rust-cache@v1
+      with:
+        working-directory: pickup-rust
+
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+    - run: cd pickup-rust && cargo fmt -- --check
+    - run: cd pickup-rust && cargo clippy -- -Dwarnings
+    - run: cd pickup-rust && cargo test
+    - run: cd pickup-rust && cargo build --release
+
+# TODO cross-compiling https://github.com/marketplace/actions/rust-cargo#cross-compilation
+# Might not be possible if we have platform-specific dependencies
+
