@@ -1,4 +1,3 @@
-const webpack = require("webpack");
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const PrettierPlugin = require("prettier-webpack-plugin");
@@ -11,8 +10,6 @@ const htmlPlugin = new HtmlWebPackPlugin({
 const copyPlugin = new CopyPlugin({
   patterns: [{ from: "src/assets", to: "assets" }],
 });
-
-const hotLoader = new webpack.HotModuleReplacementPlugin();
 
 const prettierPlugin = new PrettierPlugin();
 
@@ -40,7 +37,7 @@ module.exports = (_env, argv) => {
     resolve: {
       extensions: ["*", ".js", ".jsx"],
     },
-    plugins: [htmlPlugin, hotLoader, copyPlugin, prettierPlugin],
+    plugins: [htmlPlugin, copyPlugin, prettierPlugin],
     output: {
       publicPath: "/static",
     },
