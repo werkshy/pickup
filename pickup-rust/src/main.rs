@@ -1,7 +1,7 @@
 use actix_web::{App, HttpServer};
+use player::Command;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
-use std::sync::Mutex;
 use std::thread;
 
 mod app_state;
@@ -22,12 +22,12 @@ async fn main() -> std::io::Result<()> {
         log::info!("Building app");
         App::new()
             .data(AppState {
-                sender: Mutex::new(sender.clone()),
+                sender: sender.clone(),
             })
             .service(index::hello)
-            .service(index::echo)
             .service(index::play)
             .service(index::stop)
+            .service(index::volume)
     })
     .bind("127.0.0.1:9090")?
     .shutdown_timeout(60) // <- Set shutdown timeout to 60 seconds
@@ -35,7 +35,7 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-fn spawn_player() -> Sender<String> {
+fn spawn_player() -> Sender<Box<dyn Command>> {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
