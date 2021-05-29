@@ -1,27 +1,35 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use crate::app_state::AppState;
+use crate::{app_state::AppState, player::Command };
+use crate::player::{PlayCommand, StopCommand, VolumeCommand};
 
 #[get("/")]
-async fn hello() -> impl Responder {
+pub async fn hello() -> impl Responder {
     return HttpResponse::Ok().body("Hello");
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
 #[post("/play")]
-async fn play(data: web::Data<AppState>) -> impl Responder {
-    let sender = data.sender.lock().unwrap();
-    let _ = sender.send(String::from("play"));
+pub async fn play(data: web::Data<AppState>) -> impl Responder {
+    let mp3_file = "../music/Kevin MacLeod/Album 1/01 - Lukewarm Banjo.mp3";
+    let command = Box::new(PlayCommand {
+        file: String::from(mp3_file),
+    }) as Box<dyn Command>;
+    let _ = data.sender.send(command);
     return HttpResponse::Ok().body("ok");
 }
 
 #[post("/stop")]
-async fn stop(data: web::Data<AppState>) -> impl Responder {
-    let sender = data.sender.lock().unwrap();
-    let _ = sender.send(String::from("stop"));
+pub async fn stop(data: web::Data<AppState>) -> impl Responder {
+    let command = Box::new(StopCommand {}) as Box<dyn Command>;
+    let _ = data.sender.send(command);
+    return HttpResponse::Ok().body("ok");
+}
+
+#[post("/volume/{volume}")]
+pub async fn volume(data: web::Data<AppState>, volume: web::Path<f32>) -> impl Responder {
+    let command = Box::new(VolumeCommand {
+        volume: volume.into_inner(),
+    }) as Box<dyn Command>;
+    let _ = data.sender.send(command);
     return HttpResponse::Ok().body("ok");
 }

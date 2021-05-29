@@ -1,6 +1,7 @@
 use std::sync::mpsc::Sender;
-use std::sync::Mutex;
+
+use crate::player::Command;
 
 pub struct AppState {
-    pub sender: Mutex<Sender<String>>,
+    pub sender: Sender<Box<dyn Command>>,
 }
