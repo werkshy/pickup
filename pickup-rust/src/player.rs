@@ -1,11 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
-//use std::time::Duration;
 
-use rodio::source::SamplesConverter;
-use rodio::Source;
-//use rodio::queue::SourcesQueueInput;
-//use rodio::queue::queue;
 use rodio::{Decoder, OutputStream, Sink};
 
 // This is the actor that handles playing music
@@ -45,20 +40,11 @@ impl Player {
 
         // TODO handle missing file error - don't stop the playing until we have a good file
         let file = BufReader::new(File::open(path).unwrap());
-        // Decode that sound file into a source TODO handle error
+        // Decode that sound file into a source
+        // TODO handle error
         let source = Decoder::new(file).unwrap();
-        //let converted_source: SamplesConverter<Decoder<BufReader<File>>, f32> = source.convert_samples();
-        //log::info!("Sink length: {}", self.sink.len());
         self.sink.append(source);
-        //log::info!("Sink length: {}", self.sink.len());
-
-        //self.sink = sink;
-        //self.sink.sleep_until_end();
         log::info!("Done playing");
-    }
-
-    pub fn sleep(&mut self) {
-        self.sink.sleep_until_end();
     }
 
     pub fn stop(&mut self) {
