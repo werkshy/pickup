@@ -11,4 +11,15 @@ updates:
       interval: "daily"
     reviewers:
       - werkshy
-
+  - package-ecosystem: "gomod" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "daily"
+    reviewers:
+      - werkshy
+  - package-ecosystem: "cargo" # See documentation for possible values
+    directory: "/pickup-rust/" # Location of package manifests
+    schedule:
+      interval: "daily"
+    reviewers:
+      - werkshy
