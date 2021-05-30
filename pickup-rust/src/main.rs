@@ -9,8 +9,8 @@ mod index;
 mod player;
 
 use app_state::AppState;
-use player::Player;
 use env_logger::Env;
+use player::Player;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
