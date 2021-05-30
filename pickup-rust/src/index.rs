@@ -1,7 +1,7 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use crate::{app_state::AppState, player::Command };
 use crate::player::{PlayCommand, StopCommand, VolumeCommand};
+use crate::{app_state::AppState, player::Command};
 
 #[get("/")]
 pub async fn hello() -> impl Responder {
