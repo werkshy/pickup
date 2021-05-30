@@ -1,7 +1,8 @@
 # Pickup
 
-This is pickup (in go), a web frontend for [Music Player Daemon](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki) by Andy O'Neill
-<andy@potatoriot.com>.
+[![CI](https://github.com/werkshy/pickup/actions/workflows/ci.yaml/badge.svg)](https://github.com/werkshy/pickup/actions/workflows/ci.yaml)
+
+This is pickup (in go), a web frontend for [Music Player Daemon](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
 
 Pickup is my white whale... I've been playing with the idea since 2007. I have a
 large music collection, and my navigation of choice is by album, with easy
@@ -15,8 +16,9 @@ volume, skip tracks, start/stop playback. You can view the playlist. It runs on
 the Raspberry Pi with room to run mpd as well. Because of the client-side
 architecture it is very fast.
 
-I'm not working on this much, but I do seem to revisit it every year or two and
-will try to keep the dependencies up to date.
+In mid-2021, I have started rewriting the backend in Rust. The two motiviations for this are:
+- This is the project I usually use to learn a new language or framework
+- I want to get away from mpd and have a single executable that can do the web part, plus control the playlist and actually play music, and set us up for playback in the browser. This is basically a complete rewrite anyway.
 
 ## Getting Started In Ubuntu
 
@@ -86,7 +88,7 @@ contributions would be much appreciated.
 
 ## Roadmap
 
-- Backend: I'm considering a re-write of the backend in Rust, and dropping the
+- Backend: I'm working on a re-write of the backend in Rust, and dropping the
   mpd dependency.
 - Frontend: Upgrade to Typescript, maybe start using create-react-app to make
   the build more vanilla.
