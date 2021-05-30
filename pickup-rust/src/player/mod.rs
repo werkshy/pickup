@@ -3,42 +3,16 @@ use std::io::BufReader;
 
 use rodio::{Decoder, OutputStream, Sink};
 
-// This is the object that handles playing music
-pub struct Player {
-    stream: OutputStream,
-    sink: Sink,
-}
+pub mod commands;
 
 pub trait Command: Send {
     fn action(&mut self, player: &mut Player);
 }
 
-pub struct PlayCommand {
-    pub file: String,
-}
-
-impl Command for PlayCommand {
-    fn action(&mut self, player: &mut Player) {
-        player.play(self.file.clone());
-    }
-}
-
-pub struct StopCommand {}
-
-impl Command for StopCommand {
-    fn action(&mut self, player: &mut Player) {
-        player.stop();
-    }
-}
-
-pub struct VolumeCommand {
-    pub volume: f32,
-}
-
-impl Command for VolumeCommand {
-    fn action(&mut self, player: &mut Player) {
-        player.set_volume(self.volume);
-    }
+// This is the object that handles playing music
+pub struct Player {
+    stream: OutputStream,
+    sink: Sink,
 }
 
 impl Player {
