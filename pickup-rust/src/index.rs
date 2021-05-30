@@ -1,6 +1,6 @@
 use actix_web::{get, post, web, HttpResponse, Responder};
 
-use crate::player::{PlayCommand, StopCommand, VolumeCommand};
+use crate::player::commands::{PlayCommand, StopCommand, VolumeCommand};
 use crate::{app_state::AppState, player::Command};
 
 #[get("/")]
