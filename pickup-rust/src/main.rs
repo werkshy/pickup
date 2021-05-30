@@ -75,6 +75,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::control::stop)
             .service(api::control::volume)
     })
+    .workers(2)
     .bind("127.0.0.1:9090")?
     .shutdown_timeout(60) // <- Set shutdown timeout to 60 seconds
     .run()
