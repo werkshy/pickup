@@ -1,3 +1,4 @@
+use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use clap::Parser;
@@ -68,6 +69,7 @@ async fn main() -> std::io::Result<()> {
                 // https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html#shared-mutable-state
                 sender: sender.clone(),
             }))
+            .wrap(Logger::default())
             .service(api::hello)
             .service(api::control::play)
             .service(api::control::stop)
