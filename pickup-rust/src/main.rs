@@ -5,8 +5,8 @@ use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::thread;
 
+mod api;
 mod app_state;
-mod index;
 mod player;
 
 use app_state::AppState;
@@ -29,10 +29,10 @@ async fn main() -> std::io::Result<()> {
                 // https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html#shared-mutable-state
                 sender: sender.clone(),
             }))
-            .service(index::hello)
-            .service(index::play)
-            .service(index::stop)
-            .service(index::volume)
+            .service(api::hello)
+            .service(api::control::play)
+            .service(api::control::stop)
+            .service(api::control::volume)
     })
     .bind("127.0.0.1:9090")?
     .shutdown_timeout(60) // <- Set shutdown timeout to 60 seconds
