@@ -30,7 +30,7 @@ module.exports = (_env, argv) => {
         },
         {
           test: /\.(png|jpg)$/,
-          loader: "url-loader",
+          type: "asset",
         },
       ],
     },
@@ -39,7 +39,7 @@ module.exports = (_env, argv) => {
     },
     plugins: [htmlPlugin, copyPlugin, prettierPlugin],
     output: {
-      publicPath: "/static",
+      publicPath: "/static/",
     },
     devtool: argv.mode == "development" ? "eval-source-map" : "source-map",
     devServer: {

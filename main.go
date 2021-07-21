@@ -77,7 +77,7 @@ func serve(conf *config.Config, plyr player.Player) {
 
 	// Serve webpack-built js files at path /react-static
 	distDir, err := fs.Sub(embedded, "react/dist")
-	// strip '/react-static' from the url to get the name of the file within the static dir.
+	// strip '/static' from the url to get the name of the file within the static dir.
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.FS(distDir))))
 
