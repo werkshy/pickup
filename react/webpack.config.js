@@ -1,6 +1,7 @@
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require("copy-webpack-plugin");
 const PrettierPlugin = require("prettier-webpack-plugin");
+const path = require('path');
 
 const htmlPlugin = new HtmlWebPackPlugin({
   template: "./src/index.html",
@@ -43,7 +44,10 @@ module.exports = (_env, argv) => {
     },
     devtool: argv.mode == "development" ? "eval-source-map" : "source-map",
     devServer: {
-      contentBase: "./dist",
+      static: {
+        directory: path.resolve(__dirname, "dist"),
+        serveIndex: true,
+      },
       hot: true, // Hot reloading
       historyApiFallback: true, // Make react router work by using index.html to handle 404s.
       port: 8081,
