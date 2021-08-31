@@ -1,3 +1,6 @@
 /pickup
 /*.json
-/deploy-gaston
+
+/pickup-rust/target/
+.idea/
+.cache/

@@ -14,5 +14,6 @@ env_logger = "^0"
 log = "^0"
 rodio = "^0"
 sled = "^0"
+serde = { version = "1.0", features = ["derive"] }
 walkdir = "2"
 
