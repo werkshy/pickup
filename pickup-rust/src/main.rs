@@ -2,44 +2,23 @@ use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use clap::Parser;
+use std::path::Path;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::thread;
 
 mod api;
 mod app_state;
+mod cli;
 mod filemanager;
 mod player;
 
 use app_state::AppState;
+use cli::{Cli, Commands};
 use env_logger::Env;
-use filemanager::{load, refresh, MusicDb};
+use filemanager::cache;
+use filemanager::cache::CacheOptions;
 use player::{Command, Player};
-
-const DEFAULT_MUSIC_DIR: &str = "../music";
-
-// Clap CLI definition struct
-// TODO:
-// Can change the music-dir arg to PathBuf
-// Add subcommands e.g.
-//    serve
-//    db refresh
-//    db list
-//    db search
-//    add
-//    play
-
-#[derive(Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    /// Set the root music directory
-    #[arg(short, long, value_name = "DIR", default_value_t = DEFAULT_MUSIC_DIR.to_string())]
-    music_dir: String,
-
-    /// Refresh the music files (can be slow on network drives)
-    #[arg(short, long)]
-    refresh: bool,
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -47,19 +26,72 @@ async fn main() -> std::io::Result<()> {
 
     let cli = Cli::parse();
 
-    let music_dir = cli.music_dir;
+    let music_dir: &str = cli.music_dir.as_str();
 
-    let files: MusicDb;
-    if cli.refresh {
-        files = refresh(String::from(music_dir)).unwrap();
-    } else {
-        files = load(String::from(music_dir)).unwrap();
+    let cache_options = CacheOptions {
+        dir: music_dir.to_string(),
+        ignores: None,
+    };
+
+    match cli.command {
+        Commands::List {} => {
+            return list(cache_options);
+        }
+        Commands::Refresh {} => {
+            let result = cache::refresh(cache_options.clone());
+            return result.map(|_| ());
+        }
+        Commands::Serve { port } => {
+            return serve(ServeOptions {
+                cache_options: cache_options.clone(),
+                port,
+            })
+            .await;
+        }
     }
+}
+
+// Temp, just for list until we have something more sophisticated
+fn get_parts(path: &Path) -> Vec<String> {
+    path.components()
+        .map(|component| component.as_os_str().to_str().unwrap().to_string())
+        .collect()
+}
+
+fn list(cache_options: CacheOptions) -> std::io::Result<()> {
+    let files = cache::init(cache_options.clone()).unwrap();
     log::info!("We have got {} files", files.len());
 
+    let root_parts = get_parts(Path::new(cache_options.dir.as_str()));
+
+    for file in files {
+        let parts = get_parts(file.as_path());
+        let relative_parts = parts.strip_prefix(root_parts.as_slice()).unwrap();
+        let num_parts: usize;
+        // Figure out what is left after the category
+        if relative_parts[0].starts_with("_") {
+            num_parts = relative_parts.len() - 1;
+        } else {
+            num_parts = relative_parts.len();
+        }
+        if num_parts > 3 {
+            log::info!("{} {:?}", num_parts, file);
+        }
+    }
+
+    return Ok(());
+}
+
+struct ServeOptions {
+    cache_options: CacheOptions,
+    port: u32,
+}
+
+async fn serve(options: ServeOptions) -> std::io::Result<()> {
     let sender = spawn_player();
 
-    log::info!("Starting on http://localhost:9090");
+    let address = format!("127.0.0.1:{}", options.port);
+    log::info!("Starting on http://{}", address);
     HttpServer::new(move || {
         log::info!("Building app");
         App::new()
@@ -76,7 +108,7 @@ async fn main() -> std::io::Result<()> {
             .service(api::control::volume)
     })
     .workers(2)
-    .bind("127.0.0.1:9090")?
+    .bind(address.as_str())?
     .shutdown_timeout(60) // <- Set shutdown timeout to 60 seconds
     .run()
     .await
