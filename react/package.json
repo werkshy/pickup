@@ -35,7 +35,7 @@
     "webpack-dev-server": "^4.3.0"
   },
   "dependencies": {
-    "multicast-dns": "7.2.3",
+    "multicast-dns": "7.2.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-router-dom": "^5.3.0"
