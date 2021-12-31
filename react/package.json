@@ -19,7 +19,7 @@
   "license": "ISC",
   "devDependencies": {
     "@babel/core": "^7.16.0",
-    "@babel/preset-env": "^7.16.0",
+    "@babel/preset-env": "^7.16.7",
     "@babel/preset-react": "^7.16.0",
     "babel-loader": "^8.2.3",
     "copy-webpack-plugin": "^9.0.1",
