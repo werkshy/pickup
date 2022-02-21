@@ -4,16 +4,10 @@
   "description": "React frontend to Pickup music player",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "vite build",
+    "format": "prettier --write src index.html",
     "start": "vite serve",
-    "format": "prettier --write src index.html"
-  },
-  "babel": {
-    "presets": [
-      "@babel/preset-env",
-      "@babel/preset-react"
-    ]
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Andy O'Neill <andy@potatoriot.com>",
   "license": "ISC",
