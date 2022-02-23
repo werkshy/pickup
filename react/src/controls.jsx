@@ -1,4 +1,5 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
+import { useInterval } from "./utils/useInterval";
 
 let initialData = {
   State: "stop",
@@ -10,170 +11,123 @@ let initialData = {
   Length: 0,
 };
 
-Number.prototype.toMMSS = function () {
-  let rounded = Math.floor(this);
+function toMMSS(num) {
+  let rounded = Math.floor(num);
   let minutes = Math.floor(rounded / 60);
   var seconds = Math.floor(rounded % 60);
 
-  if (minutes < 10) {
-    minutes = "0" + minutes;
-  }
-  if (seconds < 10) {
-    seconds = "0" + seconds;
-  }
-  return minutes + ":" + seconds;
-};
+  return (
+    minutes.toString(10).padStart(2, "0") +
+    ":" +
+    seconds.toString(10).padStart(2, "0")
+  );
+}
 
-class Controls extends Component {
-  constructor(props) {
-    super(props);
-    this.state = initialData;
+export function Controls() {
+  const [data, setData] = useState(initialData);
 
-    this.play = this.play.bind(this);
-    this.pause = this.pause.bind(this);
-    this.stop = this.stop.bind(this);
-    this.nextTrack = this.nextTrack.bind(this);
-    this.prevTrack = this.prevTrack.bind(this);
-    this.volumeUp = this.volumeUp.bind(this);
-    this.volumeDown = this.volumeDown.bind(this);
-  }
+  const fetchData = async () => {
+    const response = await fetch("/api/control/");
+    const json = await response.json();
+    setData(json);
+  };
 
-  componentDidMount() {
-    this.updateStatus();
-    this.timerID = setInterval(() => this.updateStatus(), 1000);
-  }
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  componentWillUnmount() {
-    clearInterval(this.timerID);
-  }
+  useInterval(async () => {
+    await fetchData();
+  }, 1000);
 
-  updateStatus() {
-    fetch("/api/control/")
-      .then((response) => response.json())
-      .then((data) => {
-        //console.log("Control: ", data)
-        this.setState(data);
-      });
-  }
-
-  postCommand(command, opts) {
-    console.log("Posting command: ", command, opts);
+  const postCommand = async (command, opts) => {
     let data = Object.assign(
       {
         command: command,
       },
       opts
     );
-    fetch("/api/control/", {
+    const response = await fetch("/api/control/", {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
         "Content-Type": "application/json",
       },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        this.setState(data);
-      });
-  }
+    });
+    const json = await response.json();
+    setData(json);
+  };
 
-  play() {
-    this.postCommand("play");
-  }
-  stop() {
-    this.postCommand("stop");
-  }
-  pause() {
-    this.postCommand("pause");
-  }
-  nextTrack() {
-    this.postCommand("next");
-  }
-  prevTrack() {
-    this.postCommand("prev");
-  }
-  volumeUp() {
-    this.postCommand("volumeDelta", { volumeDelta: 5 });
-  }
-
-  volumeDown() {
-    this.postCommand("volumeDelta", { volumeDelta: -5 });
-  }
-
-  render() {
-    let trackInfo;
-    if (this.state.CurrentArtist) {
-      trackInfo = (
-        <>
-          <span className="artist">{this.state.CurrentArtist}</span>
-          <span> - </span>
-          <span className="track">{this.state.CurrentTrack}</span>
-        </>
-      );
-    }
-    return (
-      <div id="controls">
-        &nbsp;
-        <span id="go-home" title="Go to Artists page">
-          Home
-        </span>
-        <span className="control-break">|</span>
-        <span>vol {this.state.Volume}%</span>
-        <div
-          id="vol-down"
-          className="button"
-          title="Decrease Volume"
-          onClick={this.volumeDown}
-        />
-        <div
-          id="vol-up"
-          className="button"
-          title="Increase Volume"
-          onClick={this.volumeUp}
-        />
-        <span className="control-break">|</span>
-        <div
-          id="stop"
-          className="button"
-          title="Stop playback"
-          onClick={this.stop}
-        />
-        <div
-          id="play"
-          className="button"
-          title="Start playback"
-          onClick={this.play}
-        />
-        <div
-          id="pause"
-          className="button"
-          title="Pause playback"
-          onClick={this.pause}
-        />
-        <span className="control-break">|</span>
-        <div
-          id="prev-track"
-          className="button"
-          title="Play previous track"
-          onClick={this.prevTrack}
-        />
-        <span> track</span>
-        <div
-          id="next-track"
-          className="button"
-          title="Play next track"
-          onClick={this.nextTrack}
-        />
-        <span className="control-break">|</span>
-        {trackInfo}
-        <span className="control-break">|</span>
-        <span>
-          {this.state.Elapsed.toMMSS()} / {this.state.Length.toMMSS()}
-        </span>
-        <span className="lower" />
-      </div>
+  let trackInfo = <span>Not playing</span>;
+  if (data.CurrentArtist) {
+    trackInfo = (
+      <>
+        <span className="artist">{data.CurrentArtist}</span>
+        <span> - </span>
+        <span className="track">{data.CurrentTrack}</span>
+      </>
     );
   }
+  return (
+    <div id="controls">
+      &nbsp;
+      <span id="go-home" title="Go to Artists page">
+        Home
+      </span>
+      <span className="control-break">|</span>
+      <span>vol {data.Volume}%</span>
+      <div
+        id="vol-down"
+        className="button"
+        title="Decrease Volume"
+        onClick={() => postCommand("volumeDelta", { volumeDelta: -5 })}
+      />
+      <div
+        id="vol-up"
+        className="button"
+        title="Increase Volume"
+        onClick={() => postCommand("volumeDelta", { volumeDelta: 5 })}
+      />
+      <span className="control-break">|</span>
+      <div
+        id="stop"
+        className="button"
+        title="Stop playback"
+        onClick={() => postCommand("stop")}
+      />
+      <div
+        id="play"
+        className="button"
+        title="Start playback"
+        onClick={() => postCommand("play")}
+      />
+      <div
+        id="pause"
+        className="button"
+        title="Pause playback"
+        onClick={() => postCommand("pause")}
+      />
+      <span className="control-break">|</span>
+      <div
+        id="prev-track"
+        className="button"
+        title="Play previous track"
+        onClick={() => postCommand("prev")}
+      />
+      <span> track</span>
+      <div
+        id="next-track"
+        className="button"
+        title="Play next track"
+        onClick={() => postCommand("next")}
+      />
+      <span className="control-break">|</span>
+      {trackInfo}
+      <span className="control-break">|</span>
+      <span>
+        {toMMSS(data.Elapsed)} / {toMMSS(data.Length)}
+      </span>
+      <span className="lower" />
+    </div>
+  );
 }
-
-export default Controls;
