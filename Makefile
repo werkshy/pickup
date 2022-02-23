@@ -10,8 +10,12 @@ pickup-only: main.go $(GO_FILES)
 react: deps
 	cd react && yarn build
 
-deps:
+deps: react/yarn.lock react/package.json
 	cd react && yarn install
+
+# go vet requires the files in react/dist
+lint: deps $(GO_FILES)
+	go vet && cd react && yarn lint
 
 .PHONY: react clean deps pickup
 clean:
