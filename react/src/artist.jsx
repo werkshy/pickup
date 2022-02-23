@@ -1,118 +1,76 @@
-import React, { Component } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 
 import { playAlbum } from "./actions";
 
-class ArtistAlbum extends Component {
-  constructor(props) {
-    super(props);
+function ArtistAlbum(props) {
+  const add = () => {
+    playAlbum(props.category, props.artist, props.name, false);
+  };
 
-    this.add = this.add.bind(this);
-    this.play = this.play.bind(this);
-  }
+  const play = () => {
+    playAlbum(props.category, props.artist, props.name, true);
+  };
 
-  add() {
-    playAlbum(this.props.category, this.props.artist, this.props.name, false);
-  }
-
-  play() {
-    playAlbum(this.props.category, this.props.artist, this.props.name, true);
-  }
-
-  render() {
-    let target =
-      "/album/" +
-      this.props.category +
-      "/" +
-      this.props.artist +
-      "/" +
-      this.props.name;
-    return (
-      <li id={this.props.name}>
-        <span className="album-title abbreviated">
-          <Link to={target}>{this.props.name}</Link>
-        </span>
-        <div
-          className="album-actions add"
-          title="Add {this.props.name}"
-          onClick={this.add}
-        />
-        <div
-          className="album-actions play"
-          title="Play {this.props.name}"
-          onClick={this.play}
-        />
-      </li>
-    );
-  }
+  let target =
+    "/album/" + props.category + "/" + props.artist + "/" + props.name;
+  return (
+    <li id={props.name}>
+      <span className="album-title abbreviated">
+        <Link to={target}>{props.name}</Link>
+      </span>
+      <div
+        className="album-actions add"
+        title="Add {props.name}"
+        onClick={add}
+      />
+      <div
+        className="album-actions play"
+        title="Play {props.name}"
+        onClick={play}
+      />
+    </li>
+  );
 }
 
-class Artist extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { Name: "", AlbumNames: [], TrackNames: [] };
-  }
+// FIXME we aren't handling loose tracks under an artist (I don't really have that in my collection)
 
-  category() {
-    return this.props.match.params.category;
-  }
-
-  artist() {
-    return this.props.match.params.artist;
-  }
-
-  componentDidMount() {
-    this.getData();
-  }
-
-  componentWillUnmount() {}
-
-  componentDidUpdate(prevProps) {
-    let oldPath =
-      prevProps.match.params.category + prevProps.match.params.artist;
-    let newPath =
-      this.props.match.params.category + this.props.match.params.artist;
-    if (newPath !== oldPath) {
-      this.getData();
-    }
-  }
+export function Artist() {
+  let { category, artist } = useParams();
+  const [albumNames, setAlbumNames] = useState([]);
+  const [trackNames, setTrackNames] = useState([]);
 
   // FIXME: make (or use) an endpoint that returns just one artist
   // e.g. /api/artist/:category/:artist
   // or, perhaps we could assign a unique id to each artist, album and maybe even track
-  getData() {
-    fetch("/api/categories/")
-      .then((response) => response.json())
-      .then((data) => {
-        let category = data.find(
-          (category) => category.Name === this.category()
-        );
-        let artist = category.Artists.find(
-          (artist) => artist.Name === this.artist()
-        );
-        console.log("artist", artist);
-        this.setState(artist);
-      });
-  }
+  const fetchData = async () => {
+    const response = await fetch("/api/categories/");
+    const data = await response.json();
+    const categoryData = data.find((c) => c.Name === category);
+    const artistData = categoryData.Artists.find((a) => a.Name === artist);
+    console.log("artist", artistData);
+    setAlbumNames(artistData.AlbumNames);
+    setTrackNames(artistData.TrackNames);
+  };
 
-  render() {
-    console.log("state", this.state);
-    return (
-      <div id="artistView" className="singlecolumn">
-        <h2>{this.state.Name}</h2>
-        <ul id="albumList">
-          {this.state.AlbumNames.map((album) => (
-            <ArtistAlbum
-              key={album}
-              category={this.category()}
-              artist={this.artist()}
-              name={album}
-            />
-          ))}
-        </ul>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchData();
+  }, [artist]);
+
+  console.log(`Artist '${artist}' state: `, { albumNames, trackNames });
+  return (
+    <div id="artistView" className="singlecolumn">
+      <h2>{artist}</h2>
+      <ul id="albumList">
+        {albumNames.map((album) => (
+          <ArtistAlbum
+            key={album}
+            category={category}
+            artist={artist}
+            name={album}
+          />
+        ))}
+      </ul>
+    </div>
+  );
 }
-
-export default Artist;

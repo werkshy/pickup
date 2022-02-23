@@ -1,166 +1,97 @@
-import React, { Component } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
 import { playAlbum, playTrack } from "./actions";
 
-class AlbumTrack extends Component {
-  constructor(props) {
-    super(props);
+function AlbumTrack(props) {
+  const add = () => {
+    playTrack(props.category, props.artist, props.album, props.track, false);
+  };
 
-    this.add = this.add.bind(this);
-    this.play = this.play.bind(this);
-  }
-
-  add() {
-    playTrack(
-      this.props.category,
-      this.props.artist,
-      this.props.album,
-      this.props.track,
-      false
-    );
-  }
-
-  play() {
-    playTrack(
-      this.props.category,
-      this.props.artist,
-      this.props.album,
-      this.props.track,
-      true
-    );
-  }
+  const play = () => {
+    playTrack(props.category, props.artist, props.album, props.track, true);
+  };
 
   // FIXME the titles aren't interpolating
-  render() {
-    return (
-      <li id="{{.}}">
-        <span className="track-title abbreviated" onClick={this.play}>
-          {this.props.track}
-        </span>
-        <div
-          className="track-actions add"
-          title={`Add ${this.props.track}`}
-          onClick={this.add}
-        />
-        <div
-          className="track-actions play"
-          title={`Play ${this.props.track}`}
-          onClick={this.play}
-        >
-          &nbsp;
-        </div>
-      </li>
-    );
-  }
+  return (
+    <li id="{{.}}">
+      <span className="track-title abbreviated" onClick={play}>
+        {props.track}
+      </span>
+      <div
+        className="track-actions add"
+        title={`Add ${props.track}`}
+        onClick={add}
+      />
+      <div
+        className="track-actions play"
+        title={`Play ${props.track}`}
+        onClick={play}
+      >
+        &nbsp;
+      </div>
+    </li>
+  );
 }
 
-class Album extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      category: this.category(),
-      artist: this.artist(),
-      album: this.album(),
-      Tracks: [],
-    };
-
-    this.add = this.add.bind(this);
-    this.play = this.play.bind(this);
-  }
-
-  category() {
-    return this.props.match.params.category;
-  }
-
-  artist() {
-    return this.props.match.params.artist;
-  }
-
-  album() {
-    return this.props.match.params.album;
-  }
-
-  componentDidMount() {
-    this.getData();
-  }
-
-  componentWillUnmount() {}
-
-  componentDidUpdate(prevProps) {
-    let oldPath =
-      prevProps.match.params.category +
-      "/" +
-      prevProps.match.params.artist +
-      "/" +
-      prevProps.match.params.album;
-    let newPath =
-      this.props.match.params.category +
-      "/" +
-      this.props.match.params.artist +
-      "/" +
-      prevProps.match.params.album;
-    if (newPath !== oldPath) {
-      this.getData();
-    }
-  }
+export function Album() {
+  let { category, artist, album } = useParams();
+  const [tracks, setTracks] = useState([]);
 
   // FIXME: make (or use) an endpoint that returns just one artist
   // e.g. /api/artist/:category/:artist
   // or, perhaps we could assign a unique id to each artist, album and maybe even track
-  getData() {
-    let url = "/api/albums/" + this.category() + "/";
-    if (this.artist()) {
-      url += this.artist() + "/";
+  const fetchData = async () => {
+    let url = "/api/albums/" + category + "/";
+    if (artist) {
+      url += artist + "/";
     }
-    url += this.album();
-    fetch(url)
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("album data", data);
-        this.setState(data);
-      });
-  }
+    url += album;
+    const response = await fetch(url);
+    const data = await response.json();
+    console.log("album data", data);
+    setTracks(data.Tracks);
+  };
 
-  add() {
-    playAlbum(this.category(), this.artist(), this.album(), false);
-  }
+  useEffect(() => {
+    fetchData();
+  }, [category, artist, album]);
 
-  play() {
-    playAlbum(this.category(), this.artist(), this.album(), true);
-  }
+  const add = () => {
+    playAlbum(category, artist, album, false);
+  };
 
-  render() {
-    console.log("state", this.state);
-    return (
-      <div id="albumView" className="singlecolumn">
-        <h2 className="artist-name">
-          {this.artist() ? this.artist() + " - " : ""}
-          {this.album()}
-          <span
-            className="album-actions add"
-            onClick={this.add}
-            title={`Add album '${this.album()}'`}
+  const play = () => {
+    playAlbum(category, artist, album, true);
+  };
+
+  return (
+    <div id="albumView" className="singlecolumn">
+      <h2 className="artist-name">
+        {artist ? artist + " - " : ""}
+        {album}
+        <span
+          className="album-actions add"
+          onClick={add}
+          title={`Add album '${album}'`}
+        />
+        <span
+          className="album-actions play"
+          onClick={play}
+          title={`Play album '${album}'`}
+        />
+      </h2>
+      <ul id="trackList">
+        {tracks.map((track) => (
+          <AlbumTrack
+            key={track}
+            category={category}
+            artist={artist}
+            album={album}
+            track={track}
           />
-          <span
-            className="album-actions play"
-            onClick={this.play}
-            title={`Play album '${this.album()}'`}
-          />
-        </h2>
-        <ul id="trackList">
-          {this.state.Tracks.map((track) => (
-            <AlbumTrack
-              key={track}
-              category={this.category()}
-              artist={this.artist()}
-              album={this.album()}
-              track={track}
-            />
-          ))}
-        </ul>
-      </div>
-    );
-  }
+        ))}
+      </ul>
+    </div>
+  );
 }
-
-export default Album;
