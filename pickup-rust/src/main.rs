@@ -1,3 +1,4 @@
+use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use player::Command;
 use std::sync::mpsc;
@@ -22,9 +23,12 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         log::info!("Building app");
         App::new()
-            .data(AppState {
+            .app_data(Data::new(AppState {
+                // Note - we have to call .clone() within this `move` block so that each worker gets it's own clone of
+                // the channel.
+                // https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html#shared-mutable-state
                 sender: sender.clone(),
-            })
+            }))
             .service(index::hello)
             .service(index::play)
             .service(index::stop)
