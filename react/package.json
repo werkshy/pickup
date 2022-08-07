@@ -8,6 +8,7 @@
     "format": "prettier --write src index.html",
     "lint": "eslint src --ext .jsx --ext .js",
     "start": "vite serve",
+    "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Andy O'Neill <andy@potatoriot.com>",
