@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install libraries
       run: sudo apt-get install libasound2-dev
     - uses: Swatinem/rust-cache@v1
@@ -26,7 +26,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: install libraries
       run: sudo apt-get install libasound2-dev
     - uses: Swatinem/rust-cache@v1
