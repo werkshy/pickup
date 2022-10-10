@@ -19,7 +19,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.16.x
+        go-version: 1.19.x
     # We don't have it setup in the Makefile to avoid double-building, but 'make lint'
     # requires the react build to have completed.
     - run: make react
