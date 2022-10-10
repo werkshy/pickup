@@ -14,10 +14,10 @@
   "author": "Andy O'Neill <andy@potatoriot.com>",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^8.24.0",
-    "eslint-plugin-react": "^7.31.8",
-    "prettier": "^2.7.1",
-    "vite": "^3.1.6"
+    "eslint": "8.24.0",
+    "eslint-plugin-react": "7.31.8",
+    "prettier": "2.7.1",
+    "vite": "3.1.6"
   },
   "dependencies": {
     "react": "^18.2.0",
