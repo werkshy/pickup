@@ -2,10 +2,10 @@ use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{App, HttpServer};
 use clap::Parser;
-use std::path::Path;
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
 use std::thread;
+use std::{io::Write, sync::Arc};
 
 mod api;
 mod app_state;
@@ -16,13 +16,21 @@ mod player;
 use app_state::AppState;
 use cli::{Cli, Commands};
 use env_logger::Env;
-use filemanager::cache;
 use filemanager::cache::CacheOptions;
+use filemanager::{cache, list::list};
 use player::{Command, Player};
+
+// Enable assert_matches in tests
+#[cfg(test)]
+#[macro_use]
+extern crate assert_matches;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
+    // TODO: enable a different log format in prod (timestamps, maybe JSON?)
+    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
+        .format(|buf, record| writeln!(buf, "{}", record.args()))
+        .init();
 
     let cli = Cli::parse();
 
@@ -51,37 +59,6 @@ async fn main() -> std::io::Result<()> {
     }
 }
 
-// Temp, just for list until we have something more sophisticated
-fn get_parts(path: &Path) -> Vec<String> {
-    path.components()
-        .map(|component| component.as_os_str().to_str().unwrap().to_string())
-        .collect()
-}
-
-fn list(cache_options: CacheOptions) -> std::io::Result<()> {
-    let files = cache::init(cache_options.clone()).unwrap();
-    log::info!("We have got {} files", files.len());
-
-    let root_parts = get_parts(Path::new(cache_options.dir.as_str()));
-
-    for file in files {
-        let parts = get_parts(file.as_path());
-        let relative_parts = parts.strip_prefix(root_parts.as_slice()).unwrap();
-        let num_parts: usize;
-        // Figure out what is left after the category
-        if relative_parts[0].starts_with("_") {
-            num_parts = relative_parts.len() - 1;
-        } else {
-            num_parts = relative_parts.len();
-        }
-        if num_parts > 3 {
-            log::info!("{} {:?}", num_parts, file);
-        }
-    }
-
-    return Ok(());
-}
-
 struct ServeOptions {
     cache_options: CacheOptions,
     port: u32,
@@ -89,8 +66,10 @@ struct ServeOptions {
 
 async fn serve(options: ServeOptions) -> std::io::Result<()> {
     let sender = spawn_player();
+    let collection = cache::init(options.cache_options.clone()).unwrap();
+    let collection_arc = Arc::new(collection);
 
-    let address = format!("127.0.0.1:{}", options.port);
+    let address = format!("0.0.0.0:{}", options.port);
     log::info!("Starting on http://{}", address);
     HttpServer::new(move || {
         log::info!("Building app");
@@ -100,12 +79,14 @@ async fn serve(options: ServeOptions) -> std::io::Result<()> {
                 // the channel.
                 // https://docs.rs/actix-web/4.0.1/actix_web/struct.App.html#shared-mutable-state
                 sender: sender.clone(),
+                collection: collection_arc.clone(),
             }))
             .wrap(Logger::default())
             .service(api::hello)
             .service(api::control::play)
             .service(api::control::stop)
             .service(api::control::volume)
+            .service(api::list::list_categories)
     })
     .workers(2)
     .bind(address.as_str())?
