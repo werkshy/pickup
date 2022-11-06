@@ -2,8 +2,7 @@ name: Rust CI
 
 on:
   push:
-    branches:
-      - $default-branch
+    branches: [main]
   pull_request:
 
 jobs:
