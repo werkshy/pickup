@@ -16,7 +16,8 @@ jobs:
       run: sudo apt-get install libasound2-dev
     - uses: Swatinem/rust-cache@v2
       with:
-        working-directory: pickup-rust
+        workspaces: |
+          - pickup-rust
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -31,7 +32,8 @@ jobs:
       run: sudo apt-get install libasound2-dev
     - uses: Swatinem/rust-cache@v2
       with:
-        working-directory: pickup-rust
+        workspaces: |
+          - pickup-rust
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
