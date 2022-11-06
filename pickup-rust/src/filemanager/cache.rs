@@ -87,14 +87,14 @@ fn db_to_collection(db: sled::Db) -> Collection {
     let first_key = db.first().unwrap().unwrap().0;
     let iter = db
         .range(first_key..)
-        .map(|kv| deserialize(&kv.unwrap().1.to_vec()))
+        .map(|kv| deserialize(&kv.unwrap().1))
         .map(|file| PathBuf::from(file.path))
         .collect();
     build(iter)
 }
 
-fn deserialize(bytes: &Vec<u8>) -> File {
-    let decoded: File = bincode::deserialize(&bytes[..]).unwrap();
+fn deserialize(bytes: &[u8]) -> File {
+    let decoded: File = bincode::deserialize(bytes).unwrap();
     decoded
 }
 

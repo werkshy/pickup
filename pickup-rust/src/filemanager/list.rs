@@ -23,7 +23,7 @@ fn list_category(category: &Category) {
 
 fn list_artist(artist: &Artist, indent: usize) {
     let space = " ".repeat(indent);
-    for (_album_name, album) in &artist.albums {
+    for album in artist.albums.values() {
         list_album(album, indent + 2);
     }
     if !artist.tracks.is_empty() {

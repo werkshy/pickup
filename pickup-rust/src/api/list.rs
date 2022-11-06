@@ -18,7 +18,7 @@ struct ListCategoriesResponse {
 pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder> {
     let collection = data.collection.deref();
     let mut api_categories: Vec<ApiCategory> = vec![];
-    for (_category_name, category) in collection {
+    for category in collection.values() {
         api_categories.push(ApiCategory {
             name: category.name.clone(),
         })
