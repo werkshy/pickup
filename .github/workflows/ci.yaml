@@ -13,7 +13,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: 16.x
     - name: Install Go
@@ -32,7 +32,7 @@ jobs:
         GOOS: linux
         GOARCH: amd64
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pickup (Linux, AMD64)
         path: pickup.linux.amd64
@@ -44,7 +44,7 @@ jobs:
         GOARCH: arm
         GOARM: 5
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pickup (Linux, ARM5)
         path: pickup.linux.arm5
@@ -55,7 +55,7 @@ jobs:
         GOOS: darwin
         GOARCH: amd64
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: pickup (Darwin, AMD64)
         path: pickup.darwin.amd64
