@@ -10,7 +10,7 @@ use crate::filemanager::collection::build;
 use super::collection::Collection;
 
 static DB_ROOT_PATH: &str = ".cache";
-const DEFAULT_IGNORES: [&'static str; 2] = ["Music", "Audio Music Apps"];
+const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
 
 #[derive(Serialize, Deserialize, Debug)]
 struct File {
@@ -31,17 +31,17 @@ pub fn init(options: CacheOptions) -> std::io::Result<Collection> {
         return refresh(options);
     }
 
-    return load(&options.dir);
+    load(&options.dir)
 }
 
 // Assumes that the music dir exists
 // TODO we could wrap the DB in a RAAI type struct?
 fn load(dir: &String) -> std::io::Result<Collection> {
     log::info!("Loading music dir at {}", dir);
-    let db_path = get_db_path(&dir);
+    let db_path = get_db_path(dir);
     let db: sled::Db = sled::open(db_path.as_path())?;
 
-    return Ok(db_to_collection(db));
+    Ok(db_to_collection(db))
 }
 
 // TODO shouldn't this be async?!
@@ -53,7 +53,7 @@ pub fn refresh(options: CacheOptions) -> std::io::Result<Collection> {
         .unwrap_or_else(|| DEFAULT_IGNORES.iter().map(|i| i.to_string()).collect());
     let ignore_set: HashSet<String> = HashSet::from_iter(ignores.into_iter());
 
-    let db_path = get_db_path(&options.dir.clone());
+    let db_path = get_db_path(&options.dir);
     if db_path.exists() {
         log::info!("Deleting existing DB at {:?}", db_path);
         fs::remove_dir_all(db_path.as_path())?;
@@ -63,7 +63,7 @@ pub fn refresh(options: CacheOptions) -> std::io::Result<Collection> {
     db.flush().unwrap();
 
     // Minor performance hit but reading from the DB is a lot quicker than the refresh itself.
-    return Ok(db_to_collection(db));
+    Ok(db_to_collection(db))
 }
 
 /**
@@ -71,7 +71,7 @@ pub fn refresh(options: CacheOptions) -> std::io::Result<Collection> {
  */
 fn hash(s: &str) -> String {
     let mut hasher = DefaultHasher::new();
-    let _hash = s.hash(&mut hasher);
+    s.hash(&mut hasher);
     format!("{:x}", hasher.finish())
 }
 
@@ -90,7 +90,7 @@ fn db_to_collection(db: sled::Db) -> Collection {
         .map(|kv| deserialize(&kv.unwrap().1.to_vec()))
         .map(|file| PathBuf::from(file.path))
         .collect();
-    return build(iter);
+    build(iter)
 }
 
 fn deserialize(bytes: &Vec<u8>) -> File {
@@ -101,7 +101,7 @@ fn deserialize(bytes: &Vec<u8>) -> File {
 fn serialize(path: PathBuf, id: String) -> Vec<u8> {
     let file = File {
         path: path.to_str().unwrap().to_string(),
-        id: id,
+        id,
     };
     bincode::serialize(&file).unwrap()
 }

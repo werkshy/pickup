@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Track {
     pub id: String,
     pub name: String,

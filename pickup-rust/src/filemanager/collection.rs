@@ -8,9 +8,9 @@ use std::{
     path::PathBuf,
 };
 
-const DEFAULT_CATEGORY: &'static str = "Music";
-const CATEGORY_PREFIX: &'static str = "_";
-const CD_REGEX_STR: &'static str = r"(?i)(cd|dis(c|k)) ?\d";
+const DEFAULT_CATEGORY: &str = "Music";
+const CATEGORY_PREFIX: &str = "_";
+const CD_REGEX_STR: &str = r"(?i)(cd|dis(c|k)) ?\d";
 
 pub type Collection = HashMap<String, Category>;
 
@@ -26,7 +26,7 @@ impl CollectionBuilder {
     }
     fn add_category(&mut self, name: String) -> &mut Category {
         if !(self.collection.contains_key(&name)) {
-            let pretty_name = name.strip_prefix("_").unwrap_or(name.as_str()).to_string();
+            let pretty_name = name.strip_prefix('_').unwrap_or(name.as_str()).to_string();
             let category = Category {
                 name: pretty_name,
                 artists: HashMap::new(),
@@ -112,7 +112,7 @@ fn to_track(path: &PathBuf) -> Result<Track, String> {
         ));
     }
 
-    return Ok(Track {
+    Ok(Track {
         id,
         name: stem,
         extension,
@@ -121,18 +121,18 @@ fn to_track(path: &PathBuf) -> Result<Track, String> {
         artist,
         album,
         disc,
-    });
+    })
 }
 
 fn is_disc(dir: Option<&Cow<str>>) -> bool {
     lazy_static! {
         static ref CD_REGEX: Regex = Regex::new(CD_REGEX_STR).unwrap();
     }
-    return dir.is_some() && CD_REGEX.is_match(dir.unwrap());
+    dir.is_some() && CD_REGEX.is_match(dir.unwrap())
 }
 
 fn is_category(dir: Option<&Cow<str>>) -> bool {
-    return dir.is_some() && dir.unwrap().starts_with(CATEGORY_PREFIX);
+    dir.is_some() && dir.unwrap().starts_with(CATEGORY_PREFIX)
 }
 
 fn get_extentsion(path: &PathBuf) -> Result<String, String> {
@@ -140,7 +140,7 @@ fn get_extentsion(path: &PathBuf) -> Result<String, String> {
     if maybe_extension.is_none() {
         return Err(format!("Path '{path:?}' has no extension",));
     }
-    return Ok(maybe_extension.unwrap().to_string());
+    Ok(maybe_extension.unwrap().to_string())
 }
 
 fn get_stem(path: &PathBuf) -> Result<String, String> {
@@ -148,7 +148,7 @@ fn get_stem(path: &PathBuf) -> Result<String, String> {
     if maybe_stem.is_none() {
         return Err(format!("Path '{path:?}' has no stem",));
     }
-    return Ok(maybe_stem.unwrap().to_string());
+    Ok(maybe_stem.unwrap().to_string())
 }
 
 /**
@@ -162,7 +162,7 @@ pub fn build(files: Vec<PathBuf>) -> Collection {
             Err(err) => log::error!("{:?}", err),
         }
     }
-    return builder.collection;
+    builder.collection
 }
 
 #[cfg(test)]

@@ -3,15 +3,15 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 const ID_LEN: usize = 16;
 
 pub fn generate_id() -> String {
-    return generate_id_len(ID_LEN);
+    generate_id_len(ID_LEN)
 }
 
 fn generate_id_len(len: usize) -> String {
-    return thread_rng()
+    thread_rng()
         .sample_iter(&Alphanumeric)
         .take(len)
         .map(char::from)
-        .collect();
+        .collect()
 }
 
 #[cfg(test)]
