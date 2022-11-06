@@ -1,9 +1,12 @@
-use crate::filemanager::cache::{self, CacheOptions};
+use crate::filemanager::collection::init;
 
-use super::model::{Album, Artist, Category};
+use super::{
+    model::{Album, Artist, Category},
+    options::CollectionOptions,
+};
 
-pub fn list(cache_options: CacheOptions) -> std::io::Result<()> {
-    let collection = cache::init(cache_options).unwrap();
+pub fn list(cache_options: CollectionOptions) -> std::io::Result<()> {
+    let collection = init(cache_options).unwrap();
     log::info!("We have got {} categories", collection.len());
 
     for (category_name, category) in collection {
