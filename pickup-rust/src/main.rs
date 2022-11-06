@@ -16,9 +16,11 @@ mod player;
 use app_state::AppState;
 use cli::{Cli, Commands};
 use env_logger::Env;
-use filemanager::cache::CacheOptions;
+use filemanager::options::CollectionOptions;
 use filemanager::{cache, list::list};
 use player::{Command, Player};
+
+use crate::filemanager::collection;
 
 // Enable assert_matches in tests
 #[cfg(test)]
@@ -36,7 +38,7 @@ async fn main() -> std::io::Result<()> {
 
     let music_dir: &str = cli.music_dir.as_str();
 
-    let cache_options = CacheOptions {
+    let cache_options = CollectionOptions {
         dir: music_dir.to_string(),
         ignores: None,
     };
@@ -58,19 +60,18 @@ async fn main() -> std::io::Result<()> {
 }
 
 struct ServeOptions {
-    cache_options: CacheOptions,
+    cache_options: CollectionOptions,
     port: u32,
 }
 
 async fn serve(options: ServeOptions) -> std::io::Result<()> {
     let sender = spawn_player();
-    let collection = cache::init(options.cache_options.clone()).unwrap();
+    let collection = collection::init(options.cache_options.clone()).unwrap();
     let collection_arc = Arc::new(collection);
 
     let address = format!("0.0.0.0:{}", options.port);
     log::info!("Starting on http://{}", address);
     HttpServer::new(move || {
-        log::info!("Building app");
         App::new()
             .app_data(Data::new(AppState {
                 // Note - we have to call .clone() within this `move` block so that each worker gets it's own clone of

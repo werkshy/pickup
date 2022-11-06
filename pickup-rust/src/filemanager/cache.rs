@@ -5,9 +5,7 @@ use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-use crate::filemanager::collection::build;
-
-use super::collection::Collection;
+use super::options::CollectionOptions;
 
 static DB_ROOT_PATH: &str = ".cache";
 const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
@@ -18,34 +16,27 @@ struct File {
     id: String,
 }
 
-#[derive(Clone, Debug)]
-pub struct CacheOptions {
-    pub dir: String,
-    pub ignores: Option<Vec<String>>,
-}
-
-pub fn init(options: CacheOptions) -> std::io::Result<Collection> {
+pub fn init(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     let db_path = get_db_path(&options.dir);
     if !db_path.exists() {
         log::info!("DB does not exist '{:?}': refreshing", db_path);
         return refresh(options);
     }
 
-    load(&options.dir)
+    load(&db_path)
 }
 
 // Assumes that the music dir exists
 // TODO we could wrap the DB in a RAAI type struct?
-fn load(dir: &String) -> std::io::Result<Collection> {
-    log::info!("Loading music dir at {}", dir);
-    let db_path = get_db_path(dir);
-    let db: sled::Db = sled::open(db_path.as_path())?;
+fn load(path: &PathBuf) -> std::io::Result<Vec<PathBuf>> {
+    log::info!("Loading music dir at {:?}", path);
+    let db: sled::Db = sled::open(path.as_path())?;
 
-    Ok(db_to_collection(db))
+    Ok(db_to_files(db))
 }
 
 // TODO shouldn't this be async?!
-pub fn refresh(options: CacheOptions) -> std::io::Result<Collection> {
+pub fn refresh(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     log::info!("Refreshing music dir at {}", options.dir);
 
     let ignores: Vec<String> = options
@@ -63,7 +54,7 @@ pub fn refresh(options: CacheOptions) -> std::io::Result<Collection> {
     db.flush().unwrap();
 
     // Minor performance hit but reading from the DB is a lot quicker than the refresh itself.
-    Ok(db_to_collection(db))
+    Ok(db_to_files(db))
 }
 
 /**
@@ -83,14 +74,12 @@ fn get_db_path(music_dir: &str) -> PathBuf {
     Path::new(DB_ROOT_PATH).join(hash(music_dir))
 }
 
-fn db_to_collection(db: sled::Db) -> Collection {
+fn db_to_files(db: sled::Db) -> Vec<PathBuf> {
     let first_key = db.first().unwrap().unwrap().0;
-    let iter = db
-        .range(first_key..)
+    db.range(first_key..)
         .map(|kv| deserialize(&kv.unwrap().1))
         .map(|file| PathBuf::from(file.path))
-        .collect();
-    build(iter)
+        .collect()
 }
 
 fn deserialize(bytes: &[u8]) -> File {

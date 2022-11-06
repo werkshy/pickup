@@ -1,4 +1,4 @@
-use super::{model::Track, utils::generate_id};
+use super::{cache, model::Track, options::CollectionOptions, utils::generate_id};
 use crate::filemanager::model::Category;
 use lazy_static::lazy_static;
 use regex::Regex;
@@ -13,6 +13,11 @@ const CATEGORY_PREFIX: &str = "_";
 const CD_REGEX_STR: &str = r"(?i)(cd|dis(c|k)) ?\d";
 
 pub type Collection = HashMap<String, Category>;
+
+pub fn init(options: CollectionOptions) -> std::io::Result<Collection> {
+    let files = cache::init(options)?;
+    Ok(build(files))
+}
 
 struct CollectionBuilder {
     collection: Collection,
