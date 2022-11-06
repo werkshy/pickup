@@ -21,7 +21,7 @@ jobs:
       with:
         toolchain: stable
     - run: cd pickup-rust && cargo fmt -- --check
-    - run: cd pickup-rust && cargo clippy -- -Dwarnings
+    - run: cd pickup-rust && cargo clippy --no-deps -- -Dwarnings
     - run: cd pickup-rust && cargo test
   build:
     runs-on: ubuntu-latest
