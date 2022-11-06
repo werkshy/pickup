@@ -1,6 +1,8 @@
-name: Rust CI
+name: Rust Release
 
-on: push
+on:
+  push:
+    branches: [main]
 
 defaults:
   run:
@@ -8,9 +10,8 @@ defaults:
     working-directory: pickup-rust
 
 jobs:
-  test:
+  build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: install libraries
@@ -23,14 +24,14 @@ jobs:
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           pickup-rust/target/
-        key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
     - name: Update rust toolchain
       run: |
         rustup update
         rustup component add clippy
-    - name: 'Check format'
-      run: cargo fmt -- --check
-    - name: 'Run clippy linter'
-      run: cargo clippy --no-deps -- -Dwarnings
-    - name: 'Run tests'
-      run: cargo test
+    - name: 'Build release binary'
+      run: cargo build --release
+
+# TODO cross-compiling https://github.com/marketplace/actions/rust-cargo#cross-compilation
+# Might not be possible if we have platform-specific dependencies
+
