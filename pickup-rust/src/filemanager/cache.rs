@@ -3,6 +3,7 @@ use std::collections::{hash_map::DefaultHasher, HashSet};
 use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
+
 use walkdir::WalkDir;
 
 use super::options::CollectionOptions;
