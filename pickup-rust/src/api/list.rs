@@ -26,5 +26,5 @@ pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder
     let response = ListCategoriesResponse {
         categories: api_categories,
     };
-    return Ok(web::Json(response));
+    Ok(web::Json(response))
 }

@@ -42,19 +42,17 @@ async fn main() -> std::io::Result<()> {
     };
 
     match cli.command {
-        Commands::List {} => {
-            return list(cache_options);
-        }
+        Commands::List {} => list(cache_options),
         Commands::Refresh {} => {
             let result = cache::refresh(cache_options.clone());
-            return result.map(|_| ());
+            result.map(|_| ())
         }
         Commands::Serve { port } => {
-            return serve(ServeOptions {
+            serve(ServeOptions {
                 cache_options: cache_options.clone(),
                 port,
             })
-            .await;
+            .await
         }
     }
 }
