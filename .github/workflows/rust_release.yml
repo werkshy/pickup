@@ -34,8 +34,8 @@ jobs:
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v3
       with:
-        name: pickup-rust (Linux, AMD64)
-        path: pickup-rust/target/release/pickup-rust
+        name: pickup (Rust, Linux, AMD64)
+        path: pickup-rust/target/release/pickup
 
 # TODO cross-compiling https://github.com/marketplace/actions/rust-cargo#cross-compilation
 # Might not be possible if we have platform-specific dependencies

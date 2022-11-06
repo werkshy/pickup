@@ -5,8 +5,8 @@ use super::{
     options::CollectionOptions,
 };
 
-pub fn list(cache_options: CollectionOptions) -> std::io::Result<()> {
-    let collection = init(cache_options).unwrap();
+pub fn list(collection_options: CollectionOptions) -> std::io::Result<()> {
+    let collection = init(collection_options).unwrap();
     log::info!("We have got {} categories", collection.len());
 
     for (category_name, category) in collection {

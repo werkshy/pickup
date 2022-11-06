@@ -15,6 +15,12 @@ pub struct Player {
     sink: Sink,
 }
 
+impl Default for Player {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Player {
     pub fn new() -> Player {
         log::info!("Creating stream and sink");

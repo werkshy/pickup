@@ -1,5 +1,5 @@
 [package]
-name = "pickup-rust"
+name = "pickup"
 version = "0.1.0"
 authors = ["Andy O'Neill <andy@potatoriot.com>"]
 edition = "2021"

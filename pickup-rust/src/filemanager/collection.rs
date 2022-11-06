@@ -1,12 +1,13 @@
-use super::{cache, model::Track, options::CollectionOptions, utils::generate_id};
-use crate::filemanager::model::Category;
-use lazy_static::lazy_static;
-use regex::Regex;
 use std::{
     borrow::Cow,
     collections::{HashMap, VecDeque},
     path::PathBuf,
 };
+
+use lazy_static::lazy_static;
+use regex::Regex;
+
+use super::{cache, model::Category, model::Track, options::CollectionOptions, utils::generate_id};
 
 const DEFAULT_CATEGORY: &str = "Music";
 const CATEGORY_PREFIX: &str = "_";
@@ -177,8 +178,8 @@ mod tests {
 
     #[test]
     fn test_is_category() {
-        assert_eq!(true, is_category(Some(&Cow::from("_Trance"))));
-        assert_eq!(false, is_category(Some(&Cow::from("Smashing Pumpkins"))));
+        assert!(is_category(Some(&Cow::from("_Trance"))));
+        assert!(!is_category(Some(&Cow::from("Smashing Pumpkins"))));
     }
 
     #[test]
@@ -187,10 +188,10 @@ mod tests {
         let non_disc_strings = vec!["C D1", "thing 1", "An Album", "Album Part 2", "CD II"];
 
         for test_string in disc_strings {
-            assert_eq!(true, is_disc(Some(&Cow::from(test_string))));
+            assert!(is_disc(Some(&Cow::from(test_string))));
         }
         for test_string in non_disc_strings {
-            assert_eq!(false, is_disc(Some(&Cow::from(test_string))));
+            assert!(!is_disc(Some(&Cow::from(test_string))));
         }
     }
 
