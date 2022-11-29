@@ -16,9 +16,7 @@ function toMMSS(num) {
   let minutes = Math.floor(rounded / 60);
   var seconds = Math.floor(rounded % 60);
 
-  return (
-    `${minutes.toString(10).padStart(2, "0")}:${seconds.toString(10).padStart(2, "0")}`
-  );
+  return `${minutes.toString(10).padStart(2, "0")}:${seconds.toString(10).padStart(2, "0")}`;
 }
 
 export function Controls() {
@@ -43,7 +41,7 @@ export function Controls() {
       {
         command: command,
       },
-      opts
+      opts,
     );
     const response = await fetch("/api/control/", {
       method: "POST",
@@ -87,38 +85,13 @@ export function Controls() {
         onClick={() => postCommand("volumeDelta", { volumeDelta: 5 })}
       />
       <span className="control-break">|</span>
-      <div
-        id="stop"
-        className="button"
-        title="Stop playback"
-        onClick={() => postCommand("stop")}
-      />
-      <div
-        id="play"
-        className="button"
-        title="Start playback"
-        onClick={() => postCommand("play")}
-      />
-      <div
-        id="pause"
-        className="button"
-        title="Pause playback"
-        onClick={() => postCommand("pause")}
-      />
+      <div id="stop" className="button" title="Stop playback" onClick={() => postCommand("stop")} />
+      <div id="play" className="button" title="Start playback" onClick={() => postCommand("play")} />
+      <div id="pause" className="button" title="Pause playback" onClick={() => postCommand("pause")} />
       <span className="control-break">|</span>
-      <div
-        id="prev-track"
-        className="button"
-        title="Play previous track"
-        onClick={() => postCommand("prev")}
-      />
+      <div id="prev-track" className="button" title="Play previous track" onClick={() => postCommand("prev")} />
       <span> track</span>
-      <div
-        id="next-track"
-        className="button"
-        title="Play next track"
-        onClick={() => postCommand("next")}
-      />
+      <div id="next-track" className="button" title="Play next track" onClick={() => postCommand("next")} />
       <span className="control-break">|</span>
       {trackInfo}
       <span className="control-break">|</span>

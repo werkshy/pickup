@@ -41,10 +41,7 @@ export function Playlist() {
         <span>Playlist</span>
         <div className="arrow up-arrow" />
       </div>
-      <div
-        id="playlist-slider"
-        style={{ display: isVisible ? "block" : "none" }}
-      >
+      <div id="playlist-slider" style={{ display: isVisible ? "block" : "none" }}>
         <div id="playlist">
           <ul id="playlist-tracks">
             <>

@@ -34,5 +34,5 @@ render(
   <BrowserRouter>
     <App />
   </BrowserRouter>,
-  document.getElementById("index")
+  document.getElementById("index"),
 );

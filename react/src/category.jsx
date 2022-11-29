@@ -7,11 +7,7 @@ function CategoryArtist(props) {
   let target = `/artist/${props.category}/${props.artist.Name}`;
   return (
     <li>
-      <span
-        className="artist-title"
-        data-artist="{this.props.artist.Name}"
-        data-category=""
-      >
+      <span className="artist-title" data-artist="{this.props.artist.Name}" data-category="">
         <Link to={target}>{props.artist.Name}</Link>
       </span>
     </li>
@@ -33,16 +29,8 @@ function CategoryAlbum(props) {
       <span className="album-title abbreviated">
         <Link to={target}>{props.name}</Link>
       </span>
-      <div
-        className="album-actions add"
-        title={`Add '${props.name}'`}
-        onClick={add}
-      />
-      <div
-        className="album-actions play"
-        title={`Play '${props.name}'`}
-        onClick={play}
-      />
+      <div className="album-actions add" title={`Add '${props.name}'`} onClick={add} />
+      <div className="album-actions play" title={`Play '${props.name}'`} onClick={play} />
     </li>
   );
 }
@@ -79,11 +67,7 @@ export function Category() {
         <h3>Albums</h3>
         <ul id="albumList">
           {albumNames.map((album) => (
-            <CategoryAlbum
-              name={album}
-              category={name}
-              key={`album__${album}`}
-            />
+            <CategoryAlbum name={album} category={name} key={`album__${album}`} />
           ))}
         </ul>
       </>

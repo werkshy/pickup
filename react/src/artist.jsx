@@ -12,23 +12,14 @@ function ArtistAlbum(props) {
     playAlbum(props.category, props.artist, props.name, true);
   };
 
-  let target =
-    `/album/${props.category}/${props.artist}/${props.name}`;
+  let target = `/album/${props.category}/${props.artist}/${props.name}`;
   return (
     <li id={props.name}>
       <span className="album-title abbreviated">
         <Link to={target}>{props.name}</Link>
       </span>
-      <div
-        className="album-actions add"
-        title="Add {props.name}"
-        onClick={add}
-      />
-      <div
-        className="album-actions play"
-        title="Play {props.name}"
-        onClick={play}
-      />
+      <div className="album-actions add" title="Add {props.name}" onClick={add} />
+      <div className="album-actions play" title="Play {props.name}" onClick={play} />
     </li>
   );
 }
@@ -63,12 +54,7 @@ export function Artist() {
       <h2>{artist}</h2>
       <ul id="albumList">
         {albumNames.map((album) => (
-          <ArtistAlbum
-            key={album}
-            category={category}
-            artist={artist}
-            name={album}
-          />
+          <ArtistAlbum key={album} category={category} artist={artist} name={album} />
         ))}
       </ul>
     </div>

@@ -18,16 +18,8 @@ function AlbumTrack(props) {
       <span className="track-title abbreviated" onClick={play}>
         {props.track}
       </span>
-      <div
-        className="track-actions add"
-        title={`Add ${props.track}`}
-        onClick={add}
-      />
-      <div
-        className="track-actions play"
-        title={`Play ${props.track}`}
-        onClick={play}
-      >
+      <div className="track-actions add" title={`Add ${props.track}`} onClick={add} />
+      <div className="track-actions play" title={`Play ${props.track}`} onClick={play}>
         &nbsp;
       </div>
     </li>
@@ -70,26 +62,12 @@ export function Album() {
       <h2 className="artist-name">
         {artist ? `${artist} - ` : ""}
         {album}
-        <span
-          className="album-actions add"
-          onClick={add}
-          title={`Add album '${album}'`}
-        />
-        <span
-          className="album-actions play"
-          onClick={play}
-          title={`Play album '${album}'`}
-        />
+        <span className="album-actions add" onClick={add} title={`Add album '${album}'`} />
+        <span className="album-actions play" onClick={play} title={`Play album '${album}'`} />
       </h2>
       <ul id="trackList">
         {tracks.map((track) => (
-          <AlbumTrack
-            key={track}
-            category={category}
-            artist={artist}
-            album={album}
-            track={track}
-          />
+          <AlbumTrack key={track} category={category} artist={artist} album={album} track={track} />
         ))}
       </ul>
     </div>
