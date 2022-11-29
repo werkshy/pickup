@@ -18,7 +18,7 @@ function App() {
       <Controls />
       <CategoryList />
       <Routes>
-        <Route path="/" element={<Navigate replace to="/category/Music" />} />
+        <Route path="/" element={<Navigate replace={true} to="/category/Music" />} />
         <Route path="/category/:name" element={<Category />} />
         <Route path="/artist/:category/:artist" element={<Artist />} />
         <Route path="/album/:category/:artist/:album" element={<Album />} />

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 function Category(props) {
-  let target = "/category/" + props.category;
+  let target = `/category/${props.category}`;
   return (
     <li>
       <span className="title" data-name="{props.category}">

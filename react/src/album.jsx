@@ -42,9 +42,9 @@ export function Album() {
   // e.g. /api/artist/:category/:artist
   // or, perhaps we could assign a unique id to each artist, album and maybe even track
   const fetchData = async () => {
-    let url = "/api/albums/" + category + "/";
+    let url = `/api/albums/${category}/`;
     if (artist) {
-      url += artist + "/";
+      url += `${artist}/`;
     }
     url += album;
     const response = await fetch(url);
@@ -68,7 +68,7 @@ export function Album() {
   return (
     <div id="albumView" className="singlecolumn">
       <h2 className="artist-name">
-        {artist ? artist + " - " : ""}
+        {artist ? `${artist} - ` : ""}
         {album}
         <span
           className="album-actions add"

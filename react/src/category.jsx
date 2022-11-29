@@ -4,7 +4,7 @@ import { useInterval } from "./utils/useInterval";
 import { playAlbum } from "./actions";
 
 function CategoryArtist(props) {
-  let target = "/artist/" + props.category + "/" + props.artist.Name;
+  let target = `/artist/${props.category}/${props.artist.Name}`;
   return (
     <li>
       <span
@@ -27,7 +27,7 @@ function CategoryAlbum(props) {
     playAlbum(props.category, undefined, props.name, true);
   };
 
-  const target = "/album/" + props.category + "/" + props.name;
+  const target = `/album/${props.category}/${props.name}`;
   return (
     <li id={props.name}>
       <span className="album-title abbreviated">
@@ -82,7 +82,7 @@ export function Category() {
             <CategoryAlbum
               name={album}
               category={name}
-              key={"album__" + album}
+              key={`album__${album}`}
             />
           ))}
         </ul>

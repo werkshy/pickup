@@ -13,7 +13,7 @@ function ArtistAlbum(props) {
   };
 
   let target =
-    "/album/" + props.category + "/" + props.artist + "/" + props.name;
+    `/album/${props.category}/${props.artist}/${props.name}`;
   return (
     <li id={props.name}>
       <span className="album-title abbreviated">

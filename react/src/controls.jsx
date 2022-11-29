@@ -17,9 +17,7 @@ function toMMSS(num) {
   var seconds = Math.floor(rounded % 60);
 
   return (
-    minutes.toString(10).padStart(2, "0") +
-    ":" +
-    seconds.toString(10).padStart(2, "0")
+    `${minutes.toString(10).padStart(2, "0")}:${seconds.toString(10).padStart(2, "0")}`
   );
 }
 
