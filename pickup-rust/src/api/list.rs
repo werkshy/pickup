@@ -1,4 +1,5 @@
 use actix_web::{get, web, Responder, Result};
+use itertools::sorted;
 use lazy_static::__Deref;
 use serde::Serialize;
 
@@ -18,11 +19,12 @@ struct ListCategoriesResponse {
 pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder> {
     let collection = data.collection.deref();
     let mut api_categories: Vec<ApiCategory> = vec![];
-    for category in collection.values() {
+
+    sorted(collection.keys()).for_each(|category| {
         api_categories.push(ApiCategory {
-            name: category.name.clone(),
+            name: collection.get(category).unwrap().name.clone(),
         })
-    }
+    });
     let response = ListCategoriesResponse {
         categories: api_categories,
     };

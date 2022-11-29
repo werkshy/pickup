@@ -44,7 +44,7 @@ impl CollectionBuilder {
     }
 
     fn add_track(&mut self, track: Track) {
-        log::info!("Adding track {:?}", track.path);
+        log::info!("Adding track [{:?}] {:?}", track.category, track.path);
         let category = self.add_category(track.category.clone());
         match (&track.artist, &track.album) {
             (Some(artist_name), Some(album_name)) => {
