@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "vite build",
-    "format": "prettier --write src index.html",
-    "lint": "eslint src --ext .jsx --ext .js",
+    "format": "rome format --write src",
+    "check:format": "rome format src",
+    "lint": "rome check src",
     "start": "vite serve",
     "preview": "vite preview",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -14,9 +15,7 @@
   "author": "Andy O'Neill <andy@potatoriot.com>",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "8.27.0",
-    "eslint-plugin-react": "7.31.10",
-    "prettier": "2.7.1",
+    "rome": "^10.0.1",
     "vite": "3.2.2"
   },
   "dependencies": {
