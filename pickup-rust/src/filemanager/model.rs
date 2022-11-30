@@ -1,4 +1,4 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{collections::BTreeMap, path::PathBuf};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Track {
@@ -14,7 +14,7 @@ pub struct Track {
 
 pub struct Album {
     pub name: String,
-    pub discs: HashMap<String, Box<Album>>,
+    pub discs: BTreeMap<String, Box<Album>>,
     pub tracks: Vec<Track>,
 }
 
@@ -23,7 +23,7 @@ impl Album {
         if !(self.discs.contains_key(&name)) {
             let disc = Album {
                 name: name.clone(),
-                discs: HashMap::new(),
+                discs: BTreeMap::new(),
                 tracks: vec![],
             };
             self.discs.insert(name.clone(), Box::new(disc));
@@ -34,7 +34,7 @@ impl Album {
 
 pub struct Artist {
     pub name: String,
-    pub albums: HashMap<String, Album>,
+    pub albums: BTreeMap<String, Album>,
     pub tracks: Vec<Track>,
 }
 
@@ -43,7 +43,7 @@ impl Artist {
         if !(self.albums.contains_key(&name)) {
             let album = Album {
                 name: name.clone(),
-                discs: HashMap::new(),
+                discs: BTreeMap::new(),
                 tracks: vec![],
             };
             self.albums.insert(name.clone(), album);
@@ -54,8 +54,8 @@ impl Artist {
 
 pub struct Category {
     pub name: String,
-    pub albums: HashMap<String, Album>,
-    pub artists: HashMap<String, Artist>,
+    pub albums: BTreeMap<String, Album>,
+    pub artists: BTreeMap<String, Artist>,
 }
 
 impl Category {
@@ -63,7 +63,7 @@ impl Category {
         if !(self.artists.contains_key(&name)) {
             let artist = Artist {
                 name: name.clone(),
-                albums: HashMap::new(),
+                albums: BTreeMap::new(),
                 tracks: vec![],
             };
             self.artists.insert(name.clone(), artist);
@@ -75,7 +75,7 @@ impl Category {
         if !(self.albums.contains_key(&name)) {
             let album = Album {
                 name: name.clone(),
-                discs: HashMap::new(),
+                discs: BTreeMap::new(),
                 tracks: vec![],
             };
             self.albums.insert(name.clone(), album);

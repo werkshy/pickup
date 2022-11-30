@@ -1,3 +1,5 @@
+#![warn(unused_extern_crates)]
+
 mod cli;
 
 use std::io::Write;
