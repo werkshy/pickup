@@ -1,6 +1,6 @@
 use std::{
     borrow::Cow,
-    collections::{HashMap, VecDeque},
+    collections::{BTreeMap, VecDeque},
     path::PathBuf,
 };
 
@@ -13,7 +13,7 @@ const DEFAULT_CATEGORY: &str = "Music";
 const CATEGORY_PREFIX: &str = "_";
 const CD_REGEX_STR: &str = r"(?i)(cd|dis(c|k)) ?\d";
 
-pub type Collection = HashMap<String, Category>;
+pub type Collection = BTreeMap<String, Category>;
 
 pub fn init(options: CollectionOptions) -> std::io::Result<Collection> {
     let files = cache::init(options)?;
@@ -27,7 +27,7 @@ struct CollectionBuilder {
 impl CollectionBuilder {
     pub fn new() -> Self {
         Self {
-            collection: HashMap::new(),
+            collection: BTreeMap::new(),
         }
     }
     fn add_category(&mut self, name: String) -> &mut Category {
@@ -35,8 +35,8 @@ impl CollectionBuilder {
             let pretty_name = name.strip_prefix('_').unwrap_or(name.as_str()).to_string();
             let category = Category {
                 name: pretty_name,
-                artists: HashMap::new(),
-                albums: HashMap::new(),
+                artists: BTreeMap::new(),
+                albums: BTreeMap::new(),
             };
             self.collection.insert(name.clone(), category);
         }
