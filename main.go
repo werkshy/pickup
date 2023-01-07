@@ -12,7 +12,7 @@ import (
 	"github.com/werkshy/pickup/config"
 	"github.com/werkshy/pickup/handlers"
 	"github.com/werkshy/pickup/player"
-	flag "launchpad.net/gnuflag"
+	flag "github.com/juju/gnuflag"
 )
 
 func main() {
