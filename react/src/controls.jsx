@@ -45,7 +45,7 @@ export function Controls() {
       {
         command: command,
       },
-      opts
+      opts,
     );
     const response = await fetch("/api/control/", {
       method: "POST",
