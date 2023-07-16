@@ -17,22 +17,32 @@ the Raspberry Pi with room to run mpd as well. Because of the client-side
 architecture it is very fast.
 
 In mid-2021, I have started rewriting the backend in Rust. The two motiviations for this are:
+
 - This is the project I usually use to learn a new language or framework
 - I want to get away from mpd and have a single executable that can do the web part, plus control the playlist and actually play music, and set us up for playback in the browser. This is basically a complete rewrite anyway.
 
 ## Getting Started In Ubuntu
 
+    # The React frontend requires the 'yarn' package manager -
+    # install it like this:
+    sudo apt install nodejs
+
+    # This next command might require 'sudo' as well.
+    npm install -g yarn
+
     # Requires go > v1.16, which is best installed via `snap` on Ubuntu.
     sudo snap install --classic go
+    # Install yarn dependencies, build the frontend, and build the binary:
+    make build
 
-    go build
+    # Run the binary
     ./pickup --help
     ./pickup
 
 ## Getting Started on macOS / brew
 
     # Requires go > 1.16 for the embed feature
-    brew install golang
+    brew install yarn golang
     make
 
 ## Getting Started Cross-Compiling for Raspberry Pi
