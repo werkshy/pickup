@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { Playlist } from "./playlist";
@@ -30,9 +30,10 @@ function App() {
   );
 }
 
-render(
+const container = document.getElementById("index");
+const root = createRoot(container);
+root.render(
   <BrowserRouter>
     <App />
   </BrowserRouter>,
-  document.getElementById("index"),
 );
