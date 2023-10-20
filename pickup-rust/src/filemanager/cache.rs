@@ -43,7 +43,7 @@ pub fn refresh(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     let ignores: Vec<String> = options
         .ignores
         .unwrap_or_else(|| DEFAULT_IGNORES.iter().map(|i| i.to_string()).collect());
-    let ignore_set: HashSet<String> = HashSet::from_iter(ignores.into_iter());
+    let ignore_set: HashSet<String> = HashSet::from_iter(ignores);
 
     let db_path = get_db_path(&options.dir);
     if db_path.exists() {
