@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "React frontend to Pickup music player",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "vite build",
     "format": "prettier --write src index.html",
