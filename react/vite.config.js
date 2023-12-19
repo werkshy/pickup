@@ -1,6 +1,6 @@
 /* eslint-disable no-undef */
 import { defineConfig } from "vite";
-const { resolve } = require("path");
+import { resolve } from "node:path";
 
 export default defineConfig({
   plugins: [],
