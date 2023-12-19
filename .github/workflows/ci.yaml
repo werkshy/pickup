@@ -17,7 +17,7 @@ jobs:
       with:
         node-version: 16.x
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
         go-version: 1.19.x
     # We don't have it setup in the Makefile to avoid double-building, but 'make lint'
@@ -32,7 +32,7 @@ jobs:
         GOOS: linux
         GOARCH: amd64
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pickup (Linux, AMD64)
         path: pickup.linux.amd64
@@ -44,7 +44,7 @@ jobs:
         GOARCH: arm
         GOARM: 5
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pickup (Linux, ARM5)
         path: pickup.linux.arm5
@@ -55,7 +55,7 @@ jobs:
         GOOS: darwin
         GOARCH: amd64
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pickup (Darwin, AMD64)
         path: pickup.darwin.amd64
