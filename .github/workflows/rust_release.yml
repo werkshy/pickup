@@ -32,7 +32,7 @@ jobs:
     - name: 'Build release binary'
       run: cargo build --release
     - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: pickup (Rust, Linux, AMD64)
         path: pickup-rust/target/release/pickup
