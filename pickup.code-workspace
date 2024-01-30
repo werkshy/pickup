@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "react"
+		},
+		{
+			"path": "pickup-rust"
+		},
+	],
+	"settings": {}
+}
