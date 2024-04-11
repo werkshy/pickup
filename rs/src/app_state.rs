@@ -1,9 +1,10 @@
-use std::sync::{mpsc::Sender, Arc};
+use std::sync::{mpsc::Sender, Arc, RwLock};
 
-use crate::{filemanager::collection::Collection, player::Command};
+use crate::{filemanager::collection::Collection, player::Command, queue::PlaybackQueue};
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct AppState {
-    pub sender: Sender<Box<dyn Command>>,
+    pub player_sender: Sender<Box<dyn Command>>,
     pub collection: Arc<Collection>,
+    pub queue: RwLock<PlaybackQueue>,
 }

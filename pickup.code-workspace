@@ -8,8 +8,10 @@
 			"name": "frontend"
 		},
 		{
-			"path": "pickup-rust"
+			"path": "rs",
+			"name": "rust"
 		},
 	],
-	"settings": {}
+	"settings": {
+	}
 }

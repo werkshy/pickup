@@ -1,5 +1,7 @@
 
-.PHONY: frontend go rs clean lint
+.PHONY: all frontend go rs clean lint
+
+all: go rs
 
 go:
 	cd go && make pickup
