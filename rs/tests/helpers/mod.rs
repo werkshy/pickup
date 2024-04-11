@@ -1,10 +1,15 @@
 use actix_web::{
     body::MessageBody,
     dev::{ServiceFactory, ServiceRequest, ServiceResponse},
+    web::Data,
     App, Error,
 };
-use pickup::{build_app, build_app_state, filemanager::options::CollectionOptions, ServeOptions};
+use pickup::{
+    app_state::AppState, build_app, build_app_state, filemanager::options::CollectionOptions,
+    ServeOptions,
+};
 
+#[allow(dead_code)] // Used in tests, but triggers dead_code on test binaries that don't use it.
 pub fn build_test_app() -> App<
     impl ServiceFactory<
         ServiceRequest,
@@ -14,6 +19,10 @@ pub fn build_test_app() -> App<
         Error = Error,
     >,
 > {
+    build_app(build_test_app_state())
+}
+
+pub fn build_test_app_state() -> Data<AppState> {
     let options = ServeOptions {
         collection_options: CollectionOptions {
             dir: String::from("../music"),
@@ -22,6 +31,5 @@ pub fn build_test_app() -> App<
         port: 3001,
     };
 
-    let app_state = build_app_state(&options);
-    return build_app(app_state);
+    Data::new(build_app_state(&options))
 }

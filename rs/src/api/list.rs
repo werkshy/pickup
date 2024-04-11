@@ -4,9 +4,33 @@ use serde::Serialize;
 
 use crate::app_state::AppState;
 
+// TODO fill this out
 #[derive(Debug, Serialize)]
 struct ApiCategory {
     name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ApiTrack {
+    id: String,
+    title: String,
+    artist: Option<String>,
+    album: Option<String>,
+    disc: Option<String>,
+    category: String,
+}
+
+impl ApiTrack {
+    pub fn from_track(track: &crate::filemanager::model::Track) -> Self {
+        ApiTrack {
+            id: track.id.clone(),
+            title: track.name.clone(),
+            artist: track.artist.clone(),
+            album: track.album.clone(),
+            disc: track.disc.clone(),
+            category: track.category.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]

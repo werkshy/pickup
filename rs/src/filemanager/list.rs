@@ -7,9 +7,9 @@ use super::{
 
 pub fn list(collection_options: CollectionOptions) -> std::io::Result<()> {
     let collection = init(collection_options).unwrap();
-    log::info!("We have got {} categories", collection.len());
+    log::info!("We have got {} categories", collection.categories.len());
 
-    for (category_name, category) in collection {
+    for (category_name, category) in collection.categories {
         log::info!("[cat]{category_name}");
         list_category(&category);
     }
@@ -40,6 +40,10 @@ fn list_artist(artist: &Artist, indent: usize) {
 fn list_album(album: &Album, indent: usize) {
     let space = " ".repeat(indent);
     log::info!("{space}[al]{}", album.name);
+
+    for disc in album.discs.values() {
+        list_album(disc, indent + 2);
+    }
 
     for track in &album.tracks {
         log::info!("{space}  [tr]{}", track.name);

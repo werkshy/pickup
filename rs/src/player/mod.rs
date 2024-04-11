@@ -44,11 +44,23 @@ impl Player {
         self.sink = sink;
 
         // TODO handle missing file error - don't stop the playing until we have a good file
-        let file = BufReader::new(File::open(path).unwrap());
+        let file = BufReader::new(File::open(path.clone()).unwrap());
         // Decode that sound file into a source
         // TODO handle error
         let source = Decoder::new(file).unwrap();
         self.sink.append(source);
+
+        // TODO handle how to trigger the next song in the playlist when the current song is finished.
+    }
+
+    pub fn status(&self) -> usize {
+        let len = self.sink.len();
+        log::info!(
+            "Status: {} tracks in the sink queue. paused={}",
+            len,
+            self.sink.is_paused()
+        );
+        len
     }
 
     pub fn stop(&mut self) {

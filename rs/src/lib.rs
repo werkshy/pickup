@@ -1,11 +1,13 @@
 pub mod api;
 pub mod app_state;
+pub mod error;
 pub mod filemanager;
 pub mod player;
+pub mod queue;
 
 use std::sync::mpsc;
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use std::thread;
 
 use actix_web::{
@@ -37,12 +39,14 @@ pub struct ServeOptions {
  * Create the app state we need to pass into the app.
  */
 pub fn build_app_state(options: &ServeOptions) -> AppState {
-    let sender = spawn_player();
+    let player_sender = spawn_player();
     let collection = collection::init(options.collection_options.clone()).unwrap();
     let collection_arc = Arc::new(collection);
+    let queue = queue::PlaybackQueue::new();
     AppState {
-        sender,
+        player_sender,
         collection: collection_arc,
+        queue: RwLock::new(queue),
     }
 }
 
@@ -51,7 +55,7 @@ pub fn build_app_state(options: &ServeOptions) -> AppState {
  * https://github.com/actix/actix-web/blob/b1c85ba85be91b5ea34f31264853b411fadce1ef/actix-web/src/app.rs#L698
  */
 pub fn build_app(
-    app_state: AppState,
+    app_state: Data<AppState>,
 ) -> App<
     impl ServiceFactory<
         ServiceRequest,
@@ -62,19 +66,21 @@ pub fn build_app(
     >,
 > {
     App::new()
-        .app_data(Data::new(app_state))
+        .app_data(app_state)
         .wrap(Logger::default())
         .service(api::hello)
         .service(api::control::play)
         .service(api::control::stop)
         .service(api::control::volume)
         .service(api::list::list_categories)
+        .service(api::queue::add)
+        .service(api::queue::clear)
+        .service(api::queue::get_queue)
 }
 
 pub async fn serve(options: ServeOptions) -> std::io::Result<()> {
-    let app_state = build_app_state(&options);
-
     let address = format!("0.0.0.0:{}", options.port);
+    let app_state = Data::new(build_app_state(&options));
     log::info!("Starting on http://{}", address);
     HttpServer::new(move || build_app(app_state.clone()))
         .workers(2)
