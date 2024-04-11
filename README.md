@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/werkshy/pickup/actions/workflows/ci.yaml/badge.svg)](https://github.com/werkshy/pickup/actions/workflows/ci.yaml)
 
-This is pickup (in go), a web frontend for [Music Player Daemon](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
+This is pickup, a web-based music player.
 
 Pickup is my white whale... I've been playing with the idea since 2007. I have a
 large music collection, and my navigation of choice is by album, with easy
@@ -11,60 +11,16 @@ close, but the uploaded never worked for me and now the product is dead.
 
 ## Status
 
+There's a functioning, but abandoned, Go and React version in [go/](./go/README.md) that works as a frontend to [Music Player Daemon](http://mpd.wikia.com/wiki/Music_Player_Daemon_Wiki).
 It works, more or less. You can add albums and tracks to the playlist, control
 volume, skip tracks, start/stop playback. You can view the playlist. It runs on
 the Raspberry Pi with room to run mpd as well. Because of the client-side
 architecture it is very fast.
 
-In mid-2021, I have started rewriting the backend in Rust. The two motiviations for this are:
+In mid-2021, I started rewriting the backend in Rust. The two motiviations for this are:
 
 - This is the project I usually use to learn a new language or framework
 - I want to get away from mpd and have a single executable that can do the web part, plus control the playlist and actually play music, and set us up for playback in the browser. This is basically a complete rewrite anyway.
-
-## Getting Started In Ubuntu
-
-    # The React frontend requires the 'yarn' package manager -
-    # install it like this:
-    sudo apt install nodejs
-
-    # This next command might require 'sudo' as well.
-    npm install -g yarn
-
-    # Requires go > v1.16, which is best installed via `snap` on Ubuntu.
-    sudo snap install --classic go
-    # Install yarn dependencies, build the frontend, and build the binary:
-    make build
-
-    # Run the binary
-    ./pickup --help
-    ./pickup
-
-## Getting Started on macOS / brew
-
-    # Requires go > 1.16 for the embed feature
-    brew install yarn golang
-    make
-
-## Getting Started Cross-Compiling for Raspberry Pi
-
-Assuming you installed go as a snap, you should be able to cross-compile for
-the Pi like this:
-
-    GOOS=linux GOARCH=arm GOARM=5 go build
-
-Now copy the pickup binary to your pi and run
-
-    ./pickup
-
-## Install As A Service
-
-Copy init.d/pickup to /etc/init.d
-
-Edit the script and set these vars to suit your setup. I'm lazy and just run as
-my main user, definitely don't do this on the internet!
-
-    SCRIPT=/home/oneill/pickup/pickup
-    RUNAS=oneill
 
 ## Background
 
@@ -92,18 +48,19 @@ contributions would be much appreciated.
 
 ## Design Approach
 
-- The Go implementation is a simple backend serving JSON to a React frontend.
-- The frontend loads the entire music collection up front. This takes less than
+#### Go Version:
+
+- The Go implementation is a simple backend serving JSON to a React frontend, and requires MPD
+  for actually indexing and playing music.
+- The simple React frontend loads the entire music collection up front. This takes less than
   a second and makes navigating around the collection extremely fast.
 
-## Roadmap
+#### Rust Version:
 
-- Backend: I'm working on a re-write of the backend in Rust, and dropping the
-  mpd dependency.
-- Frontend: Upgrade to Typescript, maybe start using create-react-app to make
-  the build more vanilla.
-- Frontend: Allow playback in the browser.
+- Built-in music player in the server and file indexing, so no need for MPD.
+- I intend to add in-browser music playback as well.
+- There's no frontend yet but I will either port the Go version to Typescript and React or write a new one in Svelte.
 
 ## Screenshot
 
-![Screenshot](./screenshot.png)
+![Screenshot (Go/React version)](./screenshot.png)

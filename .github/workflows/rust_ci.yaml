@@ -5,7 +5,7 @@ on: push
 defaults:
   run:
     shell: bash
-    working-directory: pickup-rust
+    working-directory: rs
 
 jobs:
   test:
@@ -22,7 +22,7 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
-          pickup-rust/target/
+          rs/target/
         key: ${{ runner.os }}-cargo-test-${{ hashFiles('**/Cargo.lock') }}
     - name: Update rust toolchain
       run: |

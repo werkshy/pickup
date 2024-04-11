@@ -1,23 +1,19 @@
 
-GO_FILES = $(shell find . -iname '*.go')
+.PHONY: frontend go rs clean lint
 
-pickup: react
-	make pickup-only
+go:
+	cd go && make pickup
 
-pickup-only: main.go $(GO_FILES)
-	go build
+frontend:
+	cd go/frontend && yarn build
 
-react: deps
-	cd react && yarn build
+rs:
+	cd rs && cargo build
 
-deps: react/yarn.lock react/package.json
-	cd react && yarn install
+lint:
+	cd go && make lint
+	cd rs && cargo clippy
 
-# go vet requires the files in react/dist
-lint: deps $(GO_FILES)
-	go vet && cd react && yarn lint
-
-.PHONY: react clean deps pickup
 clean:
-	rm -rf react/dist
-	go clean
+	cd go && make clean
+	cd rs && cargo clean
