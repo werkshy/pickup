@@ -1,4 +1,4 @@
-name: CI
+name: Go CI
 
 on:
   push:
@@ -10,19 +10,25 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./go
+
+
     steps:
     - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Setup Node
       uses: actions/setup-node@v4
       with:
         node-version: 20.x
-    - name: Install Go
+    - name: Setup Go
       uses: actions/setup-go@v5
       with:
-        go-version: 1.21.x
+        go-version: 1.22.x
     # We don't have it setup in the Makefile to avoid double-building, but 'make lint'
     # requires the react build to have completed.
-    - run: make react
+    - run: make frontend
 
     - run: make lint
 

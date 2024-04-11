@@ -42,7 +42,7 @@ func main() {
 }
 
 // Embed the compiled frontend files
-//go:embed react/dist
+//go:embed frontend/dist
 var embedded embed.FS
 
 func serve(conf *config.Config, plyr player.Player) {
