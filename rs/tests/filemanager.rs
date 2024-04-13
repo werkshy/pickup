@@ -1,10 +1,10 @@
-use ::assert_matches::assert_matches;
+use assert_matches::assert_matches;
 use pickup::filemanager::{
     cache::{init, refresh},
     options::CollectionOptions,
 };
 
-const NUM_FILES: usize = 6;
+const NUM_FILES: usize = 33;
 
 #[test]
 fn test_refresh_and_load() {
