@@ -1,4 +1,3 @@
-/* eslint-disable no-undef */
 import { defineConfig } from "vite";
 import { resolve } from "node:path";
 
