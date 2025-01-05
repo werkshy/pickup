@@ -28,7 +28,7 @@ impl Album {
             };
             self.discs.insert(name.clone(), Box::new(disc));
         }
-        return self.discs.get_mut(&name).unwrap();
+        self.discs.get_mut(&name).unwrap()
     }
 
     pub fn add_track(&mut self, track: Track) {
@@ -52,7 +52,7 @@ impl Artist {
             };
             self.albums.insert(name.clone(), album);
         }
-        return self.albums.get_mut(&name).unwrap();
+        self.albums.get_mut(&name).unwrap()
     }
 }
 
@@ -72,7 +72,7 @@ impl Category {
             };
             self.artists.insert(name.clone(), artist);
         }
-        return self.artists.get_mut(&name).unwrap();
+        self.artists.get_mut(&name).unwrap()
     }
 
     pub fn add_album(&mut self, name: String) -> &mut Album {
@@ -84,7 +84,7 @@ impl Category {
             };
             self.albums.insert(name.clone(), album);
         }
-        return self.albums.get_mut(&name).unwrap();
+        self.albums.get_mut(&name).unwrap()
     }
 
     pub fn all_tracks(&self) -> Vec<&Track> {
