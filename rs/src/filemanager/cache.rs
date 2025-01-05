@@ -124,9 +124,8 @@ fn walk_dirs(dir: String, db: &mut sled::Db, ignores: HashSet<String>) {
 }
 
 fn get_root(path: &Path) -> String {
-    return path
-        .components()
+    path.components()
         .next() // First Component
         .map(|path| path.as_os_str().to_str().unwrap().to_string())
-        .unwrap(); // We are guaranteed to have at least one component in the Path
+        .unwrap() // We are guaranteed to have at least one component in the Path
 }

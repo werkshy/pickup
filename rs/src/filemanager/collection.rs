@@ -47,7 +47,7 @@ impl Collection {
             };
             self.categories.insert(name.clone(), category);
         }
-        return self.categories.get_mut(&name).unwrap();
+        self.categories.get_mut(&name).unwrap()
     }
 
     pub fn all_tracks(&self) -> Vec<&Track> {
@@ -95,12 +95,12 @@ impl Collection {
         if location.track.is_none() || maybe_tracks.is_none() {
             return maybe_tracks;
         }
-        return maybe_tracks.and_then(|tracks| {
+        maybe_tracks.and_then(|tracks| {
             tracks
                 .iter()
                 .find(|track| track.name == *location.track.as_ref().unwrap())
                 .map(|track| vec![*track])
-        });
+        })
     }
 }
 
