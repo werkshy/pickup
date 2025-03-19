@@ -1,4 +1,4 @@
-use rand::{distributions::Alphanumeric, thread_rng, Rng};
+use rand::{distr::Alphanumeric, rng, Rng};
 
 const ID_LEN: usize = 16;
 
@@ -7,7 +7,7 @@ pub fn generate_id() -> String {
 }
 
 fn generate_id_len(len: usize) -> String {
-    thread_rng()
+    rng()
         .sample_iter(&Alphanumeric)
         .take(len)
         .map(char::from)

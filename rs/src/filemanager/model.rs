@@ -131,8 +131,8 @@ impl Album {
 pub mod factories {
     use super::Track;
     use factori::factori;
-    use rand::distributions::Alphanumeric;
-    use rand::{thread_rng, Rng};
+    use rand::distr::Alphanumeric;
+    use rand::{rng, Rng};
     use std::path::PathBuf;
 
     factori!(Track, {
@@ -149,7 +149,7 @@ pub mod factories {
     });
 
     pub fn random_string() -> String {
-        thread_rng()
+        rng()
             .sample_iter(&Alphanumeric)
             .take(30)
             .map(char::from)
