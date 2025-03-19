@@ -22,9 +22,9 @@ walkdir = "^2"
 rand = "^0"
 regex = "^1"
 lazy_static = "^1"
-once_cell = "1.19.0"
+once_cell = "^1"
 
 [dev-dependencies]
 assert_matches = "^1"
-factori = "1.1.0"
-serial_test = "3.2.0"
+factori = "^1"
+serial_test = "^3"
