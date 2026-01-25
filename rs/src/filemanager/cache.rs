@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use rkyv::from_bytes;
+use rkyv::{rancor::Error, Archive, Deserialize, Serialize};
 use std::collections::{hash_map::DefaultHasher, HashSet};
 use std::fs;
 use std::hash::{Hash, Hasher};
@@ -11,7 +12,7 @@ use super::options::CollectionOptions;
 static DB_ROOT_PATH: &str = ".cache";
 const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Archive)]
 struct File {
     path: String,
     id: String,
@@ -84,8 +85,9 @@ fn db_to_files(db: sled::Db) -> Vec<PathBuf> {
 }
 
 fn deserialize(bytes: &[u8]) -> File {
-    let decoded: File = bincode::deserialize(bytes).unwrap();
-    decoded
+    //let decoded: File = bincode::deserialize(bytes).unwrap();
+    let deserialized: File = from_bytes::<File, Error>(bytes).unwrap();
+    deserialized
 }
 
 fn serialize(path: PathBuf, id: String) -> Vec<u8> {
@@ -93,7 +95,8 @@ fn serialize(path: PathBuf, id: String) -> Vec<u8> {
         path: path.to_str().unwrap().to_string(),
         id,
     };
-    bincode::serialize(&file).unwrap()
+    //bincode::serialize(&file).unwrap()
+    rkyv::to_bytes::<Error>(&file).unwrap().into_vec()
 }
 
 fn walk_dirs(dir: String, db: &mut sled::Db, ignores: HashSet<String>) {
@@ -116,7 +119,7 @@ fn walk_dirs(dir: String, db: &mut sled::Db, ignores: HashSet<String>) {
         let encoded = serialize(path, id);
         db.insert(i.to_be_bytes(), encoded).unwrap();
         i += 1;
-        if i % 500 == 0 {
+        if i.is_multiple_of(500) {
             log::info!("{}", i);
         }
     }
