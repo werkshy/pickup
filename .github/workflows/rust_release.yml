@@ -13,30 +13,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v6
-    - name: install libraries
-      run: sudo apt-get install libasound2-dev
-    - uses: actions/cache@v5
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          rs/target/
-        key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
-    - name: Update rust toolchain
-      run: |
-        rustup update
-        rustup component add clippy
-    - name: 'Build release binary'
-      run: cargo build --release
-    - name: 'Upload Artifact'
-      uses: actions/upload-artifact@v7
-      with:
-        name: pickup (Rust, Linux, AMD64)
-        path: rs/target/release/pickup
+      - uses: actions/checkout@v6
+      - name: install libraries
+        run: sudo apt-get install libasound2-dev
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            rs/target/
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+      - name: Update rust toolchain
+        run: |
+          rustup update
+          rustup component add clippy
+      - name: "Build release binary"
+        run: cargo build --release
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v7
+        with:
+          name: pickup (Rust, Linux, AMD64)
+          path: rs/target/release/pickup
 
 # TODO cross-compiling https://github.com/marketplace/actions/rust-cargo#cross-compilation
 # Might not be possible if we have platform-specific dependencies
-
