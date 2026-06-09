@@ -1,4 +1,4 @@
-use rand::{distr::Alphanumeric, rng, Rng};
+use rand::{distr::Alphanumeric, rng, RngExt};
 
 const ID_LEN: usize = 16;
 

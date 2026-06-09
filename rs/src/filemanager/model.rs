@@ -132,7 +132,7 @@ pub mod factories {
     use super::Track;
     use factori::factori;
     use rand::distr::Alphanumeric;
-    use rand::{rng, Rng};
+    use rand::{rng, RngExt};
     use std::path::PathBuf;
 
     factori!(Track, {
