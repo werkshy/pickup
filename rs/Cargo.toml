@@ -27,4 +27,4 @@ rkyv = "^0.8"
 [dev-dependencies]
 assert_matches = "^1"
 factori = "^1"
-serial_test = "^3"
+serial_test = "^4"
