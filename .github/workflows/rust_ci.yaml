@@ -14,7 +14,16 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: install libraries
-        run: sudo apt-get install libasound2-dev
+        run: sudo apt-get install libasound2-dev pulseaudio
+      # Plain ALSA fails in CI since there's no real device.
+      # I copied the pulseaudio trick from pulseaudio-rs CI config.
+      # https://github.com/colinmarc/pulseaudio-rs/blob/main/.github/workflows/tests.yaml
+      - name: Setup pulseaudio
+        run: |
+          systemctl --user enable pulseaudio
+          systemctl --user start pulseaudio
+          pactl load-module module-null-sink sink_name=test_sink
+          pactl set-default-sink test_sink
       - uses: actions/cache@v6
         with:
           path: |

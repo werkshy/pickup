@@ -72,6 +72,7 @@ pub fn build_app(
         .service(api::control::play)
         .service(api::control::stop)
         .service(api::control::volume)
+        .service(api::control::get_volume)
         .service(api::list::list_categories)
         .service(api::queue::add)
         .service(api::queue::clear)

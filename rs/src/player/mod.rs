@@ -65,12 +65,32 @@ impl Player {
         self.player.stop();
     }
 
-    pub fn set_volume(&mut self, value: f32) {
-        self.player.set_volume(value);
+    pub fn set_volume(&mut self, value: u8) {
+        let float_volume = scale_volume_down(value);
+        log::info!("Setting volume to {}", float_volume);
+        self.player.set_volume(float_volume);
+    }
+
+    pub fn get_volume(&mut self) -> u8 {
+        let float_volume = self.player.volume();
+        log::info!("Current volume is {}", float_volume);
+        scale_volume_up(float_volume)
     }
 
     // This getter really only exists to silence the unused warning about sink.
     pub fn sink(&self) -> &MixerDeviceSink {
         &self.sink
     }
+}
+
+// scale down volume from 0-100 to 0-1.0
+fn scale_volume_down(volume_percentage: u8) -> f32 {
+    let clamped_volume = volume_percentage.clamp(0, 100);
+    clamped_volume as f32 / 100.0
+}
+
+fn scale_volume_up(vol_fraction: f32) -> u8 {
+    let percent_volume = (vol_fraction * 100.0).round();
+    let clamped_volume = percent_volume.clamp(0.0, 100.0);
+    clamped_volume as u8
 }
