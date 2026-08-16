@@ -1603,7 +1603,6 @@ dependencies = [
  "clap",
  "env_logger",
  "factori",
- "lazy_static",
  "log",
  "once_cell",
  "rand",
