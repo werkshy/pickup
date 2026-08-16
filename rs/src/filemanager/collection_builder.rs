@@ -1,6 +1,5 @@
-use std::{borrow::Cow, collections::VecDeque, path::PathBuf};
+use std::{borrow::Cow, collections::VecDeque, path::PathBuf, sync::LazyLock};
 
-use lazy_static::lazy_static;
 use regex::Regex;
 
 use super::{
@@ -12,6 +11,8 @@ use super::{
 const DEFAULT_CATEGORY: &str = "Music";
 const CATEGORY_PREFIX: &str = "_";
 const CD_REGEX_STR: &str = r"(?i)(cd|dis(c|k)) ?\d";
+
+static CD_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(CD_REGEX_STR).unwrap());
 
 pub fn build(files: Vec<PathBuf>) -> Collection {
     let mut builder = CollectionBuilder::new();
@@ -129,9 +130,6 @@ fn to_track(path: &PathBuf) -> Result<Track, String> {
 }
 
 fn is_disc(dir: Option<&Cow<str>>) -> bool {
-    lazy_static! {
-        static ref CD_REGEX: Regex = Regex::new(CD_REGEX_STR).unwrap();
-    }
     dir.is_some() && CD_REGEX.is_match(dir.unwrap())
 }
 

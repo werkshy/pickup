@@ -1,5 +1,4 @@
 use actix_web::{get, web, Responder, Result};
-use lazy_static::__Deref;
 use serde::Serialize;
 
 use crate::app_state::AppState;
@@ -40,7 +39,7 @@ struct ListCategoriesResponse {
 
 #[get("/categories")]
 pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder> {
-    let collection = data.collection.deref();
+    let collection = data.collection.as_ref();
 
     let api_categories: Vec<ApiCategory> = collection
         .values()
