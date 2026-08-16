@@ -1,7 +1,8 @@
 use crate::filemanager::model::Track;
+use std::collections::VecDeque;
 
 pub struct PlaybackQueue {
-    pub tracks: Vec<Track>,
+    pub tracks: VecDeque<Track>,
     pub position: usize,
 }
 
@@ -17,13 +18,13 @@ impl Default for PlaybackQueue {
 impl PlaybackQueue {
     pub fn new() -> PlaybackQueue {
         PlaybackQueue {
-            tracks: vec![],
+            tracks: VecDeque::new(),
             position: 0,
         }
     }
 
     pub fn add_track(&mut self, track: Track) {
-        self.tracks.push(track);
+        self.tracks.push_back(track);
     }
 
     pub fn add_tracks(&mut self, tracks: Vec<Track>) {
@@ -35,9 +36,7 @@ impl PlaybackQueue {
     }
 
     pub fn pop(&mut self) {
-        if !self.tracks.is_empty() {
-            self.tracks.remove(0);
-        }
+        self.tracks.pop_front();
     }
 
     pub fn print_tracks(&self) {
