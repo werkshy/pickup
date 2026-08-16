@@ -1,3 +1,5 @@
+use std::sync::mpsc::Sender;
+
 use crate::player::{Command, Player};
 
 pub struct PlayCommand {
@@ -19,11 +21,27 @@ impl Command for StopCommand {
 }
 
 pub struct VolumeCommand {
-    pub volume: f32,
+    pub volume: u8,
 }
 
 impl Command for VolumeCommand {
     fn action(&mut self, player: &mut Player) {
         player.set_volume(self.volume);
+    }
+}
+
+/**
+ * Current pattern for a command that sends a response: pass a channel Sender
+ * over in the Command. This has a fair amount of boilerplate in the API call
+ * site.
+ */
+pub struct GetVolumeCommand {
+    pub reply: Sender<u8>,
+}
+
+impl Command for GetVolumeCommand {
+    fn action(&mut self, player: &mut Player) {
+        let volume = player.get_volume();
+        let _ = self.reply.send(volume);
     }
 }
