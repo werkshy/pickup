@@ -1,4 +1,7 @@
-use actix_web::{test, web::Data};
+use std::path::PathBuf;
+use std::sync::{Arc, RwLock};
+
+use actix_web::{http::StatusCode, test, web::Data};
 
 use assert_matches::assert_matches;
 use serial_test::serial;
@@ -10,7 +13,11 @@ use once_cell::sync::Lazy;
 use pickup::{
     app_state::AppState,
     build_app,
-    filemanager::{cache::refresh, options::CollectionOptions},
+    filemanager::{
+        cache::refresh, collection::Collection, model::Track, options::CollectionOptions,
+    },
+    queue::PlaybackQueue,
+    spawn_player,
 };
 use serde_json::{self, json};
 
@@ -55,6 +62,52 @@ async fn test_play() {
     let resp = test::call_and_read_body(&app, req).await;
 
     assert_eq!(&resp[..], b"ok");
+}
+
+/**
+ * When the track's file cannot be opened, the play endpoint must report the
+ * underlying file error instead of pretending the playback started.
+ */
+#[serial(queue)]
+#[actix_web::test]
+async fn test_play_with_missing_file_returns_error() {
+    // Build an app state whose first track points at a file that does not
+    // exist on disk.
+    let track = Track {
+        id: String::from("missing"),
+        name: String::from("missing track"),
+        extension: String::from("wav"),
+        path: PathBuf::from("definitely/missing/file.wav"),
+        category: String::from("test"),
+        artist: Some(String::from("artist")),
+        album: Some(String::from("album")),
+        disc: None,
+    };
+    let mut collection = Collection::new();
+    {
+        let artist = collection
+            .add_category(String::from("test"))
+            .add_artist(String::from("artist"));
+        artist.add_album(String::from("album")).add_track(track);
+    }
+    let app_state = Data::new(AppState {
+        player: spawn_player(),
+        collection: Arc::new(collection),
+        queue: RwLock::new(PlaybackQueue::new()),
+    });
+
+    let app = test::init_service(build_app(app_state)).await;
+    let req = test::TestRequest::post().uri("/play").to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    let error = body["error"].as_str().unwrap();
+    assert!(
+        error.contains("could not open ../music/definitely/missing/file.wav"),
+        "unexpected error body: {error}"
+    );
 }
 
 #[serial(queue)]
