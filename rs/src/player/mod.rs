@@ -1,10 +1,14 @@
+use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
 
 use rodio;
 use rodio::{Decoder, MixerDeviceSink};
 
+pub mod client;
 pub mod commands;
+
+pub use client::{PlayerClient, PlayerError};
 
 pub trait Command: Send {
     fn action(&mut self, player: &mut Player);
@@ -37,17 +41,33 @@ impl Player {
         (*command).action(self)
     }
 
-    pub fn play(&mut self, path: String) {
+    /**
+     * Plays a file. Errors (missing file, undecodable file) are returned to
+     * the caller (and logged); this must not panic the Player thread.
+     */
+    pub fn play(&mut self, path: String) -> Result<(), Box<dyn Error + Send + Sync>> {
         log::info!("Playing {}", path);
 
-        // TODO handle missing file error - don't stop the playing until we have a good file
-        let file = BufReader::new(File::open(path.clone()).unwrap());
+        let file = match File::open(&path) {
+            Ok(file) => file,
+            Err(error) => {
+                log::error!("Failed to open {}: {}", path, error);
+                return Err(format!("could not open {}: {}", path, error).into());
+            }
+        };
+
         // Decode that sound file into a source
-        // TODO handle error
-        let source = Decoder::new(file).unwrap();
+        let source = match Decoder::new(BufReader::new(file)) {
+            Ok(source) => source,
+            Err(error) => {
+                log::error!("Failed to decode {}: {}", path, error);
+                return Err(format!("could not decode {}: {}", path, error).into());
+            }
+        };
         self.player.append(source);
 
         // TODO handle how to trigger the next song in the playlist when the current song is finished.
+        Ok(())
     }
 
     pub fn status(&self) -> usize {

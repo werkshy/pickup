@@ -6,7 +6,6 @@ pub mod player;
 pub mod queue;
 
 use std::sync::mpsc;
-use std::sync::mpsc::Sender;
 use std::sync::{Arc, RwLock};
 use std::thread;
 
@@ -22,7 +21,7 @@ use actix_web::{App, HttpServer};
 use app_state::AppState;
 use filemanager::collection;
 use filemanager::options::CollectionOptions;
-use player::{Command, Player};
+use player::{Player, PlayerClient};
 
 // Enable assert_matches in tests
 #[cfg(test)]
@@ -39,12 +38,12 @@ pub struct ServeOptions {
  * Create the app state we need to pass into the app.
  */
 pub fn build_app_state(options: &ServeOptions) -> AppState {
-    let player_sender = spawn_player();
+    let player = spawn_player();
     let collection = collection::init(options.collection_options.clone()).unwrap();
     let collection_arc = Arc::new(collection);
     let queue = queue::PlaybackQueue::new();
     AppState {
-        player_sender,
+        player,
         collection: collection_arc,
         queue: RwLock::new(queue),
     }
@@ -91,7 +90,12 @@ pub async fn serve(options: ServeOptions) -> std::io::Result<()> {
         .await
 }
 
-fn spawn_player() -> Sender<Box<dyn Command>> {
+/**
+ * Spawn a new thread with a Player instance (rodio's Sink can't be shared
+ * across threads). Create a channel to send commands into the Player thread,
+ * and return a PlayerClient (internal interface for sending commands.)
+ */
+pub fn spawn_player() -> PlayerClient {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
@@ -101,5 +105,5 @@ fn spawn_player() -> Sender<Box<dyn Command>> {
             player.command(command);
         }
     });
-    tx
+    PlayerClient::new(tx)
 }
