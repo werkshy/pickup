@@ -4,7 +4,10 @@ use std::io::BufReader;
 use rodio;
 use rodio::{Decoder, MixerDeviceSink};
 
+pub mod client;
 pub mod commands;
+
+pub use client::PlayerClient;
 
 pub trait Command: Send {
     fn action(&mut self, player: &mut Player);
