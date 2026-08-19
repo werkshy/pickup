@@ -20,16 +20,6 @@ impl Command for StopCommand {
     }
 }
 
-pub struct VolumeCommand {
-    pub volume: u8,
-}
-
-impl Command for VolumeCommand {
-    fn action(&mut self, player: &mut Player) {
-        player.set_volume(self.volume);
-    }
-}
-
 /**
  * Generic replacement for response-carrying commands. The closure runs on the
  * Player thread and its result is sent back over a short-lived channel.

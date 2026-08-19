@@ -42,8 +42,7 @@ pub async fn stop(data: web::Data<AppState>) -> impl Responder {
 #[post("/volume/{volume}")]
 pub async fn volume(data: web::Data<AppState>, volume: web::Path<u8>) -> impl Responder {
     let clamped_volume = volume.into_inner().clamp(0, 100);
-    data.player.set_volume(clamped_volume);
-    let new_volume = get_current_volume(&data.player).await;
+    let new_volume = data.player.set_volume(clamped_volume).await.unwrap_or(0);
     HttpResponse::Ok().json(serde_json::json!({ "volume": new_volume }))
 }
 
@@ -57,5 +56,5 @@ async fn get_current_volume(player: &PlayerClient) -> u8 {
     player
         .request_async(|player| player.get_volume())
         .await
-        .unwrap_or(0)
+        .unwrap_or(0) // TODO better error handling? Return a 'player-is-dead' error?
 }

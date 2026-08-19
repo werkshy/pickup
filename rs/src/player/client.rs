@@ -2,7 +2,7 @@ use std::sync::mpsc::{channel, Sender};
 
 use actix_web::web;
 
-use crate::player::commands::{PlayCommand, QueryCommand, StopCommand, VolumeCommand};
+use crate::player::commands::{PlayCommand, QueryCommand, StopCommand};
 use crate::player::{Command, Player};
 
 /**
@@ -32,8 +32,19 @@ impl PlayerClient {
         self.send(StopCommand {});
     }
 
-    pub fn set_volume(&self, volume: u8) {
-        self.send(VolumeCommand { volume });
+    /**
+     * Sets the volume and returns the resulting volume. The set and the read
+     * happen inside a single command on the Player thread's queue, so the
+     * returned value is the volume *after* this call (serialised after any
+     * earlier commands, and after the set itself). Returns None if the Player
+     * thread has gone away.
+     */
+    pub async fn set_volume(&self, volume: u8) -> Option<u8> {
+        self.request_async(move |player| {
+            player.set_volume(volume);
+            player.get_volume()
+        })
+        .await
     }
 
     /**
@@ -65,6 +76,7 @@ impl PlayerClient {
         &self,
         query: impl FnOnce(&mut Player) -> T + Send + 'static,
     ) -> Option<T> {
+        // clone so the blocking closure owns the sender
         let client = self.clone();
         web::block(move || client.request(query))
             .await
