@@ -66,8 +66,8 @@ func serve(conf *config.Config, plyr player.Player) {
 	http.Handle("/api/playlist/", playlistHandler)
 	http.Handle("/api/control/", controlHandler)
 
-	// Serve static assets from at path /assets/ from dir react/dist/assets
-	assetsDir, err := fs.Sub(embedded, "react/dist/assets")
+	// Serve static assets from at path /assets/ from dir frontend/dist/assets
+	assetsDir, err := fs.Sub(embedded, "frontend/dist/assets")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func serve(conf *config.Config, plyr player.Player) {
 		http.FileServer(http.FS(assetsDir))))
 
 	// Serve webpack-built js files at path /react-static
-	distDir, err := fs.Sub(embedded, "react/dist")
+	distDir, err := fs.Sub(embedded, "frontend/dist")
 	// strip '/static' from the url to get the name of the file within the static dir.
 	http.Handle("/static/", http.StripPrefix("/static/",
 		http.FileServer(http.FS(distDir))))
@@ -89,7 +89,7 @@ func serve(conf *config.Config, plyr player.Player) {
 
 func index_handler(w http.ResponseWriter, r *http.Request) {
 	t0 := time.Now()
-	index, _ := embedded.ReadFile("react/dist/index.html")
+	index, _ := embedded.ReadFile("frontend/dist/index.html")
 	w.Write(index)
 	log.Printf("%-5s %-40s %v", r.Method, r.URL, time.Since(t0))
 }
