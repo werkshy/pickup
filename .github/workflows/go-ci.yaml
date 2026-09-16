@@ -4,6 +4,8 @@ on:
   push:
     branches: [$default-branch]
   pull_request:
+    paths-ignore:
+      - rs/**
 
 jobs:
   build:
@@ -39,7 +41,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pickup (Linux, AMD64)
-          path: pickup.linux.amd64
+          path: go/pickup.linux.amd64
 
       - name: Go build (Linux, ARM5)
         run: go build -o pickup.$GOOS.$GOARCH$GOARM
@@ -51,7 +53,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pickup (Linux, ARM5)
-          path: pickup.linux.arm5
+          path: go/pickup.linux.arm5
 
       - name: Go build (Darwin, ARM5)
         run: go build -o pickup.$GOOS.$GOARCH
@@ -62,4 +64,15 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pickup (Darwin, AMD64)
-          path: pickup.darwin.amd64
+          path: go/pickup.darwin.amd64
+
+      - name: Go build (Darwin, ARM64)
+        run: go build -o pickup.$GOOS.$GOARCH
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v7
+        with:
+          name: pickup (Darwin, ARM64)
+          path: go/pickup.darwin.arm64
