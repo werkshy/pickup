@@ -9,7 +9,27 @@ on:
 
 jobs:
   build:
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: linux
+            arch: arm
+            arm: 5
+          - os: linux
+            arch: arm
+            arm: 7
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+      fail-fast: false
+
     runs-on: ubuntu-latest
+    name: Build
 
     defaults:
       run:
@@ -34,47 +54,16 @@ jobs:
 
       - run: make lint
 
-      - name: Go build (Linux, AMD64)
-        run: go build -o pickup.$GOOS.$GOARCH
+      - name: Go build
+        run: go build -o pickup
         env:
-          GOOS: linux
-          GOARCH: amd64
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          GOARM: ${{ matrix.arm }}
       - name: "Upload Artifact"
         uses: actions/upload-artifact@v7
         with:
-          name: pickup (Linux, AMD64)
-          path: go/pickup.linux.amd64
+          name: pickup_${{ matrix.os }}_${{ matrix.arch }}${{ matrix.arm}}
+          path: go/pickup
+          if-no-files-found: error
 
-      - name: Go build (Linux, ARM5)
-        run: go build -o pickup.$GOOS.$GOARCH$GOARM
-        env:
-          GOOS: linux
-          GOARCH: arm
-          GOARM: 5
-      - name: "Upload Artifact"
-        uses: actions/upload-artifact@v7
-        with:
-          name: pickup (Linux, ARM5)
-          path: go/pickup.linux.arm5
-
-      - name: Go build (Darwin, ARM5)
-        run: go build -o pickup.$GOOS.$GOARCH
-        env:
-          GOOS: darwin
-          GOARCH: amd64
-      - name: "Upload Artifact"
-        uses: actions/upload-artifact@v7
-        with:
-          name: pickup (Darwin, AMD64)
-          path: go/pickup.darwin.amd64
-
-      - name: Go build (Darwin, ARM64)
-        run: go build -o pickup.$GOOS.$GOARCH
-        env:
-          GOOS: darwin
-          GOARCH: arm64
-      - name: "Upload Artifact"
-        uses: actions/upload-artifact@v7
-        with:
-          name: pickup (Darwin, ARM64)
-          path: go/pickup.darwin.arm64
