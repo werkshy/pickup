@@ -3,7 +3,7 @@ name: Rust Release
 # We only run this after merging to main.
 on:
   push:
-    branches: [$default-branch]
+    branches: [main]
     paths-ignore:
       - go/**
 
