@@ -1,6 +1,6 @@
 module github.com/werkshy/pickup
 
-go 1.19
+go 1.27
 
 require github.com/juju/gnuflag v1.0.0
 
