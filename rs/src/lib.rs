@@ -12,16 +12,21 @@ use std::thread;
 use actix_web::{
     body::MessageBody,
     dev::{ServiceFactory, ServiceResponse},
-    web::Data,
+    error::{JsonPayloadError, PathError},
+    http::StatusCode,
+    web::{self, Data},
     Error,
 };
-use actix_web::{dev::ServiceRequest, middleware::Logger};
-use actix_web::{App, HttpServer};
+use actix_web::{dev::ServiceRequest, middleware::Logger, ResponseError};
+use actix_web::{App, HttpResponse, HttpServer};
 
+use crate::api::types::ApiErrorCode;
 use app_state::AppState;
+use error::AppError;
 use filemanager::collection;
 use filemanager::options::CollectionOptions;
 use player::{Player, PlayerClient};
+use utoipa_actix_web::AppExt;
 
 // Enable assert_matches in tests
 #[cfg(test)]
@@ -64,18 +69,97 @@ pub fn build_app(
         Error = Error,
     >,
 > {
-    App::new()
-        .app_data(app_state)
-        .wrap(Logger::default())
-        .service(api::hello)
-        .service(api::control::play)
-        .service(api::control::stop)
-        .service(api::control::volume)
-        .service(api::control::get_volume)
-        .service(api::list::list_categories)
-        .service(api::queue::add)
-        .service(api::queue::clear)
-        .service(api::queue::get_queue)
+    api::register_services(
+        App::new()
+            .into_utoipa_app()
+            .openapi(api::openapi::base_doc())
+            .app_data(app_state)
+            // Keep JSON parse/validation failures in the same shape as every other error
+            .app_data(web::JsonConfig::default().error_handler(|error, _req| {
+                AppError::new(
+                    ApiErrorCode::InvalidRequest,
+                    json_error_message(&error),
+                    StatusCode::BAD_REQUEST,
+                )
+                .into()
+            }))
+            // Keep path parameter extraction failures in the same shape too
+            .app_data(web::PathConfig::default().error_handler(|error, _req| {
+                AppError::new(
+                    ApiErrorCode::InvalidRequest,
+                    path_error_message(&error),
+                    StatusCode::BAD_REQUEST,
+                )
+                .into()
+            }))
+            .map(|app| app.wrap(Logger::default()))
+            .default_service(web::to(not_found)),
+    )
+    // Serve the spec collected from the services above; must come after them
+    .openapi_service(|spec| {
+        web::resource("/openapi.json")
+            .route(web::get().to(move || {
+                let spec = spec.clone();
+                async move { web::Json(spec) }
+            }))
+            // Route level method guard, so a wrong method lands on this
+            // resource's fallback instead of the app-wide one
+            .default_service(web::to(not_found))
+    })
+    .into_app()
+}
+
+/**
+ * Actix's own `JsonPayloadError` messages are written for framework
+ * debugging, e.g. "Json deserialize error: missing field `category` at line 1
+ * column 11". Map each case onto wording that means something to an API
+ * consumer, and so doesn't change when the dependency is upgraded.
+ */
+fn json_error_message(error: &JsonPayloadError) -> String {
+    match error {
+        JsonPayloadError::ContentType => {
+            "Expected a JSON body with Content-Type: application/json".to_string()
+        }
+        JsonPayloadError::Deserialize(error) => format!("Invalid JSON body: {}", error),
+        JsonPayloadError::Overflow { limit } => {
+            format!("JSON body is over the {} byte limit", limit)
+        }
+        JsonPayloadError::OverflowKnownLength { length, limit } => {
+            format!(
+                "JSON body is {} bytes, over the {} byte limit",
+                length, limit
+            )
+        }
+        JsonPayloadError::Payload(error) => {
+            format!("Could not read the request body: {}", error)
+        }
+        JsonPayloadError::Serialize(error) => {
+            format!("Could not serialize the response: {}", error)
+        }
+        // `JsonPayloadError` is `#[non_exhaustive]`, so actix may add cases
+        _ => "Malformed request body".to_string(),
+    }
+}
+
+/**
+ * Fallback for requests no route claimed: unknown paths, and methods that a
+ * matched path does not serve. Both come back as 404 in the standard shape.
+ */
+async fn not_found() -> HttpResponse {
+    AppError::not_found("No such route").error_response()
+}
+
+/**
+ * Path extraction errors are also written for framework debugging, e.g.
+ * "Path deserialize error: invalid digit found in string". Say what the API
+ * consumer did wrong instead.
+ */
+fn path_error_message(error: &PathError) -> String {
+    match error {
+        PathError::Deserialize(error) => format!("Invalid path parameter: {}", error),
+        // `PathError` is `#[non_exhaustive]`, so actix may add cases
+        _ => "Invalid path parameter".to_string(),
+    }
 }
 
 pub async fn serve(options: ServeOptions) -> std::io::Result<()> {

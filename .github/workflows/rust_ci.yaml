@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: install libraries
-        run: sudo apt-get install libasound2-dev pulseaudio
+        run: |
+          sudo apt update
+          sudo apt install -y libasound2-dev pulseaudio
       # Plain ALSA fails in CI since there's no real device.
       # I copied the pulseaudio trick from pulseaudio-rs CI config.
       # https://github.com/colinmarc/pulseaudio-rs/blob/main/.github/workflows/tests.yaml

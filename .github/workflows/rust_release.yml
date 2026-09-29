@@ -18,7 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - name: install libraries
-        run: sudo apt-get install libasound2-dev
+        run: |
+          sudo apt update
+          sudo apt install -y libasound2-dev pulseaudio
       - uses: actions/cache@v6
         with:
           path: |

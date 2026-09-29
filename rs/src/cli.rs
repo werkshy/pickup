@@ -36,4 +36,7 @@ pub enum Commands {
         #[arg(short, long, default_value_t = DEFAULT_PORT)]
         port: u32,
     },
+
+    /// Print the OpenAPI spec for the HTTP API as JSON
+    Openapi {},
 }
