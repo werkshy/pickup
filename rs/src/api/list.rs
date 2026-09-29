@@ -1,42 +1,19 @@
 use actix_web::{get, web, Responder, Result};
-use serde::Serialize;
 
-use crate::app_state::AppState;
+use crate::{
+    api::types::{ApiCategory, ListCategoriesResponse},
+    app_state::AppState,
+};
 
-// TODO fill this out
-#[derive(Debug, Serialize)]
-struct ApiCategory {
-    name: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ApiTrack {
-    id: String,
-    title: String,
-    artist: Option<String>,
-    album: Option<String>,
-    disc: Option<String>,
-    category: String,
-}
-
-impl ApiTrack {
-    pub fn from_track(track: &crate::filemanager::model::Track) -> Self {
-        ApiTrack {
-            id: track.id.clone(),
-            title: track.name.clone(),
-            artist: track.artist.clone(),
-            album: track.album.clone(),
-            disc: track.disc.clone(),
-            category: track.category.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Serialize)]
-struct ListCategoriesResponse {
-    categories: Vec<ApiCategory>,
-}
-
+/// List the categories (top level of the collection).
+///
+/// TODO fill this out, artists/albums/tracks are not listed yet.
+#[utoipa::path(
+    tag = "collection",
+    responses(
+        (status = 200, description = "The categories in the collection", body = ListCategoriesResponse),
+    )
+)]
 #[get("/categories")]
 pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder> {
     let collection = data.collection.as_ref();

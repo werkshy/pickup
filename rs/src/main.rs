@@ -41,5 +41,11 @@ async fn main() -> std::io::Result<()> {
             })
             .await
         }
+        Commands::Openapi {} => {
+            let json = serde_json::to_string_pretty(&pickup::api::openapi::spec())
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+            println!("{}", json);
+            Ok(())
+        }
     }
 }

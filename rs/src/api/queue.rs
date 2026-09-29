@@ -1,28 +1,22 @@
-use actix_web::{get, http::StatusCode, post, web, Responder, Result};
-use serde::{Deserialize, Serialize};
+use actix_web::{get, post, web, Responder, Result};
 
-use crate::error::AppError;
-use crate::filemanager::dto::CollectionLocation;
-use crate::{api::list::ApiTrack, app_state::AppState};
+use crate::{
+    api::types::{ApiQueueInput, ApiQueueResponse, ApiTrack, ErrorResponse},
+    app_state::AppState,
+    error::AppError,
+    filemanager::dto::CollectionLocation,
+};
 
-// TODO extract 'ApiCollectionLocaltion out of here
-#[derive(Deserialize, Debug)]
-struct ApiQueueInput {
-    category: String,
-    artist: Option<String>,
-    album: Option<String>,
-    disc: Option<String>,
-    track: Option<String>,
-    #[serde(default)] // Defaults to false
-    clear: bool,
-}
-
-#[derive(Serialize, Debug)]
-struct ApiQueueResponse {
-    tracks: Vec<ApiTrack>,
-    position: usize,
-}
-
+/// Add tracks matching the given category/artist/album/disc/track to the queue.
+#[utoipa::path(
+    tag = "queue",
+    request_body = ApiQueueInput,
+    responses(
+        (status = 200, description = "The queue after adding", body = ApiQueueResponse),
+        (status = 400, description = "The request body is not valid", body = ErrorResponse),
+        (status = 404, description = "No matching music found in the collection", body = ErrorResponse),
+    )
+)]
 #[post("/queue/add")]
 pub async fn add(
     data: web::Data<AppState>,
@@ -38,9 +32,8 @@ pub async fn add(
 
     let maybe_tracks = data.collection.get_tracks_under(&collection_location);
     if maybe_tracks.is_none() {
-        return Err(AppError::new(
+        return Err(AppError::not_found(
             "No matching music found in the collection",
-            StatusCode::NOT_FOUND,
         ));
     }
     let tracks = maybe_tracks.unwrap();
@@ -57,6 +50,13 @@ pub async fn add(
     }))
 }
 
+/// Clear the queue.
+#[utoipa::path(
+    tag = "queue",
+    responses(
+        (status = 200, description = "The empty queue", body = ApiQueueResponse),
+    )
+)]
 #[post("/queue/clear")]
 pub async fn clear(data: web::Data<AppState>) -> impl Responder {
     let mut queue = data.queue.write().unwrap();
@@ -67,6 +67,13 @@ pub async fn clear(data: web::Data<AppState>) -> impl Responder {
     })
 }
 
+/// Get the current queue.
+#[utoipa::path(
+    tag = "queue",
+    responses(
+        (status = 200, description = "The current queue", body = ApiQueueResponse),
+    )
+)]
 #[get("/queue")]
 pub async fn get_queue(data: web::Data<AppState>) -> impl Responder {
     let queue = data.queue.read().unwrap();
