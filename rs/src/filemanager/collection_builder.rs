@@ -5,7 +5,7 @@ use regex::Regex;
 use super::{
     collection::Collection,
     model::{Category, Track},
-    utils::generate_id,
+    utils::generate_track_id,
 };
 
 const DEFAULT_CATEGORY: &str = "Music";
@@ -85,7 +85,7 @@ impl CollectionBuilder {
 }
 
 fn to_track(path: &PathBuf) -> Result<Track, String> {
-    let id = generate_id();
+    let id = generate_track_id(path);
     let mut category: String = DEFAULT_CATEGORY.to_string();
     let mut disc: Option<String> = None;
 
@@ -265,8 +265,10 @@ mod tests {
         );
     }
 
-    // Assert that every field except for ID matches
     fn assert_track_matches(a: &Track, b: Track) {
+        // The ID is now a deterministic hash of the path, so it can be asserted
+        // rather than ignored.
+        assert_eq!(a.id, generate_track_id(&b.path));
         assert_eq!(a.name, b.name);
         assert_eq!(a.extension, b.extension);
         assert_eq!(a.path, b.path);

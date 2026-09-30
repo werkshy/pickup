@@ -17,6 +17,7 @@ rodio = { version = "^0.22", default-features = true, features = [
 sled = "^0"
 serde = { version = "^1", features = ["derive"] }
 serde_json = "^1"
+sha2 = "^0"
 walkdir = "^2"
 rand = "^0"
 regex = "^1"
