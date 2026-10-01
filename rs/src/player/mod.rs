@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::BufReader;
+use std::path::Path;
 
 use rodio;
 use rodio::{Decoder, MixerDeviceSink};
@@ -44,15 +45,19 @@ impl Player {
     /**
      * Plays a file. Errors (missing file, undecodable file) are returned to
      * the caller (and logged); this must not panic the Player thread.
+     *
+     * Takes a path rather than a String so that names which aren't valid UTF-8
+     * remain playable (they're only rendered lossily in logs).
      */
-    pub fn play(&mut self, path: String) -> Result<(), Box<dyn Error + Send + Sync>> {
-        log::info!("Playing {}", path);
+    pub fn play(&mut self, path: impl AsRef<Path>) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let path = path.as_ref();
+        log::info!("Playing {}", path.display());
 
-        let file = match File::open(&path) {
+        let file = match File::open(path) {
             Ok(file) => file,
             Err(error) => {
-                log::error!("Failed to open {}: {}", path, error);
-                return Err(format!("could not open {}: {}", path, error).into());
+                log::error!("Failed to open {}: {}", path.display(), error);
+                return Err(format!("could not open {}: {}", path.display(), error).into());
             }
         };
 
@@ -60,8 +65,8 @@ impl Player {
         let source = match Decoder::new(BufReader::new(file)) {
             Ok(source) => source,
             Err(error) => {
-                log::error!("Failed to decode {}: {}", path, error);
-                return Err(format!("could not decode {}: {}", path, error).into());
+                log::error!("Failed to decode {}: {}", path.display(), error);
+                return Err(format!("could not decode {}: {}", path.display(), error).into());
             }
         };
         self.player.append(source);

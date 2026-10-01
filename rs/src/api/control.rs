@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use actix_web::{get, post, web, Responder};
 
 use crate::{
@@ -43,7 +45,8 @@ fn get_first_track(app_state: &AppState) -> &Track {
 pub async fn play(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
     let track = get_first_track(&data);
     // TODO shouldn't the path be absolute or relative already? Or maybe the Player needs to know the prefix
-    let path = format!("../music/{}", track.path.as_os_str().to_str().unwrap());
+    // Joined as a Path so a track whose name isn't valid UTF-8 still resolves.
+    let path = Path::new("../music").join(&track.path);
 
     data.player.play(path).await.map_err(AppError::from)?;
     Ok(web::Json(StatusResponse {

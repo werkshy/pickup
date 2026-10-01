@@ -1,4 +1,5 @@
 use std::error::Error;
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, RecvTimeoutError, Sender};
 use std::time::Duration;
 
@@ -83,7 +84,8 @@ impl PlayerClient {
      * Player rejected it (e.g. the file is missing or undecodable), or the
      * usual delivery errors if the command never reached the Player.
      */
-    pub async fn play(&self, file: String) -> Result<(), PlayerError> {
+    pub async fn play(&self, file: impl Into<PathBuf>) -> Result<(), PlayerError> {
+        let file = file.into();
         self.request_async(move |player| player.play(file))
             .await
             // map file error to PlayerError or return the Ok()
