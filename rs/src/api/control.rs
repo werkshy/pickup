@@ -6,28 +6,19 @@ use crate::{
     api::types::{ErrorResponse, StatusResponse, VolumeResponse},
     app_state::AppState,
     error::AppError,
-    filemanager::model::Track,
+    filemanager::model::{Folder, Track},
     player::{PlayerClient, PlayerError},
 };
 
 fn get_first_track(app_state: &AppState) -> &Track {
     // TODO for now let's just look for the first track, it seems to work on our demo music
-    return app_state
-        .collection
-        .values()
-        .next()
-        .unwrap()
-        .artists
-        .values()
-        .next()
-        .unwrap()
-        .albums
-        .values()
-        .next()
-        .unwrap()
-        .tracks
-        .first()
-        .unwrap();
+    fn first_track(folder: &Folder) -> Option<&Track> {
+        folder
+            .tracks
+            .first()
+            .or_else(|| folder.folders.values().find_map(first_track))
+    }
+    app_state.collection.values().find_map(first_track).unwrap()
 }
 
 /// Start playback.

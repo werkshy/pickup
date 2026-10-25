@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, RwLock};
 
 use actix_web::{http::StatusCode, test, web::Data};
@@ -14,7 +14,11 @@ use pickup::{
     app_state::AppState,
     build_app,
     filemanager::{
-        cache::refresh, collection::Collection, model::Track, options::CollectionOptions,
+        cache::refresh,
+        collection::Collection,
+        dto::CollectionLocation,
+        model::{Kind, Track},
+        options::CollectionOptions,
     },
     queue::PlaybackQueue,
     spawn_player,
@@ -73,23 +77,27 @@ async fn test_play() {
 async fn test_play_with_missing_file_returns_error() {
     // Build an app state whose first track points at a file that does not
     // exist on disk.
+    let file = PathBuf::from("definitely/missing/file.wav");
+    let location = CollectionLocation {
+        category: String::from("test"),
+        artist: Some(String::from("definitely")),
+        album: Some(String::from("missing")),
+        disc: None,
+        track: None,
+    };
     let track = Track {
         id: String::from("missing"),
         name: String::from("missing track"),
         extension: String::from("wav"),
-        path: PathBuf::from("definitely/missing/file.wav"),
-        category: String::from("test"),
-        artist: Some(String::from("artist")),
-        album: Some(String::from("album")),
+        path: file,
+        category: location.category.clone(),
+        artist: location.artist.clone(),
+        album: location.album.clone(),
         disc: None,
     };
     let mut collection = Collection::new();
-    {
-        let artist = collection
-            .add_category(String::from("test"))
-            .add_artist(String::from("artist"));
-        artist.add_album(String::from("album")).add_track(track);
-    }
+    collection.add_folder(Kind::Album, &location, Path::new("definitely/missing"));
+    collection.add_track(track, &location);
     let app_state = Data::new(AppState {
         player: spawn_player(),
         collection: Arc::new(collection),
