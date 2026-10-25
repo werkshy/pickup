@@ -103,11 +103,8 @@ fn db_path_for(music_dir: &str, version: &str) -> PathBuf {
  * Collect every cached file, sorted by path.
  *
  * Entries are keyed by track ID, which is a hash and therefore carries no
- * ordering. We previously leaned on an incrementing integer key to get
- * insertion order back, but that was really the raw `readdir` order of the
- * filesystem, which was arbitrary and not stable across machines. Sorting by
- * path makes the order deterministic and, as a bonus, gives alphabetical
- * track ordering within an album.
+ * ordering. We sort by path to make the order deterministic and give
+ * alphabetical track ordering within an album.
  */
 fn db_to_files(db: sled::Db) -> Vec<PathBuf> {
     let mut buffer = AlignedVec::<16>::new();
@@ -142,7 +139,6 @@ fn serialize(path: &Path) -> Option<Vec<u8>> {
     let file = File {
         path: path.to_str()?.to_string(),
     };
-    //bincode::serialize(&file).unwrap()
     Some(rkyv::to_bytes::<Error>(&file).unwrap().into_vec())
 }
 
@@ -207,13 +203,6 @@ fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
     }
 }
 
-/**
- * The name of the top-level directory a path sits under, which is what the
- * ignore list is matched against.
- *
- * None if the path has no components, or if its first component isn't valid
- * UTF-8 and so can't be compared against the ignore list.
- */
 /**
  * Whether a path's extension is one we can play.
  */
