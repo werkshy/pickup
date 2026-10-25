@@ -29,7 +29,7 @@ async fn main() -> std::io::Result<()> {
     };
 
     match cli.command {
-        Commands::List {} => list(collection_options),
+        Commands::List { depth } => list(collection_options, depth),
         Commands::Refresh {} => {
             let result = cache::refresh(collection_options.clone());
             result.map(|_| ())

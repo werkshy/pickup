@@ -1,4 +1,5 @@
 use rkyv::from_bytes;
+use rkyv::util::AlignedVec;
 use rkyv::{rancor::Error, Archive, Deserialize, Serialize};
 use std::collections::{hash_map::DefaultHasher, HashSet};
 use std::fs;
@@ -14,11 +15,19 @@ static DB_ROOT_PATH: &str = ".cache";
 const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
 
 /**
+ * File extensions we treat as music. Everything else (cover art, notes, cue
+ * sheets, playlists) is left out of the collection.
+ */
+const MUSIC_EXTENSIONS: [&str; 11] = [
+    "mp3", "flac", "ogg", "oga", "opus", "wav", "m4a", "aac", "wma", "aiff", "aif",
+];
+
+/**
  * Bumped whenever the on-disk schema changes. It is mixed into the DB path hash so
  * that a stale cache simply misses in `init` and gets transparently refreshed,
  * rather than reaching the `unwrap` in `deserialize` and panicking.
  */
-const CACHE_VERSION: &str = "v2";
+const CACHE_VERSION: &str = "v3";
 
 #[derive(Serialize, Deserialize, Debug, Archive)]
 struct File {
@@ -101,18 +110,25 @@ fn db_path_for(music_dir: &str, version: &str) -> PathBuf {
  * track ordering within an album.
  */
 fn db_to_files(db: sled::Db) -> Vec<PathBuf> {
+    let mut buffer = AlignedVec::<16>::new();
     let mut paths: Vec<PathBuf> = db
         .iter()
-        .map(|kv| deserialize(&kv.unwrap().1))
-        .map(|file| PathBuf::from(file.path))
+        .map(|kv| PathBuf::from(deserialize(&mut buffer, &kv.unwrap().1).path))
         .collect();
     paths.sort();
     paths
 }
 
-fn deserialize(bytes: &[u8]) -> File {
+/**
+ * Decode a cached entry.
+ */
+fn deserialize(buffer: &mut AlignedVec<16>, bytes: &[u8]) -> File {
+    // rkyv can't read a value from a buffer that is in an unaligned buffer.
+    // so we copy the bytes from the sled load into a buffer and that will be aligned.
+    buffer.clear();
+    buffer.extend_from_slice(bytes);
     //let decoded: File = bincode::deserialize(bytes).unwrap();
-    let deserialized: File = from_bytes::<File, Error>(bytes).unwrap();
+    let deserialized: File = from_bytes::<File, Error>(&buffer[..]).unwrap();
     deserialized
 }
 
@@ -145,6 +161,7 @@ fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| !e.file_type().is_dir())
+        .filter(|e| is_music_file(e.path()))
     {
         let full_path = entry.into_path();
         let relative = match full_path.strip_prefix(dir) {
@@ -197,6 +214,16 @@ fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
  * None if the path has no components, or if its first component isn't valid
  * UTF-8 and so can't be compared against the ignore list.
  */
+/**
+ * Whether a path's extension is one we can play.
+ */
+fn is_music_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.to_ascii_lowercase())
+        .is_some_and(|extension| MUSIC_EXTENSIONS.contains(&extension.as_str()))
+}
+
 fn get_root(path: &Path) -> Option<String> {
     path.components()
         .next() // First Component
@@ -213,8 +240,8 @@ mod tests {
     use std::{ffi::OsString, os::unix::ffi::OsStringExt};
 
     use super::{
-        db_path_for, db_to_files, generate_track_id, get_db_path, get_root, serialize, walk_dirs,
-        DB_ROOT_PATH,
+        db_path_for, db_to_files, deserialize, generate_track_id, get_db_path, get_root,
+        is_music_file, serialize, walk_dirs, File, DB_ROOT_PATH,
     };
 
     #[test]
@@ -233,7 +260,7 @@ mod tests {
     fn test_db_path_differs_across_cache_versions() {
         // A stale cache from a previous schema must not resolve to the current
         // path, otherwise `init` would try to deserialize old bytes and panic.
-        assert_ne!(db_path_for("../music", "v1"), db_path_for("../music", "v2"));
+        assert_ne!(db_path_for("../music", "v2"), db_path_for("../music", "v3"));
     }
 
     #[test]
@@ -260,6 +287,31 @@ mod tests {
         assert_eq!(expected, result);
     }
 
+    /**
+     * sled hands back bytes with no alignment guarantee, so the decoder has to
+     * work from a misaligned buffer. This is the bug that took down a refresh of
+     * a 45k track library.
+     */
+    #[test]
+    fn test_deserialize_tolerates_a_misaligned_buffer() {
+        let path = PathBuf::from("Artist/Album/01 Track.mp3");
+        let encoded = serialize(&path).unwrap();
+
+        // Start the archived value one byte into a 16-byte aligned allocation,
+        // which is as misaligned as it gets.
+        let mut misaligned = rkyv::util::AlignedVec::<16>::with_capacity(encoded.len() + 1);
+        misaligned.extend_from_slice(&[0]);
+        misaligned.extend_from_slice(&encoded);
+        let bytes = &misaligned[1..];
+
+        // Confirm the premise: rkyv rejects these bytes on their own.
+        assert!(rkyv::from_bytes::<File, rkyv::rancor::Error>(bytes).is_err());
+
+        let decoded = deserialize(&mut rkyv::util::AlignedVec::<16>::new(), bytes);
+
+        assert_eq!("Artist/Album/01 Track.mp3", decoded.path);
+    }
+
     #[test]
     fn test_get_root_returns_first_component() {
         assert_eq!(
@@ -272,6 +324,41 @@ mod tests {
     fn test_get_root_is_none_for_an_empty_path() {
         // A Path is not guaranteed to have any components, so this must not panic.
         assert_eq!(None, get_root(Path::new("")));
+    }
+
+    #[test]
+    fn test_is_music_file() {
+        for name in ["01 Track.mp3", "02 Track.FLAC", "03.ogg", "04.m4a"] {
+            assert!(is_music_file(Path::new(name)), "{name} should be music");
+        }
+        for name in ["cover.jpg", "notes.txt", "playlist.m3u", "no-extension"] {
+            assert!(
+                !is_music_file(Path::new(name)),
+                "{name} should not be music"
+            );
+        }
+    }
+
+    #[test]
+    fn test_walk_dirs_skips_non_music_files() {
+        let dir = temp_music_dir("skips-non-music");
+        let album = dir.join("Artist/Album");
+        std::fs::create_dir_all(&album).unwrap();
+        std::fs::write(album.join("01 Track.mp3"), "").unwrap();
+        std::fs::write(album.join("02 Track.FLAC"), "").unwrap();
+        std::fs::write(album.join("cover.jpg"), "").unwrap();
+        std::fs::write(album.join("notes.txt"), "").unwrap();
+
+        let mut db = open_temp_db("skips-non-music");
+        walk_dirs(&dir, &mut db, HashSet::new());
+
+        assert_eq!(
+            vec![
+                PathBuf::from("Artist/Album/01 Track.mp3"),
+                PathBuf::from("Artist/Album/02 Track.FLAC"),
+            ],
+            db_to_files(db)
+        );
     }
 
     /// A path we can't represent in the cache is reported as such, not unwrapped.

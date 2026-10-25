@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use pickup::filemanager::model::Kind;
 
 const DEFAULT_MUSIC_DIR: &str = "../music";
 const DEFAULT_PORT: u32 = 9090;
@@ -26,7 +27,10 @@ pub struct Cli {
 #[derive(Subcommand)]
 pub enum Commands {
     // List
-    List {},
+    List {
+        #[arg(long, value_enum, default_value_t = Kind::Track)]
+        depth: Kind,
+    },
 
     // Refresh the music files (can be slow on network drives).
     Refresh {},

@@ -1,5 +1,26 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
+/**
+ * What a directory in the music tree turned out to be. Only the top level needs
+ * its own name inspected; everything below it is decided by its parent, since a
+ * category holds artists, an artist holds albums and an album holds discs.
+ *
+ * `Track` is not a folder kind: it is only used when a listing asks how deep to
+ * print, so tracks can be shown alongside folders.
+ */
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum Kind {
+    Category,
+    Artist,
+    Album,
+    Disc,
+    Track,
+}
+
+/**
+ * A single playable file. The ID is a hash of `path`, so it is stable for as
+ * long as the file sits at that path relative to the music dir.
+ */
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Track {
     pub id: String,
@@ -12,115 +33,35 @@ pub struct Track {
     pub disc: Option<String>,
 }
 
-pub struct Album {
+/**
+ * A directory in the collection, whatever its kind. It holds the directories
+ * below it and the tracks directly inside it.
+ *
+ * Built via `Collection::add_folder`, which derives the ID and records the
+ * folder in the collection's ID index. There is deliberately no way to create
+ * one directly, so nothing can end up in the tree without also being
+ * addressable by ID.
+ */
+#[derive(Debug)]
+pub struct Folder {
+    pub id: String,
+    pub path: PathBuf,
+    /// Display name. A category's leading underscore is stripped here, while the
+    /// map key keeps it.
     pub name: String,
-    pub discs: BTreeMap<String, Box<Album>>,
+    pub kind: Kind,
+    pub folders: BTreeMap<String, Folder>,
     pub tracks: Vec<Track>,
 }
 
-impl Album {
-    pub fn add_disc(&mut self, name: String) -> &mut Album {
-        if !(self.discs.contains_key(&name)) {
-            let disc = Album {
-                name: name.clone(),
-                discs: BTreeMap::new(),
-                tracks: vec![],
-            };
-            self.discs.insert(name.clone(), Box::new(disc));
-        }
-        self.discs.get_mut(&name).unwrap()
-    }
-
-    pub fn add_track(&mut self, track: Track) {
-        self.tracks.push(track);
-    }
-}
-
-pub struct Artist {
-    pub name: String,
-    pub albums: BTreeMap<String, Album>,
-    pub tracks: Vec<Track>,
-}
-
-impl Artist {
-    pub fn add_album(&mut self, name: String) -> &mut Album {
-        if !(self.albums.contains_key(&name)) {
-            let album = Album {
-                name: name.clone(),
-                discs: BTreeMap::new(),
-                tracks: vec![],
-            };
-            self.albums.insert(name.clone(), album);
-        }
-        self.albums.get_mut(&name).unwrap()
-    }
-}
-
-pub struct Category {
-    pub name: String,
-    pub albums: BTreeMap<String, Album>,
-    pub artists: BTreeMap<String, Artist>,
-}
-
-impl Category {
-    pub fn add_artist(&mut self, name: String) -> &mut Artist {
-        if !(self.artists.contains_key(&name)) {
-            let artist = Artist {
-                name: name.clone(),
-                albums: BTreeMap::new(),
-                tracks: vec![],
-            };
-            self.artists.insert(name.clone(), artist);
-        }
-        self.artists.get_mut(&name).unwrap()
-    }
-
-    pub fn add_album(&mut self, name: String) -> &mut Album {
-        if !(self.albums.contains_key(&name)) {
-            let album = Album {
-                name: name.clone(),
-                discs: BTreeMap::new(),
-                tracks: vec![],
-            };
-            self.albums.insert(name.clone(), album);
-        }
-        self.albums.get_mut(&name).unwrap()
-    }
-
-    pub fn all_tracks(&self) -> Vec<&Track> {
-        let mut tracks = Vec::new();
-        for album in self.albums.values() {
-            tracks.extend(album.all_tracks());
-        }
-        for artist in self.artists.values() {
-            tracks.extend(artist.all_tracks());
-        }
-        tracks
-    }
-}
-
-impl Artist {
+impl Folder {
     /**
-     * Return all the tracks under this artist in a flat list.
+     * Return all the tracks under this folder in a flat list.
      */
     pub fn all_tracks(&self) -> Vec<&Track> {
         let mut tracks = Vec::new();
-        for album in self.albums.values() {
-            tracks.extend(album.all_tracks());
-        }
-        tracks.extend(self.tracks.iter());
-        tracks
-    }
-}
-
-impl Album {
-    /**
-     * Return all the tracks under this album in a flat list.
-     */
-    pub fn all_tracks(&self) -> Vec<&Track> {
-        let mut tracks = Vec::new();
-        for disc in self.discs.values() {
-            tracks.extend(disc.all_tracks());
+        for folder in self.folders.values() {
+            tracks.extend(folder.all_tracks());
         }
         tracks.extend(self.tracks.iter());
         tracks
