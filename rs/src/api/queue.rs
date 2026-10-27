@@ -4,10 +4,10 @@ use crate::{
     api::types::{ApiQueueInput, ApiQueueResponse, ApiTrack, ErrorResponse},
     app_state::AppState,
     error::AppError,
-    filemanager::dto::CollectionLocation,
 };
 
-/// Add tracks matching the given category/artist/album/disc/track to the queue.
+/// Add music to the queue: a single track for a track ID, or every track under
+/// a folder for a category, artist, album or disc ID.
 #[utoipa::path(
     tag = "queue",
     request_body = ApiQueueInput,
@@ -22,23 +22,13 @@ pub async fn add(
     data: web::Data<AppState>,
     input: web::Json<ApiQueueInput>,
 ) -> Result<impl Responder, AppError> {
-    let collection_location = CollectionLocation {
-        category: input.category.clone(),
-        artist: input.artist.clone(),
-        album: input.album.clone(),
-        disc: input.disc.clone(),
-        track: input.track.clone(),
-    };
-
-    let maybe_tracks = data.collection.get_tracks_under(&collection_location);
-    if maybe_tracks.is_none() {
+    let Some(tracks) = data.collection.get_tracks(&input.id) else {
         return Err(AppError::not_found(
             "No matching music found in the collection",
         ));
-    }
-    let tracks = maybe_tracks.unwrap();
+    };
 
-    log::info!("Adding {} track to playlist", tracks.len());
+    log::info!("Adding {} tracks to the queue", tracks.len());
     let mut queue = data.queue.write().unwrap();
     if input.clear {
         queue.clear();

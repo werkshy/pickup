@@ -27,6 +27,7 @@ where
         .service(control::volume)
         .service(control::get_volume)
         .service(list::list_categories)
+        .service(list::get_folder)
         .service(queue::add)
         .service(queue::clear)
         .service(queue::get_queue)

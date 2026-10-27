@@ -1,13 +1,12 @@
-use actix_web::{get, web, Responder, Result};
+use actix_web::{get, web, Responder};
 
 use crate::{
-    api::types::{ApiCategory, ListCategoriesResponse},
+    api::types::{ApiFolder, ApiFolderRef, ErrorResponse, ListCategoriesResponse},
     app_state::AppState,
+    error::AppError,
 };
 
 /// List the categories (top level of the collection).
-///
-/// TODO fill this out, artists/albums/tracks are not listed yet.
 #[utoipa::path(
     tag = "collection",
     responses(
@@ -15,18 +14,34 @@ use crate::{
     )
 )]
 #[get("/categories")]
-pub async fn list_categories(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn list_categories(data: web::Data<AppState>) -> impl Responder {
     let collection = data.collection.as_ref();
 
-    let api_categories: Vec<ApiCategory> = collection
-        .values()
-        .map(|category| ApiCategory {
-            name: category.name.clone(),
-        })
-        .collect();
-
     let response = ListCategoriesResponse {
-        categories: api_categories,
+        categories: collection.values().map(ApiFolderRef::from_folder).collect(),
     };
-    Ok(web::Json(response))
+    web::Json(response)
+}
+
+/// Get one folder by ID, with the folders and tracks directly inside it. Walk
+/// the collection by fetching a category from `/categories`, then each child
+/// folder from here.
+#[utoipa::path(
+    tag = "collection",
+    responses(
+        (status = 200, description = "The folder and its immediate contents", body = ApiFolder),
+        (status = 404, description = "No folder with this ID", body = ErrorResponse),
+    )
+)]
+#[get("/folders/{id}")]
+pub async fn get_folder(
+    data: web::Data<AppState>,
+    id: web::Path<String>,
+) -> Result<impl Responder, AppError> {
+    let id = id.into_inner();
+    let folder = data
+        .collection
+        .get_folder(&id)
+        .ok_or_else(|| AppError::not_found(format!("No folder found with ID '{id}'")))?;
+    Ok(web::Json(ApiFolder::from_folder(folder)))
 }

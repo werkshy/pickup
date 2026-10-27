@@ -16,9 +16,9 @@ use pickup::{
     filemanager::{
         cache::refresh,
         collection::Collection,
-        dto::CollectionLocation,
-        model::{Kind, Track},
+        model::{CollectionLocation, Kind, Track},
         options::CollectionOptions,
+        utils::generate_track_id,
     },
     queue::PlaybackQueue,
     spawn_player,
@@ -61,11 +61,30 @@ async fn test_play() {
 
     assert_matches!(result, Ok(_));
     let app = test::init_service(build_app((*APP_STATE).clone())).await;
-    let req = test::TestRequest::post().uri("/play").to_request();
+    let id = generate_track_id(Path::new("Bryan Teoh/Free/01 - Finally See The Light.mp3"));
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{id}").as_str())
+        .to_request();
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
     assert_eq!(resp, json!({ "status": "ok" }));
+}
+
+#[serial(queue)]
+#[actix_web::test]
+async fn test_play_with_unknown_track_id_is_404() {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::post().uri("/play/trk_nope").to_request();
+
+    let resp = test::call_service(&app, req).await;
+
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    let body: serde_json::Value = test::read_body_json(resp).await;
+    assert_eq!(
+        body,
+        json!({ "code": "not_found", "message": "No track found with ID 'trk_nope'" })
+    );
 }
 
 /**
@@ -75,15 +94,14 @@ async fn test_play() {
 #[serial(queue)]
 #[actix_web::test]
 async fn test_play_with_missing_file_returns_error() {
-    // Build an app state whose first track points at a file that does not
-    // exist on disk.
+    // Build an app state whose only track points at a file that does not
+    // exist on disk, and play it by ID.
     let file = PathBuf::from("definitely/missing/file.wav");
     let location = CollectionLocation {
         category: String::from("test"),
         artist: Some(String::from("definitely")),
         album: Some(String::from("missing")),
         disc: None,
-        track: None,
     };
     let track = Track {
         id: String::from("missing"),
@@ -95,7 +113,7 @@ async fn test_play_with_missing_file_returns_error() {
         album: location.album.clone(),
         disc: None,
     };
-    let mut collection = Collection::new();
+    let mut collection = Collection::new(String::from("/music"));
     collection.add_folder(Kind::Album, &location, Path::new("definitely/missing"));
     collection.add_track(track, &location);
     let app_state = Data::new(AppState {
@@ -105,7 +123,7 @@ async fn test_play_with_missing_file_returns_error() {
     });
 
     let app = test::init_service(build_app(app_state)).await;
-    let req = test::TestRequest::post().uri("/play").to_request();
+    let req = test::TestRequest::post().uri("/play/missing").to_request();
 
     let resp = test::call_service(&app, req).await;
     assert_eq!(resp.status(), StatusCode::INTERNAL_SERVER_ERROR);

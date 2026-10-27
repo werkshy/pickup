@@ -6,38 +6,34 @@ use crate::{
     api::types::{ErrorResponse, StatusResponse, VolumeResponse},
     app_state::AppState,
     error::AppError,
-    filemanager::model::{Folder, Track},
     player::{PlayerClient, PlayerError},
 };
 
-fn get_first_track(app_state: &AppState) -> &Track {
-    // TODO for now let's just look for the first track, it seems to work on our demo music
-    fn first_track(folder: &Folder) -> Option<&Track> {
-        folder
-            .tracks
-            .first()
-            .or_else(|| folder.folders.values().find_map(first_track))
-    }
-    app_state.collection.values().find_map(first_track).unwrap()
-}
-
-/// Start playback.
-///
-/// TODO for now plays the first track, it seems to work on our demo music.
+/// Play a single track, by ID.
 #[utoipa::path(
     tag = "control",
     responses(
         (status = 200, description = "Playback started", body = StatusResponse),
+        (status = 404, description = "No track with this ID", body = ErrorResponse),
         (status = 500, description = "The player did not respond in time or the action itself failed", body = ErrorResponse),
         (status = 503, description = "The player thread is gone", body = ErrorResponse),
     )
 )]
-#[post("/play")]
-pub async fn play(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
-    let track = get_first_track(&data);
+#[post("/play/{id}")]
+pub async fn play(
+    data: web::Data<AppState>,
+    id: web::Path<String>,
+) -> Result<impl Responder, AppError> {
+    let id = id.into_inner();
+    let Some(track) = data.collection.get_track(&id) else {
+        return Err(AppError::not_found(format!(
+            "No track found with ID '{id}'"
+        )));
+    };
+
     // TODO shouldn't the path be absolute or relative already? Or maybe the Player needs to know the prefix
     // Joined as a Path so a track whose name isn't valid UTF-8 still resolves.
-    let path = Path::new("../music").join(&track.path);
+    let path = Path::new(&data.collection.dir).join(&track.path);
 
     data.player.play(path).await.map_err(AppError::from)?;
     Ok(web::Json(StatusResponse {
