@@ -4,13 +4,13 @@ use std::path::{Path, PathBuf};
 use super::{
     cache,
     collection_builder::build,
-    dto::CollectionLocation,
-    model::{Folder, Kind, Track},
+    model::{CollectionLocation, Folder, Kind, Track},
     options::CollectionOptions,
     utils::{generate_album_id, generate_artist_id, generate_category_id, generate_disc_id},
 };
 
 pub struct Collection {
+    pub dir: String,
     pub categories: BTreeMap<String, Folder>,
     /// Every folder by ID, so it can be addressed without knowing where it sits.
     folders_by_id: HashMap<String, CollectionLocation>,
@@ -19,20 +19,16 @@ pub struct Collection {
 }
 
 pub fn init(options: CollectionOptions) -> std::io::Result<Collection> {
+    let dir = options.dir.clone();
     let files = cache::init(options)?;
-    let collection = build(files);
+    let collection = build(dir, files);
     Ok(collection)
 }
 
-impl Default for Collection {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl Collection {
-    pub fn new() -> Self {
+    pub fn new(dir: String) -> Self {
         Self {
+            dir,
             categories: BTreeMap::new(),
             folders_by_id: HashMap::new(),
             tracks_by_id: HashMap::new(),
@@ -113,10 +109,6 @@ impl Collection {
      */
     pub fn add_track(&mut self, track: Track, location: &CollectionLocation) -> bool {
         let id = track.id.clone();
-        let indexed = CollectionLocation {
-            track: Some(track.name.clone()),
-            ..location.clone()
-        };
 
         {
             let Some(folder) = self.folder_mut(location) else {
@@ -125,7 +117,7 @@ impl Collection {
             folder.tracks.push(track);
         }
 
-        self.tracks_by_id.insert(id, indexed);
+        self.tracks_by_id.insert(id, location.clone());
         true
     }
 
@@ -155,53 +147,39 @@ impl Collection {
     }
 
     /**
-     * Return the flat list of tracks under a certain location (identified by
-     * category, artist, album, and disc). If the location is not found, return
-     * None.
+     * The tracks an ID addresses: the single track for a track ID, or every
+     * track under the folder for a folder ID. None if the ID is not in the
+     * collection.
      */
-    pub fn get_tracks_under(&self, location: &CollectionLocation) -> Option<Vec<&Track>> {
-        let folder = self.folder_at(location)?;
-        let tracks = folder.all_tracks();
-
-        // No track named, so the whole folder.
-        let name = match &location.track {
-            Some(name) => name,
-            None => return Some(tracks),
-        };
-        tracks
-            .into_iter()
-            .find(|track| &track.name == name)
-            .map(|track| vec![track])
+    pub fn get_tracks(&self, id: &str) -> Option<Vec<&Track>> {
+        if let Some(track) = self.get_track(id) {
+            return Some(vec![track]);
+        }
+        self.get_folder(id).map(|folder| folder.all_tracks())
     }
 
     /**
-     * The folder a location points at, if any. A location with a track names the
-     * folder that holds it, so the track is ignored here.
+     * The folder a location points at, if any: the category it names, then
+     * each level below it.
      */
     fn folder_at(&self, location: &CollectionLocation) -> Option<&Folder> {
         let mut folder = self.categories.get(&location.category)?;
-        if let Some(artist) = &location.artist {
-            folder = folder.folders.get(artist)?;
-        }
-        if let Some(album) = &location.album {
-            folder = folder.folders.get(album)?;
-        }
-        if let Some(disc) = &location.disc {
-            folder = folder.folders.get(disc)?;
+        for name in [&location.artist, &location.album, &location.disc]
+            .into_iter()
+            .flatten()
+        {
+            folder = folder.folders.get(name)?;
         }
         Some(folder)
     }
 
     fn folder_mut(&mut self, location: &CollectionLocation) -> Option<&mut Folder> {
         let mut folder = self.categories.get_mut(&location.category)?;
-        if let Some(artist) = &location.artist {
-            folder = folder.folders.get_mut(artist)?;
-        }
-        if let Some(album) = &location.album {
-            folder = folder.folders.get_mut(album)?;
-        }
-        if let Some(disc) = &location.disc {
-            folder = folder.folders.get_mut(disc)?;
+        for name in [&location.artist, &location.album, &location.disc]
+            .into_iter()
+            .flatten()
+        {
+            folder = folder.folders.get_mut(name)?;
         }
         Some(folder)
     }
@@ -214,14 +192,12 @@ fn parent_location(location: &CollectionLocation) -> Option<CollectionLocation> 
     if location.disc.is_some() {
         Some(CollectionLocation {
             disc: None,
-            track: None,
             ..location.clone()
         })
     } else if location.album.is_some() {
         Some(CollectionLocation {
             album: None,
             disc: None,
-            track: None,
             ..location.clone()
         })
     } else if location.artist.is_some() {
@@ -229,7 +205,6 @@ fn parent_location(location: &CollectionLocation) -> Option<CollectionLocation> 
             artist: None,
             album: None,
             disc: None,
-            track: None,
             ..location.clone()
         })
     } else {
@@ -314,9 +289,11 @@ mod tests {
     use super::*;
     use crate::filemanager::model::factories::*;
 
+    const TEST_MUSIC_DIR: &str = "../music";
+
     #[test]
     fn test_add_category() {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
         let category = collection.add_folder(
             Kind::Category,
             &collection_location("Music", None, None, None),
@@ -426,7 +403,7 @@ mod tests {
      */
     #[test]
     fn test_get_track_by_id_for_bare_artist_track() {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
         let location = collection_location("Music", Some("Solo"), None, None);
         collection.add_folder(Kind::Artist, &location, Path::new("Solo"));
         let track = test_track(&location, "Bare");
@@ -442,6 +419,7 @@ mod tests {
 
         assert!(collection.get_folder("cat_nope").is_none());
         assert!(collection.get_track("trk_nope").is_none());
+        assert!(collection.get_tracks("art_nope").is_none());
     }
 
     /**
@@ -468,7 +446,7 @@ mod tests {
      */
     #[test]
     fn test_same_name_in_different_categories_has_distinct_ids() {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
         add_album_tracks(
             &mut collection,
             "Music",
@@ -499,7 +477,7 @@ mod tests {
      */
     #[test]
     fn test_a_duplicate_folder_name_does_not_index_its_other_ids() {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
         let location = collection_location("Music", Some("Shared"), None, None);
         let first = collection
             .add_folder(Kind::Artist, &location, Path::new("One/Shared"))
@@ -521,7 +499,7 @@ mod tests {
      */
     #[test]
     fn test_unplaceable_track_is_dropped_rather_than_indexed() {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
         // A location with no artist and no album: nowhere to put a track.
         let location = collection_location("Music", None, None, None);
         let track = test_track(&location, "Loose");
@@ -560,11 +538,11 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tracks_under_category() {
+    fn test_get_tracks_for_category() {
         let collection = build_test_collection();
 
-        let maybe_tracks =
-            collection.get_tracks_under(&collection_location("Music", None, None, None));
+        let id = collection.categories["Music"].id.clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -585,15 +563,13 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tracks_under_artist() {
+    fn test_get_tracks_for_artist() {
         let collection = build_test_collection();
 
-        let maybe_tracks = collection.get_tracks_under(&collection_location(
-            "Music",
-            Some("Artist One"),
-            None,
-            None,
-        ));
+        let id = collection.categories["Music"].folders["Artist One"]
+            .id
+            .clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -609,15 +585,13 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tracks_under_artist_album() {
+    fn test_get_tracks_for_album() {
         let collection = build_test_collection();
 
-        let maybe_tracks = collection.get_tracks_under(&collection_location(
-            "Music",
-            Some("Artist Two"),
-            Some("Album Two".to_string()),
-            None,
-        ));
+        let id = collection.categories["Music"].folders["Artist Two"].folders["Album Two"]
+            .id
+            .clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -633,15 +607,14 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tracks_under_disc() {
+    fn test_get_tracks_for_disc() {
         let collection = build_test_collection();
 
-        let maybe_tracks = collection.get_tracks_under(&collection_location(
-            "Music",
-            Some("Artist Two"),
-            Some("Album Two".to_string()),
-            Some("Disc One".to_string()),
-        ));
+        let id = collection.categories["Music"].folders["Artist Two"].folders["Album Two"].folders
+            ["Disc One"]
+            .id
+            .clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -654,15 +627,13 @@ mod tests {
     }
 
     #[test]
-    fn test_get_tracks_under_bare_album() {
+    fn test_get_tracks_for_bare_album() {
         let collection = build_test_collection();
 
-        let maybe_tracks = collection.get_tracks_under(&collection_location(
-            "_Other",
-            None,
-            Some("Album Four".to_string()),
-            None,
-        ));
+        let id = collection.categories["_Other"].folders["Album Four"]
+            .id
+            .clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -677,15 +648,18 @@ mod tests {
         );
     }
 
+    /**
+     * A track ID addresses just that one track, not everything under the
+     * folder that holds it.
+     */
     #[test]
-    fn test_get_tracks_under_track() {
+    fn test_get_tracks_for_a_track_id() {
         let collection = build_test_collection();
 
-        let mut location =
-            collection_location("_Other", None, Some("Album Four".to_string()), None);
-        location.track = Some("Album Four Track One".to_string());
-
-        let maybe_tracks = collection.get_tracks_under(&location);
+        let id = collection.categories["_Other"].folders["Album Four"].tracks[0]
+            .id
+            .clone();
+        let maybe_tracks = collection.get_tracks(&id);
 
         assert!(maybe_tracks.is_some());
 
@@ -711,7 +685,7 @@ mod tests {
      * bare album. The paths are the ones each folder would really sit at.
      */
     fn build_test_collection() -> Collection {
-        let mut collection = Collection::new();
+        let mut collection = Collection::new(TEST_MUSIC_DIR.to_string());
 
         // 1. First artist in default category
         add_album_tracks(
@@ -810,7 +784,6 @@ mod tests {
             artist: artist.map(String::from),
             album,
             disc,
-            track: None,
         }
     }
 

@@ -34,6 +34,20 @@ pub struct Track {
 }
 
 /**
+ * Where a folder or track sits in the collection: the category, and the
+ * artist, album and disc it descends from, each by name. The builder derives
+ * it from the directory structure, and `Collection` uses it to place folders
+ * and to resolve what an ID points at.
+ */
+#[derive(Clone, Debug)]
+pub struct CollectionLocation {
+    pub category: String,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub disc: Option<String>,
+}
+
+/**
  * A directory in the collection, whatever its kind. It holds the directories
  * below it and the tracks directly inside it.
  *

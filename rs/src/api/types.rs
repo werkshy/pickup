@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-use crate::filemanager::model::Track;
+use crate::filemanager::model::{Folder, Kind, Track};
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct IndexResponse {
@@ -19,9 +19,59 @@ pub struct VolumeResponse {
     pub volume: u8,
 }
 
+/// A folder in the collection, without its contents.
 #[derive(Debug, Serialize, ToSchema)]
-pub struct ApiCategory {
+pub struct ApiFolderRef {
+    pub id: String,
     pub name: String,
+    pub kind: String,
+}
+
+/// A folder with the folders and tracks directly inside it.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ApiFolder {
+    pub id: String,
+    pub name: String,
+    pub kind: String,
+    pub folders: Vec<ApiFolderRef>,
+    pub tracks: Vec<ApiTrack>,
+}
+
+impl ApiFolderRef {
+    pub fn from_folder(folder: &Folder) -> Self {
+        ApiFolderRef {
+            id: folder.id.clone(),
+            name: folder.name.clone(),
+            kind: kind_name(folder.kind).to_string(),
+        }
+    }
+}
+
+impl ApiFolder {
+    pub fn from_folder(folder: &Folder) -> Self {
+        ApiFolder {
+            id: folder.id.clone(),
+            name: folder.name.clone(),
+            kind: kind_name(folder.kind).to_string(),
+            folders: folder
+                .folders
+                .values()
+                .map(ApiFolderRef::from_folder)
+                .collect(),
+            tracks: folder.tracks.iter().map(ApiTrack::from_track).collect(),
+        }
+    }
+}
+
+/// The name a folder kind is known by in the API.
+fn kind_name(kind: Kind) -> &'static str {
+    match kind {
+        Kind::Category => "category",
+        Kind::Artist => "artist",
+        Kind::Album => "album",
+        Kind::Disc => "disc",
+        Kind::Track => "track",
+    }
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -49,16 +99,14 @@ impl ApiTrack {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ListCategoriesResponse {
-    pub categories: Vec<ApiCategory>,
+    pub categories: Vec<ApiFolderRef>,
 }
 
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ApiQueueInput {
-    pub category: String,
-    pub artist: Option<String>,
-    pub album: Option<String>,
-    pub disc: Option<String>,
-    pub track: Option<String>,
+    /// The ID of a track, or of any folder (category, artist, album or disc)
+    /// to add everything under.
+    pub id: String,
     #[serde(default)] // Defaults to false
     pub clear: bool,
 }

@@ -8,8 +8,7 @@ use regex::Regex;
 
 use super::{
     collection::Collection,
-    dto::CollectionLocation,
-    model::{Kind, Track},
+    model::{CollectionLocation, Kind, Track},
     utils::generate_track_id,
 };
 
@@ -28,8 +27,8 @@ struct Dir {
     location: CollectionLocation,
 }
 
-pub fn build(files: Vec<PathBuf>) -> Collection {
-    let mut collection = Collection::new();
+pub fn build(dir: String, files: Vec<PathBuf>) -> Collection {
+    let mut collection = Collection::new(dir);
     let mut dirs: HashMap<PathBuf, Dir> = HashMap::new();
 
     // Directories first, parents before children, so that each one is created
@@ -203,7 +202,6 @@ fn location(
         artist,
         album,
         disc,
-        track: None,
     }
 }
 
@@ -297,6 +295,7 @@ mod tests {
     #[test]
     fn test_build_nests_by_directory() {
         let collection = build(
+            String::from("/music"),
             [
                 "Smashing Pumpkins/Gish/01 I Am One.mp3",
                 "_Grunge/Smashing Pumpkins/Mellon Collie/CD 1/01 Mellon Collie.mp3",
@@ -345,6 +344,7 @@ mod tests {
     #[test]
     fn test_build_indexes_every_container_by_its_path() {
         let collection = build(
+            String::from("/music"),
             [
                 "Smashing Pumpkins/Gish/01 I Am One.mp3",
                 "_Grunge/Smashing Pumpkins/Mellon Collie/CD 1/01 Mellon Collie.mp3",
@@ -388,7 +388,10 @@ mod tests {
      */
     #[test]
     fn test_build_drops_a_file_at_the_root() {
-        let collection = build(["01 Loose.mp3"].map(PathBuf::from).to_vec());
+        let collection = build(
+            String::from("/music"),
+            ["01 Loose.mp3"].map(PathBuf::from).to_vec(),
+        );
 
         assert!(collection.categories.is_empty());
         assert!(collection.all_tracks().is_empty());
@@ -401,6 +404,7 @@ mod tests {
     #[test]
     fn test_build_drops_a_non_disc_directory_under_an_album() {
         let collection = build(
+            String::from("/music"),
             ["Artist/Album/Artwork/01.mp3", "Artist/Album/01.mp3"]
                 .map(PathBuf::from)
                 .to_vec(),
@@ -421,6 +425,7 @@ mod tests {
     #[test]
     fn test_build_drops_descendants_of_a_non_disc_directory() {
         let collection = build(
+            String::from("/music"),
             ["Artist/Album/Artwork/More/01.mp3", "Artist/Album/01.mp3"]
                 .map(PathBuf::from)
                 .to_vec(),
@@ -440,6 +445,7 @@ mod tests {
     #[test]
     fn test_build_drops_a_directory_inside_a_disc() {
         let collection = build(
+            String::from("/music"),
             [
                 "Artist/Album/CD 1/Extras/01.mp3",
                 "Artist/Album/CD 1/02.mp3",
