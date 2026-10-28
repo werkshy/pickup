@@ -44,7 +44,10 @@ pub fn init(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
         match load(&cache_path) {
             Ok(paths) => return Ok(paths),
             Err(error) => {
-                log::warn!("Failed to load cache at {:?}: {error}: refreshing", cache_path)
+                log::warn!(
+                    "Failed to load cache at {:?}: {error}: refreshing",
+                    cache_path
+                )
             }
         }
     } else {
@@ -249,10 +252,7 @@ mod tests {
 
     #[test]
     fn test_cache_path_is_distinct_per_music_dir() {
-        assert_ne!(
-            get_cache_path("../music"),
-            get_cache_path("../other-music")
-        );
+        assert_ne!(get_cache_path("../music"), get_cache_path("../other-music"));
     }
 
     #[test]
