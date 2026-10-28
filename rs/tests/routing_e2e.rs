@@ -7,8 +7,7 @@ use once_cell::sync::Lazy;
 use pickup::{app_state::AppState, build_app};
 use serde_json::{self, json};
 
-// Build (and open the collection DB) once for the whole binary, so the tests
-// don't race each other opening sled.
+// Build the app state (and load the collection) once for the whole binary.
 static APP_STATE: Lazy<Data<AppState>> = Lazy::new(build_test_app_state);
 
 #[actix_web::test]

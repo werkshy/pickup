@@ -19,9 +19,17 @@ pub struct Collection {
 }
 
 pub fn init(options: CollectionOptions) -> std::io::Result<Collection> {
+    let start = std::time::Instant::now();
     let dir = options.dir.clone();
     let files = cache::init(options)?;
+    let loaded = start.elapsed();
+    let path_count = files.len();
     let collection = build(dir, files);
+    log::info!(
+        "Loaded {path_count} cached paths in {loaded:?}; built collection of {} tracks in {:?}",
+        collection.all_tracks().len(),
+        start.elapsed()
+    );
     Ok(collection)
 }
 

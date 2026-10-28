@@ -9,9 +9,8 @@ use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
 use super::options::CollectionOptions;
-use super::utils::generate_track_id;
 
-static DB_ROOT_PATH: &str = ".cache";
+static CACHE_ROOT_PATH: &str = ".cache";
 const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
 
 /**
@@ -23,37 +22,40 @@ const MUSIC_EXTENSIONS: [&str; 11] = [
 ];
 
 /**
- * Bumped whenever the on-disk schema changes. It is mixed into the DB path hash so
- * that a stale cache simply misses in `init` and gets transparently refreshed,
- * rather than reaching the `unwrap` in `deserialize` and panicking.
+ * Bumped whenever the on-disk schema changes. It is mixed into the cache path
+ * hash so that a stale cache simply misses in `init` and gets transparently
+ * refreshed, rather than being decoded with the wrong schema.
  */
-const CACHE_VERSION: &str = "v3";
+const CACHE_VERSION: &str = "v4";
 
+/**
+ * The whole cache in one value: every track path, sorted and deduplicated by
+ * `refresh`. Stored as a single rkyv blob so a load is one file read and one
+ * decode, rather than iterating a key-value store entry by entry.
+ */
 #[derive(Serialize, Deserialize, Debug, Archive)]
-struct File {
-    path: String,
+struct Snapshot {
+    paths: Vec<String>,
 }
 
 pub fn init(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
-    let db_path = get_db_path(&options.dir);
-    if !db_path.exists() {
-        log::info!("DB does not exist '{:?}': refreshing", db_path);
-        return refresh(options);
+    let cache_path = get_cache_path(&options.dir);
+    if cache_path.exists() {
+        match load(&cache_path) {
+            Ok(paths) => return Ok(paths),
+            Err(error) => {
+                log::warn!("Failed to load cache at {:?}: {error}: refreshing", cache_path)
+            }
+        }
+    } else {
+        log::info!("Cache does not exist '{:?}': refreshing", cache_path);
     }
 
-    load(&db_path)
-}
-
-// Assumes that the music dir exists
-// TODO we could wrap the DB in a RAAI type struct?
-fn load(path: &PathBuf) -> std::io::Result<Vec<PathBuf>> {
-    log::info!("Loading music dir cache at {:?}", path);
-    let db: sled::Db = sled::open(path.as_path())?;
-
-    Ok(db_to_files(db))
+    refresh(options)
 }
 
 // TODO shouldn't this be async?!
+// Assumes that the music dir exists
 pub fn refresh(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     log::info!("Refreshing music dir at {}", options.dir);
 
@@ -62,17 +64,19 @@ pub fn refresh(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
         .unwrap_or_else(|| DEFAULT_IGNORES.iter().map(|i| i.to_string()).collect());
     let ignore_set: HashSet<String> = HashSet::from_iter(ignores);
 
-    let db_path = get_db_path(&options.dir);
-    if db_path.exists() {
-        log::info!("Deleting existing DB at {:?}", db_path);
-        fs::remove_dir_all(db_path.as_path())?;
-    }
-    let mut db: sled::Db = sled::open(db_path).unwrap();
-    walk_dirs(Path::new(&options.dir), &mut db, ignore_set);
-    db.flush().unwrap();
+    let mut paths = walk_dirs(Path::new(&options.dir), ignore_set);
 
-    // Minor performance hit but reading from the DB is a lot quicker than the refresh itself.
-    Ok(db_to_files(db))
+    // Sorted paths make the order deterministic and give alphabetical track
+    // ordering within an album. Dedup guards against a repeated path, which a
+    // single walk cannot produce but which the key-value cache used to dedupe
+    // for free.
+    paths.sort();
+    paths.dedup();
+
+    write_snapshot(&get_cache_path(&options.dir), &paths)?;
+
+    // The walked paths are the snapshot, so there is nothing to read back.
+    Ok(paths.into_iter().map(PathBuf::from).collect())
 }
 
 /**
@@ -86,72 +90,76 @@ fn hash(s: &str) -> String {
 
 /**
  * Get a unique path for a cache of the current music_dir by hashing music_dir
- * and using DB_ROOT_PATH as the root
+ * and using CACHE_ROOT_PATH as the root
  */
-fn get_db_path(music_dir: &str) -> PathBuf {
-    db_path_for(music_dir, CACHE_VERSION)
+fn get_cache_path(music_dir: &str) -> PathBuf {
+    cache_path_for(music_dir, CACHE_VERSION)
 }
 
 /**
- * Build the path for the cache DB, hasing the music dir and a version.
+ * Build the path for the cache file, hashing the music dir and a version.
  */
-fn db_path_for(music_dir: &str, version: &str) -> PathBuf {
-    Path::new(DB_ROOT_PATH).join(hash(&format!("{version}:{music_dir}")))
+fn cache_path_for(music_dir: &str, version: &str) -> PathBuf {
+    Path::new(CACHE_ROOT_PATH).join(hash(&format!("{version}:{music_dir}")))
 }
 
 /**
- * Collect every cached file, sorted by path.
+ * Decode the snapshot at `cache_path`.
  *
- * Entries are keyed by track ID, which is a hash and therefore carries no
- * ordering. We sort by path to make the order deterministic and give
- * alphabetical track ordering within an album.
+ * rkyv can't read a value from an unaligned buffer, and the bytes from a file
+ * read have no alignment guarantee, so they are copied into an aligned buffer
+ * before decoding.
  */
-fn db_to_files(db: sled::Db) -> Vec<PathBuf> {
+fn load(cache_path: &PathBuf) -> std::io::Result<Vec<PathBuf>> {
+    log::info!("Loading music dir cache at {:?}", cache_path);
+    let bytes = fs::read(cache_path)?;
+
     let mut buffer = AlignedVec::<16>::new();
-    let mut paths: Vec<PathBuf> = db
-        .iter()
-        .map(|kv| PathBuf::from(deserialize(&mut buffer, &kv.unwrap().1).path))
-        .collect();
-    paths.sort();
-    paths
+    buffer.extend_from_slice(&bytes);
+
+    let snapshot: Snapshot = from_bytes::<Snapshot, Error>(&buffer[..])
+        .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
+
+    // The snapshot is written sorted, so it comes back sorted.
+    Ok(snapshot.paths.into_iter().map(PathBuf::from).collect())
 }
 
 /**
- * Decode a cached entry.
+ * Write the snapshot to a temp file and rename it into place, so a crash
+ * mid-write can never leave a truncated snapshot at the cache path.
  */
-fn deserialize(buffer: &mut AlignedVec<16>, bytes: &[u8]) -> File {
-    // rkyv can't read a value from a buffer that is in an unaligned buffer.
-    // so we copy the bytes from the sled load into a buffer and that will be aligned.
-    buffer.clear();
-    buffer.extend_from_slice(bytes);
-    //let decoded: File = bincode::deserialize(bytes).unwrap();
-    let deserialized: File = from_bytes::<File, Error>(&buffer[..]).unwrap();
-    deserialized
-}
+fn write_snapshot(cache_path: &Path, paths: &[String]) -> std::io::Result<()> {
+    if let Some(parent) = cache_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
 
-/**
- * Encode a path for the cache.
- *
- * Returns None if the path isn't valid UTF-8: the on-disk schema stores paths as
- * a String, so such a file simply cannot be cached and the caller skips it.
- */
-fn serialize(path: &Path) -> Option<Vec<u8>> {
-    let file = File {
-        path: path.to_str()?.to_string(),
+    let snapshot = Snapshot {
+        paths: paths.to_vec(),
     };
-    Some(rkyv::to_bytes::<Error>(&file).unwrap().into_vec())
+    let bytes = rkyv::to_bytes::<Error>(&snapshot).unwrap().into_vec();
+
+    // A pid suffix keeps concurrent refreshes from writing through each other's
+    // temp file; whichever rename lands last leaves a valid snapshot behind.
+    let mut temp_path = cache_path.as_os_str().to_os_string();
+    temp_path.push(format!(".tmp.{}", std::process::id()));
+    fs::write(&temp_path, bytes)?;
+    fs::rename(&temp_path, cache_path)?;
+
+    Ok(())
 }
 
 /**
- * Walk the music dir, writing every file we can represent into the cache.
+ * Walk the music dir, collecting the relative path of every file we can
+ * represent.
  *
  * Files we can't handle are skipped with a warning rather than unwrapped (e.g.
  * a filename that isn't valid UTF-8.)
  */
-fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
+fn walk_dirs(dir: &Path, ignores: HashSet<String>) -> Vec<String> {
     log::info!("Walking {}", dir.display());
     let mut i: u64 = 0;
     let mut skipped: u64 = 0;
+    let mut paths: Vec<String> = Vec::new();
     for entry in WalkDir::new(dir)
         .follow_links(true)
         .into_iter()
@@ -180,19 +188,17 @@ fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
             continue;
         }
 
-        // Key by the same ID the collection builder will derive from this path,
-        // so the cache is keyed by track identity and dedupes for free.
-        let id = generate_track_id(relative);
-        let encoded = match serialize(relative) {
-            Some(encoded) => encoded,
+        match relative.to_str() {
+            Some(path) => {
+                paths.push(path.to_string());
+                i += 1;
+            }
             None => {
                 log::warn!("Skipping {:?}: path is not valid UTF-8", full_path);
                 skipped += 1;
                 continue;
             }
-        };
-        db.insert(id.as_bytes(), encoded).unwrap();
-        i += 1;
+        }
         if i.is_multiple_of(500) {
             log::info!("{}", i);
         }
@@ -201,6 +207,7 @@ fn walk_dirs(dir: &Path, db: &mut sled::Db, ignores: HashSet<String>) {
     if skipped > 0 {
         log::warn!("Skipped {} file(s)", skipped);
     }
+    paths
 }
 
 /**
@@ -229,76 +236,68 @@ mod tests {
     use std::{ffi::OsString, os::unix::ffi::OsStringExt};
 
     use super::{
-        db_path_for, db_to_files, deserialize, generate_track_id, get_db_path, get_root,
-        is_music_file, serialize, walk_dirs, File, DB_ROOT_PATH,
+        cache_path_for, get_cache_path, get_root, is_music_file, load, walk_dirs, write_snapshot,
+        CACHE_ROOT_PATH,
     };
 
     #[test]
-    fn test_db_path_is_rooted_at_cache_dir() {
-        let path = get_db_path("../music");
+    fn test_cache_path_is_rooted_at_cache_dir() {
+        let path = get_cache_path("../music");
 
-        assert_eq!(DB_ROOT_PATH, path.parent().unwrap().to_str().unwrap());
+        assert_eq!(CACHE_ROOT_PATH, path.parent().unwrap().to_str().unwrap());
     }
 
     #[test]
-    fn test_db_path_is_distinct_per_music_dir() {
-        assert_ne!(get_db_path("../music"), get_db_path("../other-music"));
+    fn test_cache_path_is_distinct_per_music_dir() {
+        assert_ne!(
+            get_cache_path("../music"),
+            get_cache_path("../other-music")
+        );
     }
 
     #[test]
-    fn test_db_path_differs_across_cache_versions() {
+    fn test_cache_path_differs_across_cache_versions() {
         // A stale cache from a previous schema must not resolve to the current
-        // path, otherwise `init` would try to deserialize old bytes and panic.
-        assert_ne!(db_path_for("../music", "v2"), db_path_for("../music", "v3"));
+        // path, so `init` misses it and refreshes rather than decoding bytes
+        // written by another schema.
+        assert_ne!(
+            cache_path_for("../music", "v3"),
+            cache_path_for("../music", "v4")
+        );
     }
 
     #[test]
-    fn test_db_to_files_sorts_by_path() {
-        let db = open_temp_db("sorts-by-path");
-
+    fn test_write_and_load_round_trips_paths() {
         let paths = vec![
-            PathBuf::from("b/Artist/02.mp3"),
-            PathBuf::from("a/Artist/01.mp3"),
-            PathBuf::from("a/Artist/02.mp3"),
+            String::from("a/Artist/01.mp3"),
+            String::from("a/Artist/02.mp3"),
+            String::from("b/Artist/02.mp3"),
         ];
-        for path in &paths {
-            db.insert(
-                generate_track_id(path).as_bytes(),
-                serialize(path).expect("these test paths are valid UTF-8"),
-            )
-            .unwrap();
-        }
 
-        let result = db_to_files(db);
+        let cache_path = temp_path("round-trip");
+        write_snapshot(&cache_path, &paths).unwrap();
 
-        let mut expected = paths;
-        expected.sort();
-        assert_eq!(expected, result);
+        let loaded = load(&cache_path).unwrap();
+
+        assert_eq!(
+            paths.iter().map(PathBuf::from).collect::<Vec<PathBuf>>(),
+            loaded
+        );
+        let _ = std::fs::remove_file(&cache_path);
     }
 
     /**
-     * sled hands back bytes with no alignment guarantee, so the decoder has to
-     * work from a misaligned buffer. This is the bug that took down a refresh of
-     * a 45k track library.
+     * A cache that isn't a valid snapshot (a truncated write, say) is an
+     * error, which `init` answers with a refresh.
      */
     #[test]
-    fn test_deserialize_tolerates_a_misaligned_buffer() {
-        let path = PathBuf::from("Artist/Album/01 Track.mp3");
-        let encoded = serialize(&path).unwrap();
+    fn test_load_rejects_a_corrupt_cache() {
+        let cache_path = temp_path("corrupt");
+        std::fs::write(&cache_path, b"not a snapshot").unwrap();
 
-        // Start the archived value one byte into a 16-byte aligned allocation,
-        // which is as misaligned as it gets.
-        let mut misaligned = rkyv::util::AlignedVec::<16>::with_capacity(encoded.len() + 1);
-        misaligned.extend_from_slice(&[0]);
-        misaligned.extend_from_slice(&encoded);
-        let bytes = &misaligned[1..];
+        assert!(load(&cache_path).is_err());
 
-        // Confirm the premise: rkyv rejects these bytes on their own.
-        assert!(rkyv::from_bytes::<File, rkyv::rancor::Error>(bytes).is_err());
-
-        let decoded = deserialize(&mut rkyv::util::AlignedVec::<16>::new(), bytes);
-
-        assert_eq!("Artist/Album/01 Track.mp3", decoded.path);
+        let _ = std::fs::remove_file(&cache_path);
     }
 
     #[test]
@@ -338,27 +337,19 @@ mod tests {
         std::fs::write(album.join("cover.jpg"), "").unwrap();
         std::fs::write(album.join("notes.txt"), "").unwrap();
 
-        let mut db = open_temp_db("skips-non-music");
-        walk_dirs(&dir, &mut db, HashSet::new());
+        let mut found = walk_dirs(&dir, HashSet::new());
+        found.sort();
 
         assert_eq!(
             vec![
-                PathBuf::from("Artist/Album/01 Track.mp3"),
-                PathBuf::from("Artist/Album/02 Track.FLAC"),
+                String::from("Artist/Album/01 Track.mp3"),
+                String::from("Artist/Album/02 Track.FLAC"),
             ],
-            db_to_files(db)
+            found
         );
     }
 
     /// A path we can't represent in the cache is reported as such, not unwrapped.
-    #[cfg(unix)]
-    #[test]
-    fn test_serialize_is_none_for_a_non_utf8_path() {
-        let path = PathBuf::from("Artist/Album").join(non_utf8_name());
-
-        assert!(serialize(&path).is_none());
-    }
-
     #[cfg(unix)]
     #[test]
     fn test_walk_dirs_skips_non_utf8_file_names() {
@@ -368,14 +359,10 @@ mod tests {
         std::fs::write(album.join("01 Track.mp3"), "").unwrap();
         std::fs::write(album.join(non_utf8_name()), "").unwrap();
 
-        let mut db = open_temp_db("skips-file-names");
-        walk_dirs(&dir, &mut db, HashSet::new());
+        let found = walk_dirs(&dir, HashSet::new());
 
         // The bad file is skipped; the good one is still cached.
-        assert_eq!(
-            vec![PathBuf::from("Artist/Album/01 Track.mp3")],
-            db_to_files(db)
-        );
+        assert_eq!(vec![String::from("Artist/Album/01 Track.mp3")], found);
     }
 
     /// Same, but the bad name is a directory: the files under it are skipped too
@@ -388,26 +375,13 @@ mod tests {
         std::fs::create_dir_all(&album).unwrap();
         std::fs::write(album.join("01 Track.mp3"), "").unwrap();
 
-        let mut db = open_temp_db("skips-dir-names");
-        walk_dirs(&dir, &mut db, HashSet::new());
-
-        assert!(db_to_files(db).is_empty());
+        assert!(walk_dirs(&dir, HashSet::new()).is_empty());
     }
 
     /// A file name that is not valid UTF-8: the 0xFF byte is never valid UTF-8.
     #[cfg(unix)]
     fn non_utf8_name() -> OsString {
         OsString::from_vec(vec![b'b', b'a', b'd', 0xFF, b'.', b'm', b'p', b'3'])
-    }
-
-    /// A temporary DB per test, so the tests can run in parallel (sled locks
-    /// its directory, so they each need their own).
-    fn open_temp_db(label: &str) -> sled::Db {
-        sled::Config::new()
-            .path(temp_path(&format!("db-{label}")))
-            .temporary(true)
-            .open()
-            .unwrap()
     }
 
     /// A temporary music dir per test, emptied first so a leftover from an
