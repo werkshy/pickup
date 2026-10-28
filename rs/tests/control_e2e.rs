@@ -113,7 +113,7 @@ async fn test_play_with_missing_file_returns_error() {
         album: location.album.clone(),
         disc: None,
     };
-    let mut collection = Collection::new(String::from("/music"));
+    let mut collection = Collection::new(String::from("../music"));
     collection.add_folder(Kind::Album, &location, Path::new("definitely/missing"));
     collection.add_track(track, &location);
     let app_state = Data::new(AppState {
