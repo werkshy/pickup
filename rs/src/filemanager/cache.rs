@@ -6,7 +6,7 @@ use std::fs;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
-use walkdir::WalkDir;
+use jwalk::{Parallelism, WalkDir};
 
 use super::options::CollectionOptions;
 
@@ -57,7 +57,6 @@ pub fn init(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     refresh(options)
 }
 
-// TODO shouldn't this be async?!
 // Assumes that the music dir exists
 pub fn refresh(options: CollectionOptions) -> std::io::Result<Vec<PathBuf>> {
     log::info!("Refreshing music dir at {}", options.dir);
@@ -163,14 +162,20 @@ fn walk_dirs(dir: &Path, ignores: HashSet<String>) -> Vec<String> {
     let mut i: u64 = 0;
     let mut skipped: u64 = 0;
     let mut paths: Vec<String> = Vec::new();
+    // jwalk walks directories in parallel. skip_hidden(false) matches the
+    // walkdir behavior this replaces, which yields hidden entries. A
+    // dedicated pool wider than the CPU count keeps plenty of directory
+    // reads in flight against a high-latency (network) filesystem.
     for entry in WalkDir::new(dir)
         .follow_links(true)
+        .skip_hidden(false)
+        .parallelism(Parallelism::RayonNewPool(16))
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| !e.file_type().is_dir())
-        .filter(|e| is_music_file(e.path()))
+        .filter(|e| is_music_file(&e.path()))
     {
-        let full_path = entry.into_path();
+        let full_path = entry.path();
         let relative = match full_path.strip_prefix(dir) {
             Ok(relative) => relative,
             Err(error) => {
