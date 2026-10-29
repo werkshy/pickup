@@ -6,7 +6,7 @@ use std::time::Duration;
 use actix_web::web;
 
 use crate::player::commands::QueryCommand;
-use crate::player::{Command, Player};
+use crate::player::{Command, PlaybackStatus, Player};
 
 /**
  * Default timeout for waiting on the Player thread to answer a query.
@@ -115,6 +115,24 @@ impl PlayerClient {
     }
 
     /**
+     * Returns a snapshot of the playback state: how many sources are queued,
+     * whether playback is paused, and the position/duration of the current
+     * track (position None when nothing is queued, duration None when the
+     * decoder could not determine it).
+     */
+    pub async fn status(&self) -> Result<PlaybackStatus, PlayerError> {
+        self.request_async(|player| player.status()).await
+    }
+
+    /**
+     * Position in the currently playing track, or None when nothing is
+     * queued.
+     */
+    pub async fn position(&self) -> Result<Option<Duration>, PlayerError> {
+        self.request_async(|player| player.position()).await
+    }
+
+    /**
      * Runs `query` on the Player thread and blocks the calling thread until
      * the result arrives or the client's timeout elapses. Blocking: only
      * call from sync contexts; async code must use request_async, which runs
@@ -208,8 +226,15 @@ mod tests {
 
         assert_eq!(client.set_volume(63).await, Ok(63));
 
-        let result = client.request(|p| (p.get_volume(), p.status()));
+        let result = client.request(|p| (p.get_volume(), p.status().queued));
         assert_eq!(result, Ok((63, 0)));
+    }
+
+    #[actix_web::test]
+    async fn test_position_is_none_when_nothing_is_playing() {
+        let client = crate::spawn_player();
+
+        assert_eq!(client.position().await, Ok(None));
     }
 
     #[actix_web::test]

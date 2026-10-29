@@ -38,6 +38,115 @@ async fn set_volume(value: u32) -> serde_json::Value {
     test::call_and_read_body_json(&app, req).await
 }
 
+async fn set_stop() {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::post().uri("/stop").to_request();
+    let _: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+}
+
+#[serial(queue)]
+#[actix_web::test]
+async fn test_status_reports_empty_player() {
+    // Reset to a known state: stop clears everything queued in the player,
+    // regardless of what earlier tests in this serial group played.
+    set_stop().await;
+
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::get().uri("/status").to_request();
+
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    assert_eq!(
+        resp,
+        json!({
+            "queued": 0,
+            "paused": false,
+            "position_secs": null,
+            "duration_secs": null,
+        })
+    );
+}
+
+#[serial(queue)]
+#[actix_web::test]
+async fn test_status_reports_playing_track() {
+    let options = CollectionOptions {
+        dir: String::from("../music"),
+        ignores: None,
+    };
+    assert_matches!(refresh(options), Ok(_));
+
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let id = generate_track_id(Path::new("Bryan Teoh/Free/01 - Finally See The Light.mp3"));
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{id}").as_str())
+        .to_request();
+    let _: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    assert_eq!(resp["queued"], 1);
+    assert_eq!(resp["paused"], false);
+    // The decoder determined the duration of the track, and playback has a
+    // position.
+    assert!(
+        resp["duration_secs"].as_f64().is_some_and(|d| d > 0.0),
+        "unexpected duration in {resp}"
+    );
+    assert!(
+        resp["position_secs"].as_f64().is_some_and(|p| p >= 0.0),
+        "unexpected position in {resp}"
+    );
+
+    // Leave the player empty for the other tests in this serial group.
+    set_stop().await;
+}
+
+#[serial(queue)]
+#[actix_web::test]
+async fn test_play_replaces_the_current_track() {
+    let options = CollectionOptions {
+        dir: String::from("../music"),
+        ignores: None,
+    };
+    assert_matches!(refresh(options), Ok(_));
+    set_stop().await;
+
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let first = generate_track_id(Path::new("Bryan Teoh/Free/01 - Finally See The Light.mp3"));
+    let second = generate_track_id(Path::new("Bryan Teoh/Free/02 - Neptunian Princess.mp3"));
+
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{first}").as_str())
+        .to_request();
+    let _: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let playing: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(playing["queued"], 1);
+
+    // Playing another track must replace the first, not queue behind it.
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{second}").as_str())
+        .to_request();
+    let _: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let replaced: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    assert_eq!(replaced["queued"], 1);
+    assert_ne!(
+        replaced["duration_secs"], playing["duration_secs"],
+        "duration still describes the replaced track: {replaced}"
+    );
+    assert!(
+        replaced["position_secs"].as_f64().unwrap() < 1.0,
+        "the replaced track did not start from the beginning: {replaced}"
+    );
+    set_stop().await;
+}
+
 #[serial(queue)]
 #[actix_web::test]
 async fn test_stop() {

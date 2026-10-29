@@ -20,6 +20,7 @@ async fn test_openapi_lists_all_routes() {
         "/",
         "/play/{id}",
         "/stop",
+        "/status",
         "/volume",
         "/volume/{volume}",
         "/categories",

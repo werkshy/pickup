@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 use crate::filemanager::model::{Folder, Kind, Track};
+use crate::player::PlaybackStatus;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct IndexResponse {
@@ -17,6 +18,30 @@ pub struct StatusResponse {
 #[derive(Debug, Serialize, ToSchema)]
 pub struct VolumeResponse {
     pub volume: u8,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PlaybackStatusResponse {
+    /// Number of sources queued in the player, including the one playing.
+    pub queued: usize,
+    pub paused: bool,
+    /// Position in the currently playing track, in seconds; absent when
+    /// nothing is playing.
+    pub position_secs: Option<f64>,
+    /// Duration of the currently playing track, in seconds; absent when
+    /// unknown or nothing is playing.
+    pub duration_secs: Option<f64>,
+}
+
+impl From<PlaybackStatus> for PlaybackStatusResponse {
+    fn from(status: PlaybackStatus) -> Self {
+        PlaybackStatusResponse {
+            queued: status.queued,
+            paused: status.paused,
+            position_secs: status.position.map(|d| d.as_secs_f64()),
+            duration_secs: status.duration.map(|d| d.as_secs_f64()),
+        }
+    }
 }
 
 /// A folder in the collection, without its contents.
