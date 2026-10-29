@@ -11,13 +11,14 @@ on:
 permissions:
   contents: write
 
-defaults:
-  run:
-    shell: bash
-    working-directory: rs
-
 jobs:
   build:
+    # only set the cwd for the build job - the release job doesn't checkout the repo.
+    defaults:
+      run:
+        shell: bash
+        working-directory: rs
+
     strategy:
       fail-fast: false
       matrix:
