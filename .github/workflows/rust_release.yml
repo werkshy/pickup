@@ -1,26 +1,67 @@
 name: Rust Release
 
-# We only run this after merging to main.
+# Builds cross-compiled release binaries and creates a GitHub release for
+# semver tags, e.g. 0.1.0 or v0.1.0.
 on:
   push:
-    branches: [main]
-    paths-ignore:
-      - go/**
+    tags:
+      - 'v*.*.*'
+      - '[0-9]*.*.*'
 
-defaults:
-  run:
-    shell: bash
-    working-directory: rs
+permissions:
+  contents: write
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # only set the cwd for the build job - the release job doesn't checkout the repo.
+    defaults:
+      run:
+        shell: bash
+        working-directory: rs
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Mirrors the go build matrix, minus arm5: modern ubuntu has no
+          # armel packages, so there's no matching alsa to link against.
+          # We build natively where a runner exists (arm64 runners are
+          # free for public repos), and via 'cross' (docker+qemu) for
+          # armv7, since there's no armv7 runner.
+          - os: linux
+            arch: amd64
+            target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+          - os: linux
+            arch: arm64
+            target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+          - os: linux
+            arch: arm7
+            target: armv7-unknown-linux-gnueabihf
+            runner: ubuntu-latest
+            cross: true
+          # macos-latest is an arm64 runner, we cross-compile the intel
+          # build on it.
+          - os: darwin
+            arch: amd64
+            target: x86_64-apple-darwin
+            runner: macos-latest
+          - os: darwin
+            arch: arm64
+            target: aarch64-apple-darwin
+            runner: macos-latest
+
+    runs-on: ${{ matrix.runner }}
+    name: Build (${{ matrix.os }}/${{ matrix.arch }})
+
     steps:
       - uses: actions/checkout@v7
       - name: install libraries
+        if: runner.os == 'Linux' && matrix.cross != true
         run: |
           sudo apt update
-          sudo apt install -y libasound2-dev pulseaudio
+          sudo apt install -y libasound2-dev
       - uses: actions/cache@v6
         with:
           path: |
@@ -29,18 +70,50 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             rs/target/
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
       - name: Update rust toolchain
         run: |
           rustup update
-          rustup component add clippy
+          rustup target add ${{ matrix.target }}
+      - name: install cross
+        if: matrix.cross == true
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
       - name: "Build release binary"
-        run: cargo build --release
+        run: ${{ matrix.cross == true && 'cross' || 'cargo' }} build --release --target ${{ matrix.target }}
+      - name: "Stage artifact"
+        run: cp target/${{ matrix.target }}/release/pickup pickup_${{ matrix.os }}_${{ matrix.arch }}
       - name: "Upload Artifact"
         uses: actions/upload-artifact@v7
         with:
-          name: pickup (Rust, Linux, AMD64)
-          path: rs/target/release/pickup
+          name: pickup_${{ matrix.os }}_${{ matrix.arch }}
+          path: rs/pickup_${{ matrix.os }}_${{ matrix.arch }}
+          if-no-files-found: error
 
-# TODO cross-compiling https://github.com/marketplace/actions/rust-cargo#cross-compilation
-# Might not be possible if we have platform-specific dependencies
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      # Tags like 0.0.1-rc1 also trigger the build (the tag filters match
+      # anything after the third version number); mark them as pre-releases
+      # so they don't become the 'latest' release.
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          flags=()
+          if ! [[ "$TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            flags+=(--prerelease)
+          fi
+          gh release create "$TAG" "$GITHUB_WORKSPACE"/dist/* \
+            --title "pickup-rust $TAG" \
+            --generate-notes \
+            "${flags[@]}"
