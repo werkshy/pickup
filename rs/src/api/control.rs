@@ -3,7 +3,7 @@ use std::path::Path;
 use actix_web::{get, post, web, Responder};
 
 use crate::{
-    api::types::{ErrorResponse, StatusResponse, VolumeResponse},
+    api::types::{ErrorResponse, PlaybackStatusResponse, StatusResponse, VolumeResponse},
     app_state::AppState,
     error::AppError,
     player::{PlayerClient, PlayerError},
@@ -79,6 +79,21 @@ pub async fn volume(
         .await
         .map_err(AppError::from)?;
     Ok(web::Json(VolumeResponse { volume: new_volume }))
+}
+
+/// Get the current playback status.
+#[utoipa::path(
+    tag = "control",
+    responses(
+        (status = 200, description = "The current playback status", body = PlaybackStatusResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[get("/status")]
+pub async fn status(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
+    let status = data.player.status().await.map_err(AppError::from)?;
+    Ok(web::Json(PlaybackStatusResponse::from(status)))
 }
 
 /// Get the current volume.

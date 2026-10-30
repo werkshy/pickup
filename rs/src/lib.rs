@@ -5,7 +5,7 @@ pub mod filemanager;
 pub mod player;
 pub mod queue;
 
-use std::sync::mpsc;
+use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, RwLock};
 use std::thread;
 
@@ -25,7 +25,7 @@ use app_state::AppState;
 use error::AppError;
 use filemanager::collection;
 use filemanager::options::CollectionOptions;
-use player::{Player, PlayerClient};
+use player::{Player, PlayerClient, POLL_INTERVAL};
 use utoipa_actix_web::AppExt;
 
 // Enable assert_matches in tests
@@ -185,8 +185,18 @@ pub fn spawn_player() -> PlayerClient {
     thread::spawn(move || {
         let mut player = Player::new();
 
-        for command in rx {
-            player.command(command);
+        // Poll-based loop: besides running commands, the Player thread wakes
+        // up every POLL_INTERVAL so time-based handling (position tracking,
+        // near-end detection) works even when no commands arrive.
+        loop {
+            match rx.recv_timeout(POLL_INTERVAL) {
+                Ok(command) => {
+                    player.command(command);
+                    player.tick();
+                }
+                Err(RecvTimeoutError::Timeout) => player.tick(),
+                Err(RecvTimeoutError::Disconnected) => break,
+            }
         }
     });
     PlayerClient::new(tx)

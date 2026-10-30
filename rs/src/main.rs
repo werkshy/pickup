@@ -15,9 +15,14 @@ use pickup::{serve, ServeOptions};
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // TODO: enable a different log format in prod (timestamps, maybe JSON?)
-    env_logger::Builder::from_env(Env::default().default_filter_or("info"))
-        .format(|buf, record| writeln!(buf, "{}", record.args()))
-        .init();
+    // Silence a noisy log from Symphonia's MP3 demuxer when it estimates the
+    // duration from the bitrate of a track. RUST_LOG still overrides
+    // everything.
+    env_logger::Builder::from_env(
+        Env::default().default_filter_or("info,symphonia_bundle_mp3=warn"),
+    )
+    .format(|buf, record| writeln!(buf, "{}", record.args()))
+    .init();
 
     let cli = Cli::parse();
 
