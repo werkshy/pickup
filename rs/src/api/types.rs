@@ -132,14 +132,35 @@ pub struct ApiQueueInput {
     /// The ID of a track, or of any folder (category, artist, album or disc)
     /// to add everything under.
     pub id: String,
+    /// Where the added tracks go in the queue. Defaults to the tail.
+    #[serde(default)]
+    pub position: ApiQueuePosition,
+    /// Start playing when the player is idle (the "play this album now"
+    /// use case). With `position: replace` the new queue always starts
+    /// immediately, since replacing stops the current track.
     #[serde(default)] // Defaults to false
-    pub clear: bool,
+    pub play_now: bool,
+}
+
+/// Where newly added tracks go in the queue.
+#[derive(Debug, Default, PartialEq, Deserialize, ToSchema)]
+#[serde(rename_all = "lowercase")]
+pub enum ApiQueuePosition {
+    /// After everything currently queued.
+    #[default]
+    Tail,
+    /// Right after the currently playing track ("play next"). When the
+    /// player is idle, they become the next tracks to play.
+    Next,
+    /// Replace the whole queue with the added tracks. This stops the
+    /// currently playing track, if any.
+    Replace,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct ApiQueueResponse {
+    /// The tracks in the queue, with the track playing right now first.
     pub tracks: Vec<ApiTrack>,
-    pub position: usize,
 }
 
 /// The body of every error response, so consumers can rely on one shape.

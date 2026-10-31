@@ -52,6 +52,7 @@ mod tests {
     use std::sync::mpsc;
 
     use super::*;
+    use crate::player::test_player;
 
     /// Only compiled in when debug_assertions are on (debug and test builds);
     /// in release builds the second action() call is a silent no-op.
@@ -61,7 +62,7 @@ mod tests {
     fn test_action_panics_if_invoked_twice() {
         let (reply_tx, reply_rx) = mpsc::channel();
         let mut command = QueryCommand::new(|_: &mut Player| 1u8, reply_tx);
-        let mut player = Player::new();
+        let mut player = test_player();
 
         command.action(&mut player); // first invocation is fine
         assert_eq!(reply_rx.recv().ok(), Some(1));

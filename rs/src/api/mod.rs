@@ -23,7 +23,9 @@ where
 {
     app.service(hello)
         .service(control::play)
+        .service(control::resume)
         .service(control::stop)
+        .service(control::skip)
         .service(control::volume)
         .service(control::get_volume)
         .service(control::status)
