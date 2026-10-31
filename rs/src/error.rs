@@ -24,6 +24,10 @@ impl AppError {
         AppError::new(ApiErrorCode::NotFound, msg, StatusCode::NOT_FOUND)
     }
 
+    pub fn invalid_request(msg: impl Into<String>) -> AppError {
+        AppError::new(ApiErrorCode::InvalidRequest, msg, StatusCode::BAD_REQUEST)
+    }
+
     pub fn internal(msg: impl Into<String>) -> AppError {
         AppError::new(
             ApiErrorCode::Internal,

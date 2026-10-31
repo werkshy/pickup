@@ -1,15 +1,13 @@
-use std::path::Path;
-
 use actix_web::{get, post, web, Responder};
 
 use crate::{
     api::types::{ErrorResponse, PlaybackStatusResponse, StatusResponse, VolumeResponse},
     app_state::AppState,
     error::AppError,
-    player::{PlayerClient, PlayerError},
+    player::{PlayOutcome, PlayerClient, PlayerError},
 };
 
-/// Play a single track, by ID.
+/// Play a single track, by ID, replacing anything in the queue.
 #[utoipa::path(
     tag = "control",
     responses(
@@ -31,11 +29,73 @@ pub async fn play(
         )));
     };
 
-    // TODO shouldn't the path be absolute or relative already? Or maybe the Player needs to know the prefix
-    // Joined as a Path so a track whose name isn't valid UTF-8 still resolves.
-    let path = Path::new(&data.collection.dir).join(&track.path);
+    // Validate before touching anything: a track that cannot be played must
+    // not stop the current playback or replace the queue.
+    data.player
+        .check_playable(&track.path)
+        .await
+        .map_err(AppError::from)?;
 
-    data.player.play(path).await.map_err(AppError::from)?;
+    // Stop first: if the old track finished between the queue mutation and
+    // the new playback starting, it would advance past the new queue's
+    // first track.
+    data.player.stop().await.map_err(AppError::from)?;
+    data.queue
+        .write()
+        .unwrap()
+        .replace_with(vec![track.clone()]);
+
+    // Tell the player to play the new queue.
+    data.player
+        .play_from_queue()
+        .await
+        .map_err(AppError::from)?;
+    Ok(web::Json(StatusResponse {
+        status: "ok".to_string(),
+    }))
+}
+
+/// Resume playback from the front of the queue. Does nothing if the
+/// player is already playing.
+#[utoipa::path(
+    tag = "control",
+    responses(
+        (status = 200, description = "Playback started (or was already running)", body = StatusResponse),
+        (status = 400, description = "The queue is empty or has played out", body = ErrorResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[post("/play")]
+pub async fn resume(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
+    let outcome = data
+        .player
+        .play_queue_if_idle()
+        .await
+        .map_err(AppError::from)?;
+
+    match outcome {
+        PlayOutcome::NothingQueued => Err(AppError::invalid_request(
+            "Nothing to play: the queue is empty or has played out",
+        )),
+        PlayOutcome::Started | PlayOutcome::AlreadyPlaying => Ok(web::Json(StatusResponse {
+            status: "ok".to_string(),
+        })),
+    }
+}
+
+/// Skip to the next track in the queue. No-op when nothing is playing.
+#[utoipa::path(
+    tag = "control",
+    responses(
+        (status = 200, description = "Skipped to the next track (or nothing was playing)", body = StatusResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[post("/skip")]
+pub async fn skip(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
+    data.player.skip().await.map_err(AppError::from)?;
     Ok(web::Json(StatusResponse {
         status: "ok".to_string(),
     }))

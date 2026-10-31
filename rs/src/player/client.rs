@@ -6,7 +6,7 @@ use std::time::Duration;
 use actix_web::web;
 
 use crate::player::commands::QueryCommand;
-use crate::player::{Command, PlaybackStatus, Player};
+use crate::player::{Command, PlayOutcome, PlaybackStatus, Player};
 
 /**
  * Default timeout for waiting on the Player thread to answer a query.
@@ -98,6 +98,45 @@ impl PlayerClient {
      */
     pub async fn stop(&self) -> Result<(), PlayerError> {
         self.request_async(|player| player.stop()).await
+    }
+
+    /**
+     * Start playing the track at the front of the queue, replacing whatever
+     * is currently playing.
+     */
+    pub async fn play_from_queue(&self) -> Result<(), PlayerError> {
+        self.request_async(|player| player.play_queue())
+            .await
+            .and_then(|result| result.map_err(PlayerError::Failed))
+    }
+
+    /**
+     * Like play_from_queue(), but only when the player is idle: a resume or
+     * play_now request must not interrupt playback that is already running.
+     * Resolves to what happened (see PlayOutcome).
+     */
+    pub async fn play_queue_if_idle(&self) -> Result<PlayOutcome, PlayerError> {
+        self.request_async(|player| player.play_queue_if_idle())
+            .await
+            .and_then(|result| result.map_err(PlayerError::Failed))
+    }
+
+    /**
+     * Skip to the next track in the queue. No-op when nothing is playing.
+     */
+    pub async fn skip(&self) -> Result<(), PlayerError> {
+        self.request_async(|player| player.skip()).await
+    }
+
+    /**
+     * Checks that a track can be decoded, without changing playback or the
+     * queue. The path is relative to the music root, like queue track paths.
+     */
+    pub async fn check_playable(&self, file: impl Into<PathBuf>) -> Result<(), PlayerError> {
+        let file = file.into();
+        self.request_async(move |player| player.check_playable(file))
+            .await
+            .and_then(|result| result.map_err(PlayerError::Failed))
     }
 
     /**
@@ -202,10 +241,11 @@ mod tests {
     use std::time::Duration;
 
     use super::*;
+    use crate::player::test_player;
 
     #[test]
     fn test_request_runs_on_player_thread() {
-        let client = crate::spawn_player();
+        let client = crate::spawn_player_with_empty_queue();
         let caller = thread::current().id();
 
         assert_ne!(client.request(|_| thread::current().id()), Ok(caller));
@@ -213,7 +253,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_request_round_trips_volume() {
-        let client = crate::spawn_player();
+        let client = crate::spawn_player_with_empty_queue();
 
         assert_eq!(client.set_volume(42).await, Ok(42));
 
@@ -222,7 +262,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_request_returns_composite_values() {
-        let client = crate::spawn_player();
+        let client = crate::spawn_player_with_empty_queue();
 
         assert_eq!(client.set_volume(63).await, Ok(63));
 
@@ -232,7 +272,7 @@ mod tests {
 
     #[actix_web::test]
     async fn test_position_is_none_when_nothing_is_playing() {
-        let client = crate::spawn_player();
+        let client = crate::spawn_player_with_empty_queue();
 
         assert_eq!(client.position().await, Ok(None));
     }
@@ -260,7 +300,7 @@ mod tests {
     fn test_request_times_out_on_stuck_player_thread() {
         let (tx, rx) = mpsc::channel::<Box<dyn Command>>();
         thread::spawn(move || {
-            let mut player = Player::new();
+            let mut player = test_player();
             while let Ok(command) = rx.recv() {
                 player.command(command);
             }
@@ -283,7 +323,7 @@ mod tests {
     /// file error), not panic the Player thread.
     #[actix_web::test]
     async fn test_play_with_missing_file_fails_and_keeps_player_alive() {
-        let client = crate::spawn_player();
+        let client = crate::spawn_player_with_empty_queue();
 
         assert!(matches!(
             client

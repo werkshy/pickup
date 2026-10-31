@@ -1,18 +1,20 @@
 //! Integration tests for PlayerClient's public async API. The sync `request`
 //! path is private and is covered by unit tests inside src/player/client.rs.
 
-use std::sync::mpsc;
+use std::path::PathBuf;
+use std::sync::{mpsc, Arc, RwLock};
 use std::thread;
 use std::time::Duration;
 
 use pickup::{
     player::{Command, Player, PlayerClient, PlayerError},
-    spawn_player,
+    queue::PlaybackQueue,
+    spawn_player_with_empty_queue,
 };
 
 #[actix_web::test]
 async fn test_request_async_runs_on_player_thread() {
-    let client = spawn_player();
+    let client = spawn_player_with_empty_queue();
     let caller = thread::current().id();
 
     assert_ne!(
@@ -23,7 +25,7 @@ async fn test_request_async_runs_on_player_thread() {
 
 #[actix_web::test]
 async fn test_request_async_returns_value() {
-    let client = spawn_player();
+    let client = spawn_player_with_empty_queue();
 
     assert_eq!(client.set_volume(55).await, Ok(55));
 
@@ -57,7 +59,10 @@ async fn test_request_async_returns_dead_when_player_is_gone() {
 async fn test_request_async_times_out_on_stuck_player_thread() {
     let (tx, rx) = mpsc::channel::<Box<dyn Command>>();
     thread::spawn(move || {
-        let mut player = Player::new();
+        let mut player = Player::new(
+            Arc::new(RwLock::new(PlaybackQueue::new())),
+            PathBuf::from("."),
+        );
         while let Ok(command) = rx.recv() {
             player.command(command);
         }
@@ -78,7 +83,7 @@ async fn test_request_async_times_out_on_stuck_player_thread() {
 /// keep working afterwards.
 #[actix_web::test]
 async fn test_play_with_missing_file_fails_and_keeps_player_alive() {
-    let client = spawn_player();
+    let client = spawn_player_with_empty_queue();
 
     assert!(matches!(
         client

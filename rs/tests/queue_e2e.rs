@@ -31,8 +31,161 @@ pub async fn clear_playlist() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&service, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 0);
+}
+
+async fn get_json(uri: &str) -> serde_json::Value {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::get().uri(uri).to_request();
+    test::call_and_read_body_json(&app, req).await
+}
+
+async fn add_to_queue(body: serde_json::Value) -> serde_json::Value {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::post()
+        .uri("/queue/add")
+        .set_json(body)
+        .to_request();
+    test::call_and_read_body_json(&app, req).await
+}
+
+async fn play_track(id: String) {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{id}").as_str())
+        .to_request();
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(resp, json!({ "status": "ok" }));
+}
+
+const TRACK_1: &str = "Bryan Teoh/Free/01 - Finally See The Light.mp3";
+const TRACK_2: &str = "Bryan Teoh/Free/02 - Neptunian Princess.mp3";
+
+/// Playing a track and then adding another with position "next" must leave
+/// the new track queued directly behind the playing one, without starting
+/// it early.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_add_next_goes_after_the_current_track() {
+    clear_playlist().await;
+    play_track(generate_track_id(Path::new(TRACK_1))).await;
+
+    let resp = add_to_queue(json!({
+        "id": generate_track_id(Path::new(TRACK_2)),
+        "position": "next",
+    }))
+    .await;
+
+    let tracks = resp.get("tracks").unwrap().as_array().unwrap();
+    assert_eq!(tracks.len(), 2);
+    assert_eq!(tracks[0]["id"], generate_track_id(Path::new(TRACK_1)));
+    assert_eq!(tracks[1]["id"], generate_track_id(Path::new(TRACK_2)));
+
+    // The next track must not start while one is playing.
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 1);
+
+    clear_playlist().await;
+}
+
+/// play_now must start playback when the player is idle.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_add_with_play_now_starts_playback() {
+    clear_playlist().await;
+
+    add_to_queue(json!({
+        "id": generate_track_id(Path::new(TRACK_2)),
+        "play_now": true,
+    }))
+    .await;
+
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 1);
+
+    clear_playlist().await;
+}
+
+/// play_now must not interrupt playback that is already running.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_add_with_play_now_does_not_interrupt_playback() {
+    clear_playlist().await;
+    play_track(generate_track_id(Path::new(TRACK_1))).await;
+
+    add_to_queue(json!({
+        "id": generate_track_id(Path::new(TRACK_2)),
+        "play_now": true,
+    }))
+    .await;
+
+    // Still only the first track is playing.
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 1);
+    let queue = get_json("/queue").await;
+    assert_eq!(queue["tracks"].as_array().unwrap().len(), 2);
+
+    clear_playlist().await;
+}
+
+/// position "replace" swaps the queue. With play_now the new queue starts
+/// immediately (replacing also stops the old track); without it, playback
+/// stops.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_add_replace_with_play_now_starts_the_new_queue() {
+    clear_playlist().await;
+    play_track(generate_track_id(Path::new(TRACK_1))).await;
+
+    let resp = add_to_queue(json!({
+        "id": generate_track_id(Path::new(TRACK_2)),
+        "position": "replace",
+        "play_now": true,
+    }))
+    .await;
+
+    let tracks = resp.get("tracks").unwrap().as_array().unwrap();
+    assert_eq!(tracks.len(), 1);
+    assert_eq!(tracks[0]["id"], generate_track_id(Path::new(TRACK_2)));
+
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 1);
+
+    clear_playlist().await;
+}
+
+#[serial(queue)]
+#[actix_web::test]
+async fn test_add_replace_without_play_now_stops_playback() {
+    clear_playlist().await;
+    play_track(generate_track_id(Path::new(TRACK_1))).await;
+
+    add_to_queue(json!({
+        "id": generate_track_id(Path::new(TRACK_2)),
+        "position": "replace",
+    }))
+    .await;
+
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 0);
+    let queue = get_json("/queue").await;
+    assert_eq!(queue["tracks"].as_array().unwrap().len(), 1);
+
+    clear_playlist().await;
+}
+
+/// Clearing the queue must also stop playback: the playing track would no
+/// longer be on the queue.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_clear_stops_playback() {
+    clear_playlist().await;
+    play_track(generate_track_id(Path::new(TRACK_1))).await;
+
+    clear_playlist().await;
+
+    let status = get_json("/status").await;
+    assert_eq!(status["queued"], 0);
 }
 
 #[serial(queue)]
@@ -139,7 +292,6 @@ async fn test_add_category() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 5);
 
     // Now if we re-add the category, we should get 5 more tracks
@@ -169,7 +321,6 @@ async fn test_add_artist() {
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
     assert_eq!(resp.get("error"), None);
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 1);
 }
 
@@ -187,7 +338,6 @@ async fn test_add_album() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 2);
 }
 
@@ -205,7 +355,6 @@ async fn test_add_disc() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 14);
 }
 
@@ -225,7 +374,6 @@ async fn test_add_track() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 1);
 }
 
@@ -243,13 +391,11 @@ async fn test_clear() {
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 5);
 
     let req = test::TestRequest::post().uri("/queue/clear").to_request();
 
     let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
 
-    assert_eq!(resp.get("position").unwrap().as_u64().unwrap(), 0);
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 0);
 }

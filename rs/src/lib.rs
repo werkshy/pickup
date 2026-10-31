@@ -5,6 +5,7 @@ pub mod filemanager;
 pub mod player;
 pub mod queue;
 
+use std::path::PathBuf;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, RwLock};
 use std::thread;
@@ -43,14 +44,17 @@ pub struct ServeOptions {
  * Create the app state we need to pass into the app.
  */
 pub fn build_app_state(options: &ServeOptions) -> AppState {
-    let player = spawn_player();
+    let queue = Arc::new(RwLock::new(queue::PlaybackQueue::new()));
+    let player = spawn_player(
+        queue.clone(),
+        PathBuf::from(&options.collection_options.dir),
+    );
     let collection = collection::init(options.collection_options.clone()).unwrap();
     let collection_arc = Arc::new(collection);
-    let queue = queue::PlaybackQueue::new();
     AppState {
         player,
         collection: collection_arc,
-        queue: RwLock::new(queue),
+        queue,
     }
 }
 
@@ -178,12 +182,16 @@ pub async fn serve(options: ServeOptions) -> std::io::Result<()> {
  * Spawn a new thread with a Player instance (rodio's Sink can't be shared
  * across threads). Create a channel to send commands into the Player thread,
  * and return a PlayerClient (internal interface for sending commands.)
+ *
+ * The queue is shared with the Player thread: when a track finishes, the
+ * Player pops the finished track and starts the next one. `music_dir`
+ * is the collection root the queue's track paths are relative to.
  */
-pub fn spawn_player() -> PlayerClient {
+pub fn spawn_player(queue: Arc<RwLock<queue::PlaybackQueue>>, music_dir: PathBuf) -> PlayerClient {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let mut player = Player::new();
+        let mut player = Player::new(queue, music_dir);
 
         // Poll-based loop: besides running commands, the Player thread wakes
         // up every POLL_INTERVAL so time-based handling (position tracking,
@@ -200,4 +208,16 @@ pub fn spawn_player() -> PlayerClient {
         }
     });
     PlayerClient::new(tx)
+}
+
+/**
+ * Spawn a Player with an empty queue and no collection root. Queue-driven
+ * playback does nothing until tracks are added; meant for tests and other
+ * callers that drive the Player directly.
+ */
+pub fn spawn_player_with_empty_queue() -> PlayerClient {
+    spawn_player(
+        Arc::new(RwLock::new(queue::PlaybackQueue::new())),
+        PathBuf::from("."),
+    )
 }
