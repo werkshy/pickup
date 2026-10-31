@@ -6,5 +6,9 @@ use crate::{filemanager::collection::Collection, player::PlayerClient, queue::Pl
 pub struct AppState {
     pub player: PlayerClient,
     pub collection: Arc<Collection>,
-    pub queue: RwLock<PlaybackQueue>,
+    /**
+     * The playback queue is shared with the Player thread, using an
+     * RwLock to synchronize access.
+     */
+    pub queue: Arc<RwLock<PlaybackQueue>>,
 }
