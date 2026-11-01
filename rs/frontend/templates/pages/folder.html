@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+{% if page.crumbs.len() > 1 %}
+<nav class="crumbs">
+    {% for crumb in page.crumbs %}
+    <a href="/browse/{{ crumb.id }}">{{ crumb.name }}</a>{% if !loop.last %}<span class="crumb-sep">/</span>{% endif %}
+    {% endfor %}
+</nav>
+{% endif %}
+
+<h1>{{ page.heading }}</h1>
+
+{% if !page.folders_empty %}
+<h2>{{ page.sub_kind_label }}</h2>
+<ul class="folder-list{% if page.kind == "category" %} multicolumn{% endif %}">
+    {% for folder in page.folders %}
+    <li>
+        <a class="folder-link kind-{{ folder.kind }}" href="/browse/{{ folder.id }}">{{ folder.name }}</a>
+        <span class="row-actions">
+            <button class="action-play" title="Play {{ folder.name }} now"
+                    hx-post="/web/play/{{ folder.id }}" hx-swap="none">&#9654;</button>
+            <button class="action-next" title="Play {{ folder.name }} next"
+                    hx-post="/web/queue/next/{{ folder.id }}" hx-swap="none">&#187;</button>
+            <button class="action-add" title="Add {{ folder.name }} to the queue"
+                    hx-post="/web/queue/add/{{ folder.id }}" hx-swap="none">+</button>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if !page.tracks_empty %}
+<h2>Tracks</h2>
+<ul class="track-list">
+    {% for track in page.tracks %}
+    <li>
+        <button class="track-title" title="Play {{ track.title }} now"
+                hx-post="/web/play/{{ track.id }}" hx-swap="none">{{ track.title }}</button>
+        <span class="row-actions">
+            <button class="action-next" title="Play {{ track.title }} next"
+                    hx-post="/web/queue/next/{{ track.id }}" hx-swap="none">&#187;</button>
+            <button class="action-add" title="Add {{ track.title }} to the queue"
+                    hx-post="/web/queue/add/{{ track.id }}" hx-swap="none">+</button>
+        </span>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endblock %}

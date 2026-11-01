@@ -73,3 +73,37 @@ async fn test_method_mismatch_on_dynamic_path_is_404() {
         json!({ "code": "not_found", "message": "No such route" })
     );
 }
+
+/**
+ * A browser navigation (Accept: text/html) to a route nobody serves gets
+ * the HTML error page instead of JSON.
+ */
+#[actix_web::test]
+async fn test_unknown_route_with_html_accept_is_html_error() {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::get()
+        .uri("/does-not-exist")
+        .insert_header(("accept", "text/html,application/xhtml+xml"))
+        .to_request();
+
+    let resp = test::call_service(&app, req).await;
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+
+    let content_type = resp
+        .headers()
+        .get("content-type")
+        .and_then(|value| value.to_str().ok())
+        .unwrap_or_default()
+        .to_string();
+    let body = test::read_body(resp).await;
+    let body = String::from_utf8_lossy(&body).to_string();
+
+    assert!(
+        content_type.starts_with("text/html"),
+        "a browser gets HTML, not JSON: {content_type}"
+    );
+    assert!(
+        body.contains("Page not found"),
+        "unexpected error page: {body}"
+    );
+}

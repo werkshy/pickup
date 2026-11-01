@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ shell.title }}</title>
+    <link rel="stylesheet" href="/static/app.css">
+    <script src="/static/htmx.min.js"></script>
+    <script src="/static/app.js" defer></script>
+</head>
+{# Navigation swaps only #content: hx-select carves it out of the full-page
+   response, hx-swap=outerHTML replaces it with the response's own copy (so
+   the boosting attributes are always the freshly rendered ones). The drawer
+   and player bar live outside <main> and are never touched by navigation. #}
+<body hx-target="#content" hx-select="#content" hx-swap="outerHTML">
+    <header id="site-header" hx-boost="true">
+        <a class="brand" href="/">Pickup</a>
+        <nav id="category-tabs">
+            {% for category in shell.categories %}
+            <a href="/browse/{{ category.id }}"
+               {% if shell.active_category == category.id %}class="active"{% endif %}>{{ category.name }}</a>
+            {% endfor %}
+        </nav>
+    </header>
+
+    <main id="content" hx-boost="true">
+        {% block content %}{% endblock %}
+    </main>
+
+    <aside id="drawer">
+        <div class="drawer-head">
+            <span class="drawer-title">Queue</span>
+            <span class="drawer-head-actions">
+                <button id="queue-clear" class="icon-button" title="Clear the queue"
+                        hx-post="/web/queue/clear" hx-swap="none">Clear</button>
+                <button id="drawer-close" class="icon-button" title="Close the queue">&times;</button>
+            </span>
+        </div>
+        {% include "fragments/queue.html" %}
+    </aside>
+
+    <footer id="player-bar">
+        <div id="now-playing"><span class="muted">Nothing playing</span></div>
+        <div id="bar-actions">
+            <button id="drawer-toggle" class="icon-button" title="Show the queue">&#9776;&nbsp;Queue</button>
+        </div>
+    </footer>
+</body>
+</html>

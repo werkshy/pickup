@@ -89,7 +89,7 @@ impl ApiFolder {
 }
 
 /// The name a folder kind is known by in the API.
-fn kind_name(kind: Kind) -> &'static str {
+pub(crate) fn kind_name(kind: Kind) -> &'static str {
     match kind {
         Kind::Category => "category",
         Kind::Artist => "artist",

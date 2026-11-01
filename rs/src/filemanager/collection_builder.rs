@@ -12,7 +12,10 @@ use super::{
     utils::generate_track_id,
 };
 
-const DEFAULT_CATEGORY: &str = "Music";
+/// The category artists live in when they sit directly in the music dir
+/// (no `_Category` directory above them). Exposed so consumers can build
+/// links to the implicit category's folder.
+pub const DEFAULT_CATEGORY: &str = "Music";
 const CATEGORY_PREFIX: &str = "_";
 const CD_REGEX_STR: &str = r"(?i)(cd|dis(c|k)|digital media|(12 )?vinyl) ?\d";
 

@@ -1,0 +1,16 @@
+<ol id="queue-list" {% if shell.oob %}hx-swap-oob="true"{% endif %}>
+    {% for track in shell.queue.tracks %}
+    <li {% if track.playing %}class="playing"{% endif %}>
+        <span class="queue-pos">{{ track.index + 1 }}</span>
+        <span class="queue-titles">
+            <span class="queue-title">{{ track.title }}</span>
+            {% if !track.artist.is_empty() %}<span class="queue-artist">{{ track.artist }}</span>{% endif %}
+        </span>
+        <button class="icon-button queue-remove" title="Remove from the queue"
+                hx-post="/web/queue/remove/{{ track.index }}" hx-swap="none">&times;</button>
+    </li>
+    {% endfor %}
+    {% if shell.queue.empty %}
+    <li class="queue-empty muted">The queue is empty</li>
+    {% endif %}
+</ol>
