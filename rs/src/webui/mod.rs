@@ -46,7 +46,13 @@ where
             .service(actions::remove)
             .service(actions::move_track)
             .service(actions::clear)
+            .service(actions::resume)
+            .service(actions::pause)
+            .service(actions::skip)
+            .service(actions::stop)
+            .service(actions::volume)
             .service(actions::queue_fragment)
+            .service(actions::progress)
             .service(Files::new("/static", static_dir()))
     })
 }

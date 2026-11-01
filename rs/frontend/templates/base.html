@@ -10,10 +10,15 @@
 </head>
 {# Navigation swaps only #content: hx-select carves it out of the full-page
    response, hx-swap=outerHTML replaces it with the response's own copy (so
-   the boosting attributes are always the freshly rendered ones). The drawer
-   and player bar live outside <main> and are never touched by navigation. #}
-<body hx-target="#content" hx-select="#content" hx-swap="outerHTML">
-    <header id="site-header" hx-boost="true">
+   the boosting attributes are always the freshly rendered ones).
+
+   These attributes live on the boosted containers, NOT on <body>: htmx
+   inherits hx-* attributes from ancestors, and a body-level hx-select would
+   filter every other request's response (e.g. the player bar's progress
+   poll) by #content, finding nothing and wiping the swap target. #}
+<body>
+    <header id="site-header" hx-boost="true"
+            hx-target="#content" hx-select="#content" hx-swap="outerHTML">
         <a class="brand" href="/">Pickup</a>
         <nav id="category-tabs">
             {% for category in shell.categories %}
@@ -23,7 +28,8 @@
         </nav>
     </header>
 
-    <main id="content" hx-boost="true">
+    <main id="content" hx-boost="true"
+          hx-target="#content" hx-select="#content" hx-swap="outerHTML">
         {% block content %}{% endblock %}
     </main>
 
@@ -39,11 +45,6 @@
         {% include "fragments/queue.html" %}
     </aside>
 
-    <footer id="player-bar">
-        <div id="now-playing"><span class="muted">Nothing playing</span></div>
-        <div id="bar-actions">
-            <button id="drawer-toggle" class="icon-button" title="Show the queue">&#9776;&nbsp;Queue</button>
-        </div>
-    </footer>
+    {% include "fragments/player_bar.html" %}
 </body>
 </html>
