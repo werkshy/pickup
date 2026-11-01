@@ -129,6 +129,14 @@ impl PlayerClient {
     }
 
     /**
+     * Pauses the currently playing track. No-op when nothing is playing or
+     * playback is already paused.
+     */
+    pub async fn pause(&self) -> Result<(), PlayerError> {
+        self.request_async(|player| player.pause()).await
+    }
+
+    /**
      * Checks that a track can be decoded, without changing playback or the
      * queue. The path is relative to the music root, like queue track paths.
      */

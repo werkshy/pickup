@@ -55,12 +55,13 @@ pub async fn play(
     }))
 }
 
-/// Resume playback from the front of the queue. Does nothing if the
-/// player is already playing.
+/// Start playback: resume a paused track, or start the track at the front
+/// of the queue when the player is idle. Does nothing if a track is already
+/// playing.
 #[utoipa::path(
     tag = "control",
     responses(
-        (status = 200, description = "Playback started (or was already running)", body = StatusResponse),
+        (status = 200, description = "Playback started or resumed", body = StatusResponse),
         (status = 400, description = "The queue is empty or has played out", body = ErrorResponse),
         (status = 500, description = "The player did not respond in time", body = ErrorResponse),
         (status = 503, description = "The player thread is gone", body = ErrorResponse),
@@ -78,10 +79,29 @@ pub async fn resume(data: web::Data<AppState>) -> Result<impl Responder, AppErro
         PlayOutcome::NothingQueued => Err(AppError::invalid_request(
             "Nothing to play: the queue is empty or has played out",
         )),
-        PlayOutcome::Started | PlayOutcome::AlreadyPlaying => Ok(web::Json(StatusResponse {
-            status: "ok".to_string(),
-        })),
+        PlayOutcome::Started | PlayOutcome::Resumed | PlayOutcome::AlreadyPlaying => {
+            Ok(web::Json(StatusResponse {
+                status: "ok".to_string(),
+            }))
+        }
     }
+}
+
+/// Pause playback. No-op when nothing is playing or already paused.
+#[utoipa::path(
+    tag = "control",
+    responses(
+        (status = 200, description = "Playback paused (or nothing was playing)", body = StatusResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[post("/pause")]
+pub async fn pause(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
+    data.player.pause().await.map_err(AppError::from)?;
+    Ok(web::Json(StatusResponse {
+        status: "ok".to_string(),
+    }))
 }
 
 /// Skip to the next track in the queue. No-op when nothing is playing.

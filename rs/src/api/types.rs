@@ -163,6 +163,23 @@ pub struct ApiQueueResponse {
     pub tracks: Vec<ApiTrack>,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ApiQueueRemoveInput {
+    /// Index of the track to remove in the queue. Index 0 is the track
+    /// playing right now (or the next one to play when the player is idle);
+    /// removing it skips to the next track, or stops when it was the last.
+    pub index: usize,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ApiQueueMoveInput {
+    /// Index of the track to move.
+    pub from: usize,
+    /// Index to move the track to. While a track is playing, neither `from`
+    /// nor `to` may be 0: the front of the queue is the track playing now.
+    pub to: usize,
+}
+
 /// The body of every error response, so consumers can rely on one shape.
 ///
 /// Serialized from `crate::error::AppError`, which carries the same data

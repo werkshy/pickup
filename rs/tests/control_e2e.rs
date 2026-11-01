@@ -166,6 +166,63 @@ async fn test_play_with_exhausted_queue_is_bad_request() {
     assert_eq!(body["code"], "invalid_request");
 }
 
+/// Pausing holds the current track (position and duration stay), and /play
+/// resumes it instead of starting over.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_pause_and_resume() {
+    set_stop().await;
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let id = generate_track_id(Path::new("Bryan Teoh/Free/01 - Finally See The Light.mp3"));
+    let req = test::TestRequest::post()
+        .uri(format!("/play/{id}").as_str())
+        .to_request();
+    let _: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+
+    let req = test::TestRequest::post().uri("/pause").to_request();
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(resp, json!({ "status": "ok" }));
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let paused: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(paused["paused"], true);
+    assert!(
+        paused["position_secs"].as_f64().is_some_and(|p| p >= 0.0),
+        "a paused track keeps its position: {paused}"
+    );
+    assert!(
+        paused["duration_secs"].as_f64().is_some_and(|d| d > 0.0),
+        "a paused track keeps its duration: {paused}"
+    );
+
+    // /play resumes the paused track rather than restarting it.
+    let req = test::TestRequest::post().uri("/play").to_request();
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(resp, json!({ "status": "ok" }));
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let resumed: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(resumed["paused"], false);
+
+    set_stop().await;
+}
+
+/// Pausing an idle player is a no-op that still succeeds.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_pause_when_idle_is_ok() {
+    set_stop().await;
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+
+    let req = test::TestRequest::post().uri("/pause").to_request();
+    let resp: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(resp, json!({ "status": "ok" }));
+
+    let req = test::TestRequest::get().uri("/status").to_request();
+    let status: serde_json::Value = test::call_and_read_body_json(&app, req).await;
+    assert_eq!(status["paused"], false);
+}
+
 #[serial(queue)]
 #[actix_web::test]
 async fn test_play_replaces_the_current_track() {

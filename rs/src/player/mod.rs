@@ -60,6 +60,8 @@ pub struct PlaybackStatus {
 pub enum PlayOutcome {
     /// Playback started.
     Started,
+    /// A paused track resumed playing.
+    Resumed,
     /// The player was already playing; nothing changed.
     AlreadyPlaying,
     /// The queue has no track to play.
@@ -161,6 +163,11 @@ impl Player {
             return Err(message.into());
         }
         self.player.append(source);
+        // A new track must always actually play: rodio's pause flag survives
+        // stop() and clear_sink() (it lives on the sink, independent of the
+        // sources), so clear it here or a track queued after a pause would
+        // start paused.
+        self.player.play();
 
         // Bookkeeping for the track that is now playing.
         self.active = true;
@@ -374,6 +381,33 @@ impl Player {
     }
 
     /**
+     * Pause the currently playing track: the sink keeps the track and its
+     * position, tick() holds state while paused (a paused source neither
+     * advances nor ends). No-op when nothing is playing or already paused.
+     */
+    pub fn pause(&mut self) {
+        if self.player.empty() {
+            log::info!("Nothing to pause: no track is playing");
+            return;
+        }
+        log::info!("Pausing playback");
+        self.player.pause();
+    }
+
+    /**
+     * Resume playback of a paused track, at the position it was paused at.
+     * No-op when playback is not paused.
+     */
+    pub fn unpause(&mut self) {
+        if !self.player.is_paused() {
+            log::info!("Nothing to resume: playback is not paused");
+            return;
+        }
+        log::info!("Resuming playback");
+        self.player.play();
+    }
+
+    /**
      * Start playing the track at the front of the queue, replacing whatever
      * is currently playing. The queue is the source of truth: callers mutate
      * it first, then ask the player to play from it.
@@ -388,11 +422,16 @@ impl Player {
     }
 
     /**
-     * Like play_queue(), but only when the player is idle: a resume or
-     * play_now request must not interrupt playback that is already running.
+     * Make the queue play: unpause a paused track, or start the front of the
+     * queue when the player is idle. Neither a resume nor a play_now request
+     * may interrupt playback that is already running.
      */
     pub fn play_queue_if_idle(&mut self) -> Result<PlayOutcome, Box<dyn Error + Send + Sync>> {
         if !self.player.empty() {
+            if self.player.is_paused() {
+                self.unpause();
+                return Ok(PlayOutcome::Resumed);
+            }
             return Ok(PlayOutcome::AlreadyPlaying);
         }
         let queued = self.queue.read().unwrap().current_or_next().is_some();
@@ -463,7 +502,13 @@ impl Player {
             thread::sleep(Duration::from_millis(5));
         }
         let drained = self.player.empty();
-        if !drained {
+        if drained {
+            // rodio's pause flag is independent of the sources and survives
+            // stop(); clear it so the sink is fully idle once drained -
+            // status must not report paused for a stopped player, and a
+            // later append must not inherit the pause.
+            self.player.play();
+        } else {
             // Wedged player - we don't expect this to happen but there's not much we can do.
             log::warn!("Sink did not drain within {STOP_DRAIN_TIMEOUT:?} after stop");
         }
@@ -902,6 +947,124 @@ mod tests {
         );
 
         player.stop();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_pause_and_unpause_hold_the_track() {
+        let dir = test_audio_dir("pause");
+        let path_a = dir.join("a.wav");
+        write_wav(&path_a, 480_000); // 10s, so it does not end while paused
+
+        let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
+        queue.write().unwrap().add_tracks(vec![make_track(path_a)]);
+        let mut player = Player::new(queue.clone(), PathBuf::from(""));
+
+        player.play_queue().unwrap();
+        player.pause();
+
+        // The sink keeps the paused source, and the queue keeps the track at
+        // the front: a resume continues the same track.
+        let status = player.status();
+        assert!(status.paused);
+        assert!(!player.player.empty());
+        assert!(status.active);
+
+        player.unpause();
+
+        assert!(!player.status().paused);
+        assert!(!player.player.empty());
+
+        player.stop();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_pause_is_a_noop_when_idle() {
+        let mut player = test_player();
+
+        player.pause();
+        assert!(!player.status().paused);
+
+        // Unpausing a player that is not paused is a no-op too.
+        player.unpause();
+        assert!(!player.status().paused);
+    }
+
+    #[test]
+    fn test_play_queue_if_idle_resumes_a_paused_track() {
+        let dir = test_audio_dir("resume");
+        let path_a = dir.join("a.wav");
+        write_wav(&path_a, 480_000);
+
+        let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
+        queue.write().unwrap().add_tracks(vec![make_track(path_a)]);
+        let mut player = Player::new(queue.clone(), PathBuf::from(""));
+
+        player.play_queue().unwrap();
+        player.pause();
+        assert!(player.status().paused);
+
+        // The resume request must unpause, not restart the track.
+        assert_eq!(player.play_queue_if_idle().unwrap(), PlayOutcome::Resumed);
+        assert!(!player.status().paused);
+        assert!(!player.player.empty());
+
+        player.stop();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_a_new_track_does_not_inherit_the_pause() {
+        let dir = test_audio_dir("paused-replace");
+        let path_a = dir.join("a.wav");
+        let path_b = dir.join("b.wav");
+        write_wav(&path_a, 480_000);
+        write_wav(&path_b, 48_000);
+
+        let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
+        queue
+            .write()
+            .unwrap()
+            .add_tracks(vec![make_track(path_a), make_track(path_b.clone())]);
+        let mut player = Player::new(queue.clone(), PathBuf::from(""));
+
+        player.play_queue().unwrap();
+        player.pause();
+
+        // Skipping the paused track starts the next one - which must
+        // actually play, not sit paused behind the old pause flag.
+        player.skip();
+
+        let status = player.status();
+        assert!(!status.paused, "the next track must not start paused");
+        assert!(!player.player.empty());
+        assert_eq!(queue.read().unwrap().tracks.front().unwrap().path, path_b);
+
+        player.stop();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_stop_after_a_pause_resets_the_pause() {
+        let dir = test_audio_dir("stop-paused");
+        let path_a = dir.join("a.wav");
+        write_wav(&path_a, 480_000);
+
+        let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
+        queue.write().unwrap().add_tracks(vec![make_track(path_a)]);
+        let mut player = Player::new(queue.clone(), PathBuf::from(""));
+
+        player.play_queue().unwrap();
+        player.pause();
+        player.stop();
+
+        // A stopped player is idle, not paused: status must say so, and the
+        // next play must not be held back by the stale pause flag.
+        let status = player.status();
+        assert!(!status.paused);
+        assert!(player.player.empty());
+
         let _ = std::fs::remove_dir_all(&dir);
     }
 
