@@ -386,7 +386,9 @@ impl Player {
      * advances nor ends). No-op when nothing is playing or already paused.
      */
     pub fn pause(&mut self) {
-        if self.player.empty() {
+        // We don't want to pause a player that is draining the sink after being
+        // stopped, because the pause state is sticky.
+        if !self.active || self.player.empty() {
             log::info!("Nothing to pause: no track is playing");
             return;
         }

@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="error-page">
+    <h1>Page not found</h1>
+    <p class="muted">There's nothing at <code>{{ path }}</code>.</p>
+    <p><a class="error-home" href="/">Back to the collection</a></p>
+</div>
+{% endblock %}

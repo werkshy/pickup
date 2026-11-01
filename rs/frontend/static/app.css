@@ -1,0 +1,399 @@
+/* Pickup web UI. Dark, compact, no artwork: lists of names and small
+ * action buttons. The player bar sits at the bottom, the queue drawer
+ * overlays on the right. */
+
+:root {
+    --bg: #131313;
+    --panel: #1d1d1d;
+    --panel-raised: #262626;
+    --text: #e4e4e4;
+    --text-muted: #9a9a9a;
+    --accent: #4fd1a1;
+    --accent-dim: #2b6f5a;
+    --border: #303030;
+    --danger: #e07070;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent);
+}
+
+.muted {
+    color: var(--text-muted);
+}
+
+/* ---- header ---- */
+
+#site-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0 1rem;
+    height: 3rem;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex: none;
+}
+
+.brand {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+#category-tabs {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+}
+
+#category-tabs a {
+    padding: 0.3rem 0.75rem;
+    border-radius: 1rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+#category-tabs a:hover {
+    color: var(--text);
+    background: var(--panel-raised);
+}
+
+#category-tabs a.active {
+    color: var(--bg);
+    background: var(--accent);
+    font-weight: 600;
+}
+
+/* ---- main content ---- */
+
+#content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 2rem;
+}
+
+#content h1 {
+    font-size: 1.5rem;
+    margin: 0.5rem 0 1rem;
+}
+
+#content h2 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin: 1.5rem 0 0.5rem;
+}
+
+.crumbs {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.crumb-sep {
+    margin: 0 0.4rem;
+    color: var(--border);
+}
+
+/* Compact lists of names, several columns for large collections. */
+
+.folder-list,
+.track-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* A fixed content width: every row is the same width, with the action
+     * buttons at its right edge, however wide the window is. */
+    max-width: 48rem;
+}
+
+.folder-list li,
+.track-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+}
+
+.folder-list li:hover,
+.track-list li:hover {
+    background: var(--panel-raised);
+}
+
+.folder-list.multicolumn {
+    /* The category list uses the whole content width: four columns of
+     * whatever fits, instead of the fixed-width block the single-column
+     * lists get. 12rem is the smallest column it will make on a narrow
+     * window; on wide screens the count caps at four. */
+    max-width: none;
+    columns: 4 12rem;
+    column-gap: 1.5rem;
+}
+
+.folder-list.multicolumn li {
+    break-inside: avoid;
+}
+
+.folder-link,
+.track-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    padding: 0;
+    cursor: pointer;
+}
+
+.track-title {
+    color: var(--text);
+}
+
+.track-title:hover {
+    color: var(--accent);
+}
+
+/* ---- action buttons ---- */
+
+/* The buttons always take up their space (hidden, not display:none), so a
+ * row is exactly the same size hovered or not - otherwise rows would grow
+ * on hover and shift around in the multi-column layout. */
+.row-actions {
+    display: inline-flex;
+    visibility: hidden;
+    gap: 0.15rem;
+    flex: none;
+}
+
+.folder-list li:hover .row-actions,
+.track-list li:hover .row-actions {
+    visibility: visible;
+}
+
+button {
+    font: inherit;
+}
+
+.icon-button,
+.row-actions button {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 0.05rem 0.45rem;
+    cursor: pointer;
+}
+
+.row-actions button {
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.icon-button:hover,
+.row-actions button:hover {
+    color: var(--text);
+    background: var(--panel);
+    border-color: var(--border);
+}
+
+.row-actions .action-play:hover {
+    color: var(--accent);
+}
+
+.row-actions .action-add:hover,
+.row-actions .action-next:hover {
+    color: var(--accent);
+}
+
+/* ---- queue drawer ---- */
+
+#drawer {
+    position: fixed;
+    top: 3rem; /* below the header */
+    bottom: 4rem; /* above the player bar */
+    right: 0;
+    width: 22rem;
+    max-width: 90vw;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    box-shadow: -0.5rem 0 1.5rem rgba(0, 0, 0, 0.4);
+    transform: translateX(100%);
+    transition: transform 0.15s ease-out;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+}
+
+body.queue-open #drawer {
+    transform: none;
+}
+
+.drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem;
+    border-bottom: 1px solid var(--border);
+    flex: none;
+}
+
+.drawer-title {
+    font-weight: 600;
+}
+
+.drawer-head-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+#queue-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.4rem 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+#queue-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.9rem;
+}
+
+#queue-list li:hover {
+    background: var(--panel-raised);
+}
+
+#queue-list li.playing .queue-title {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.queue-pos {
+    flex: none;
+    width: 1.6rem;
+    text-align: right;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.queue-titles {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.queue-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.queue-artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.queue-remove {
+    visibility: hidden;
+    flex: none;
+}
+
+#queue-list li:hover .queue-remove {
+    visibility: visible;
+}
+
+.queue-remove:hover {
+    color: var(--danger) !important;
+}
+
+.queue-empty {
+    justify-content: center;
+    color: var(--text-muted);
+    padding-top: 2rem !important;
+}
+
+/* ---- error page ---- */
+
+.error-page {
+    max-width: 48rem;
+    margin: 4rem auto 0;
+    text-align: center;
+}
+
+.error-page code {
+    background: var(--panel-raised);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    overflow-wrap: anywhere;
+}
+
+.error-home {
+    color: var(--accent);
+}
+
+.error-home:hover {
+    text-decoration: underline;
+}
+
+/* ---- player bar ---- */
+
+#player-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 4rem;
+    padding: 0 1rem;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    flex: none;
+    z-index: 20;
+}
+
+#now-playing {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

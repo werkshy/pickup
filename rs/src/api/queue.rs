@@ -35,6 +35,20 @@ pub async fn add(
     data: web::Data<AppState>,
     input: web::Json<ApiQueueInput>,
 ) -> Result<impl Responder, AppError> {
+    add_to_queue(&data, &input).await?;
+    Ok(web::Json(queue_response(&data)))
+}
+
+/**
+ * Add the tracks an ID addresses to the queue: a single track for a track
+ * ID, or every track under a folder for a category, artist, album or disc
+ * ID. Shared by the JSON API and the web UI actions, so both behave the
+ * same.
+ */
+pub(crate) async fn add_to_queue(
+    data: &web::Data<AppState>,
+    input: &ApiQueueInput,
+) -> Result<(), AppError> {
     let Some(tracks) = data.collection.get_tracks(&input.id) else {
         return Err(AppError::not_found(
             "No matching music found in the collection",
@@ -80,7 +94,7 @@ pub async fn add(
             .map_err(AppError::from)?;
     }
 
-    Ok(web::Json(queue_response(&data)))
+    Ok(())
 }
 
 /// Remove one track from the queue, by index. Removing the track that is
@@ -100,7 +114,18 @@ pub async fn remove(
     data: web::Data<AppState>,
     input: web::Json<ApiQueueRemoveInput>,
 ) -> Result<impl Responder, AppError> {
-    let index = input.index;
+    remove_from_queue(&data, input.index).await?;
+    Ok(web::Json(queue_response(&data)))
+}
+
+/**
+ * Remove the track at `index` from the queue. Shared by the JSON API and
+ * the web UI actions.
+ */
+pub(crate) async fn remove_from_queue(
+    data: &web::Data<AppState>,
+    index: usize,
+) -> Result<(), AppError> {
     let playing = data.player.status().await.map_err(AppError::from)?.active;
 
     if playing && index == 0 {
@@ -109,7 +134,7 @@ pub async fn remove(
         // the queue has run out). The queue must not be mutated here: skip()
         // reads the front as the track it is discarding.
         data.player.skip().await.map_err(AppError::from)?;
-        return Ok(web::Json(queue_response(&data)));
+        return Ok(());
     }
 
     let removed = data.queue.write().unwrap().remove(index);
@@ -118,7 +143,7 @@ pub async fn remove(
             "Index {index} is outside the queue"
         )));
     }
-    Ok(web::Json(queue_response(&data)))
+    Ok(())
 }
 
 /// Move a track within the queue (reorder). While a track is playing, the
@@ -139,21 +164,33 @@ pub async fn move_track(
     data: web::Data<AppState>,
     input: web::Json<ApiQueueMoveInput>,
 ) -> Result<impl Responder, AppError> {
+    move_in_queue(&data, input.from, input.to).await?;
+    Ok(web::Json(queue_response(&data)))
+}
+
+/**
+ * Move a track from one queue position to another. Shared by the JSON API
+ * and the web UI actions.
+ */
+pub(crate) async fn move_in_queue(
+    data: &web::Data<AppState>,
+    from: usize,
+    to: usize,
+) -> Result<(), AppError> {
     let playing = data.player.status().await.map_err(AppError::from)?.active;
-    if playing && (input.from == 0 || input.to == 0) {
+    if playing && (from == 0 || to == 0) {
         return Err(AppError::invalid_request(
             "Position 0 is the track playing now; it cannot be moved or replaced while playing",
         ));
     }
 
-    let moved = data.queue.write().unwrap().move_track(input.from, input.to);
+    let moved = data.queue.write().unwrap().move_track(from, to);
     if !moved {
         return Err(AppError::invalid_request(format!(
-            "Cannot move from {} to {}: outside the queue",
-            input.from, input.to
+            "Cannot move from {from} to {to}: outside the queue"
         )));
     }
-    Ok(web::Json(queue_response(&data)))
+    Ok(())
 }
 
 /// Stop playback and clear queue.
@@ -167,9 +204,18 @@ pub async fn move_track(
 )]
 #[post("/queue/clear")]
 pub async fn clear(data: web::Data<AppState>) -> Result<impl Responder, AppError> {
+    clear_queue(&data).await?;
+    Ok(web::Json(queue_response(&data)))
+}
+
+/**
+ * Stop playback and empty the queue. Shared by the JSON API and the web UI
+ * actions.
+ */
+pub(crate) async fn clear_queue(data: &web::Data<AppState>) -> Result<(), AppError> {
     data.player.stop().await.map_err(AppError::from)?;
     data.queue.write().unwrap().clear();
-    Ok(web::Json(queue_response(&data)))
+    Ok(())
 }
 
 /// Get the current queue.

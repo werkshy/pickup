@@ -17,7 +17,7 @@ async fn test_openapi_lists_all_routes() {
 
     let paths = resp["paths"].as_object().unwrap();
     for route in [
-        "/",
+        "/hello",
         "/play",
         "/pause",
         "/play/{id}",

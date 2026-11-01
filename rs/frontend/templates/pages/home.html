@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Categories</h1>
+<ul class="folder-list multicolumn">
+    {% for category in shell.categories %}
+    <li>
+        <a class="folder-link kind-category" href="/browse/{{ category.id }}">{{ category.name }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

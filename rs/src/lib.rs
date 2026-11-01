@@ -4,6 +4,7 @@ pub mod error;
 pub mod filemanager;
 pub mod player;
 pub mod queue;
+pub mod webui;
 
 use std::path::PathBuf;
 use std::sync::mpsc::{self, RecvTimeoutError};
@@ -14,9 +15,9 @@ use actix_web::{
     body::MessageBody,
     dev::{ServiceFactory, ServiceResponse},
     error::{JsonPayloadError, PathError},
-    http::StatusCode,
+    http::{header, StatusCode},
     web::{self, Data},
-    Error,
+    Error, HttpRequest,
 };
 use actix_web::{dev::ServiceRequest, middleware::Logger, ResponseError};
 use actix_web::{App, HttpResponse, HttpServer};
@@ -73,7 +74,8 @@ pub fn build_app(
         Error = Error,
     >,
 > {
-    api::register_services(
+    // The web UI serves HTML pages and fragments.
+    let app = webui::register(api::register_services(
         App::new()
             .into_utoipa_app()
             .openapi(api::openapi::base_doc())
@@ -98,9 +100,9 @@ pub fn build_app(
             }))
             .map(|app| app.wrap(Logger::default()))
             .default_service(web::to(not_found)),
-    )
+    ));
     // Serve the spec collected from the services above; must come after them
-    .openapi_service(|spec| {
+    app.openapi_service(|spec| {
         web::resource("/openapi.json")
             .route(web::get().to(move || {
                 let spec = spec.clone();
@@ -147,9 +149,23 @@ fn json_error_message(error: &JsonPayloadError) -> String {
 
 /**
  * Fallback for requests no route claimed: unknown paths, and methods that a
- * matched path does not serve. Both come back as 404 in the standard shape.
+ * matched path does not serve. Browser navigation (Accept: text/html) gets
+ * the HTML error page; API consumers and htmx actions keep the standard
+ * JSON error shape.
  */
-async fn not_found() -> HttpResponse {
+async fn not_found(request: HttpRequest) -> HttpResponse {
+    let wants_html = request
+        .headers()
+        .get(header::ACCEPT)
+        .and_then(|value| value.to_str().ok())
+        .map(|accept| accept.contains("text/html"))
+        .unwrap_or(false);
+
+    if wants_html {
+        if let Some(state) = request.app_data::<Data<AppState>>() {
+            return webui::not_found_page(state, request.path()).await;
+        }
+    }
     AppError::not_found("No such route").error_response()
 }
 

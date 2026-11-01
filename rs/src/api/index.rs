@@ -9,7 +9,7 @@ use crate::api::types::IndexResponse;
         (status = 200, description = "Server info", body = IndexResponse)
     )
 )]
-#[get("/")]
+#[get("/hello")]
 pub async fn hello() -> impl Responder {
     web::Json(IndexResponse {
         name: "pickup".to_string(),

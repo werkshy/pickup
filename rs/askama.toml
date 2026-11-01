@@ -1,0 +1,3 @@
+[general]
+# Templates live under frontend/, not the crate root's default templates/.
+dirs = ["frontend/templates"]
