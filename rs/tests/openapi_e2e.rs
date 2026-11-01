@@ -19,6 +19,7 @@ async fn test_openapi_lists_all_routes() {
     for route in [
         "/",
         "/play",
+        "/pause",
         "/play/{id}",
         "/skip",
         "/stop",
@@ -30,6 +31,8 @@ async fn test_openapi_lists_all_routes() {
         "/queue",
         "/queue/add",
         "/queue/clear",
+        "/queue/move",
+        "/queue/remove",
     ] {
         assert!(
             paths.contains_key(route),

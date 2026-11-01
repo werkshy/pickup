@@ -1,7 +1,10 @@
 use actix_web::{get, post, web, Responder, Result};
 
 use crate::{
-    api::types::{ApiQueueInput, ApiQueuePosition, ApiQueueResponse, ApiTrack, ErrorResponse},
+    api::types::{
+        ApiQueueInput, ApiQueueMoveInput, ApiQueuePosition, ApiQueueRemoveInput, ApiQueueResponse,
+        ApiTrack, ErrorResponse,
+    },
     app_state::AppState,
     error::AppError,
 };
@@ -77,6 +80,79 @@ pub async fn add(
             .map_err(AppError::from)?;
     }
 
+    Ok(web::Json(queue_response(&data)))
+}
+
+/// Remove one track from the queue, by index. Removing the track that is
+/// playing (index 0) skips to the next track, or stops when it was the last.
+#[utoipa::path(
+    tag = "queue",
+    request_body = ApiQueueRemoveInput,
+    responses(
+        (status = 200, description = "The queue after removing", body = ApiQueueResponse),
+        (status = 400, description = "The index is outside the queue", body = ErrorResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[post("/queue/remove")]
+pub async fn remove(
+    data: web::Data<AppState>,
+    input: web::Json<ApiQueueRemoveInput>,
+) -> Result<impl Responder, AppError> {
+    let index = input.index;
+    let playing = data.player.status().await.map_err(AppError::from)?.active;
+
+    if playing && index == 0 {
+        // Removing the playing track is exactly a skip: the Player pops it
+        // off the front of the queue and starts the next one (or stops when
+        // the queue has run out). The queue must not be mutated here: skip()
+        // reads the front as the track it is discarding.
+        data.player.skip().await.map_err(AppError::from)?;
+        return Ok(web::Json(queue_response(&data)));
+    }
+
+    let removed = data.queue.write().unwrap().remove(index);
+    if removed.is_none() {
+        return Err(AppError::invalid_request(format!(
+            "Index {index} is outside the queue"
+        )));
+    }
+    Ok(web::Json(queue_response(&data)))
+}
+
+/// Move a track within the queue (reorder). While a track is playing, the
+/// front of the queue is the track playing now, so position 0 can be neither
+/// moved nor moved onto.
+#[utoipa::path(
+    tag = "queue",
+    request_body = ApiQueueMoveInput,
+    responses(
+        (status = 200, description = "The queue after moving", body = ApiQueueResponse),
+        (status = 400, description = "Either index is outside the queue, or position 0 was moved while playing", body = ErrorResponse),
+        (status = 500, description = "The player did not respond in time", body = ErrorResponse),
+        (status = 503, description = "The player thread is gone", body = ErrorResponse),
+    )
+)]
+#[post("/queue/move")]
+pub async fn move_track(
+    data: web::Data<AppState>,
+    input: web::Json<ApiQueueMoveInput>,
+) -> Result<impl Responder, AppError> {
+    let playing = data.player.status().await.map_err(AppError::from)?.active;
+    if playing && (input.from == 0 || input.to == 0) {
+        return Err(AppError::invalid_request(
+            "Position 0 is the track playing now; it cannot be moved or replaced while playing",
+        ));
+    }
+
+    let moved = data.queue.write().unwrap().move_track(input.from, input.to);
+    if !moved {
+        return Err(AppError::invalid_request(format!(
+            "Cannot move from {} to {}: outside the queue",
+            input.from, input.to
+        )));
+    }
     Ok(web::Json(queue_response(&data)))
 }
 

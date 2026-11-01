@@ -24,6 +24,7 @@ where
     app.service(hello)
         .service(control::play)
         .service(control::resume)
+        .service(control::pause)
         .service(control::stop)
         .service(control::skip)
         .service(control::volume)
@@ -32,6 +33,8 @@ where
         .service(list::list_categories)
         .service(list::get_folder)
         .service(queue::add)
+        .service(queue::remove)
+        .service(queue::move_track)
         .service(queue::clear)
         .service(queue::get_queue)
 }

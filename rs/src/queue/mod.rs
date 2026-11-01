@@ -82,6 +82,34 @@ impl PlaybackQueue {
         self.tracks.front()
     }
 
+    /**
+     * Remove the track at `index` (0 is the track playing right now, or the
+     * next one when idle). Returns the removed track, or None when the index
+     * is outside the queue.
+     */
+    pub fn remove(&mut self, index: usize) -> Option<Track> {
+        self.tracks.remove(index)
+    }
+
+    /**
+     * Move the track at `from` to `to`, reordering the queue. Both indices
+     * must be inside the queue; moving a track to its own position is a
+     * no-op. Returns whether the queue was changed (false for out-of-range
+     * indices).
+     */
+    pub fn move_track(&mut self, from: usize, to: usize) -> bool {
+        if from >= self.tracks.len() || to >= self.tracks.len() {
+            return false;
+        }
+        if from != to {
+            // Removing before inserting keeps "move to position N" intuitive:
+            // [a, b, c] moved 0 -> 2 becomes [b, c, a].
+            let track = self.tracks.remove(from).expect("index checked above");
+            self.tracks.insert(to, track);
+        }
+        true
+    }
+
     pub fn clear(&mut self) {
         self.tracks.clear();
     }
@@ -184,5 +212,56 @@ mod tests {
 
         assert_eq!(names(&queue), ["b", "c"]);
         assert_eq!(queue.current_or_next().unwrap().name, "b");
+    }
+
+    #[test]
+    fn test_remove_takes_the_track_at_the_index() {
+        let mut queue = PlaybackQueue::new();
+        queue.add_tracks(vec![track("a"), track("b"), track("c")]);
+
+        assert_eq!(queue.remove(1).unwrap().name, "b");
+        assert_eq!(names(&queue), ["a", "c"]);
+    }
+
+    #[test]
+    fn test_remove_out_of_range_returns_none() {
+        let mut queue = PlaybackQueue::new();
+        queue.add_track(track("a"));
+
+        assert!(queue.remove(1).is_none());
+        assert_eq!(names(&queue), ["a"]);
+    }
+
+    #[test]
+    fn test_move_track_reorders_the_queue() {
+        let mut queue = PlaybackQueue::new();
+        queue.add_tracks(vec![track("a"), track("b"), track("c")]);
+
+        // [a, b, c] with a moved to the back is [b, c, a].
+        assert!(queue.move_track(0, 2));
+        assert_eq!(names(&queue), ["b", "c", "a"]);
+
+        // ... and moving it back to the front restores the order.
+        assert!(queue.move_track(2, 0));
+        assert_eq!(names(&queue), ["a", "b", "c"]);
+    }
+
+    #[test]
+    fn test_move_track_to_the_same_position_is_a_noop() {
+        let mut queue = PlaybackQueue::new();
+        queue.add_tracks(vec![track("a"), track("b")]);
+
+        assert!(queue.move_track(1, 1));
+        assert_eq!(names(&queue), ["a", "b"]);
+    }
+
+    #[test]
+    fn test_move_track_out_of_range_fails() {
+        let mut queue = PlaybackQueue::new();
+        queue.add_tracks(vec![track("a"), track("b")]);
+
+        assert!(!queue.move_track(2, 0));
+        assert!(!queue.move_track(0, 2));
+        assert_eq!(names(&queue), ["a", "b"]);
     }
 }
