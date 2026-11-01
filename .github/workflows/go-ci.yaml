@@ -41,7 +41,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version: 26.x
           cache-dependency-path: go/frontend/yarn.lock
       - name: Setup Go
         uses: actions/setup-go@v7
