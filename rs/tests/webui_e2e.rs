@@ -315,6 +315,14 @@ async fn test_static_assets_are_served() {
 
     let (status, _) = get_html("/static/app.css").await;
     assert_eq!(status, StatusCode::OK);
+
+    // The favicon is served in both the modern (svg) and legacy (ico) forms.
+    let (status, body) = get_html("/static/favicon.svg").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(body.contains("<svg"), "favicon.svg is an svg: {body}");
+
+    let (status, _) = get_html("/static/favicon.ico").await;
+    assert_eq!(status, StatusCode::OK);
 }
 
 /// The queue drawer shows the JSON-visible queue state on full page loads,
