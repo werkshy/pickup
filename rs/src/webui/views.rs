@@ -6,6 +6,8 @@ use std::path::{Path, PathBuf};
 
 use askama::Template;
 
+use std::time::Duration;
+
 use crate::api::types::kind_name;
 use crate::app_state::AppState;
 use crate::filemanager::collection_builder::DEFAULT_CATEGORY;
@@ -13,12 +15,13 @@ use crate::filemanager::model::{Folder, Kind};
 use crate::filemanager::utils::{
     generate_album_id, generate_artist_id, generate_category_id, generate_disc_id,
 };
+use crate::player::PlaybackStatus;
 
 /**
  * The shared chrome of every page: title, category tabs, the queue drawer's
- * contents. `oob` marks the queue list as an out-of-band swap target for
- * action responses, so the same template renders both inline (a full page)
- * and as an OOB update (an action response).
+ * contents, and the player bar. `oob` marks the queue list and player bar as
+ * out-of-band swap targets for action responses, so the same templates render
+ * both inline (a full page) and as OOB updates (an action response).
  */
 pub struct Shell {
     pub title: String,
@@ -26,17 +29,64 @@ pub struct Shell {
     /// ID of the category tab to highlight; empty on the home page.
     pub active_category: String,
     pub queue: QueueView,
+    pub player_bar: PlayerBarView,
     pub oob: bool,
+}
+
+/**
+ * One consistent snapshot of the player: its playback status and the current
+ * volume. Built once per render and shared by every view that needs player
+ * state, so a page render costs a fixed pair of requests to the player
+ * thread instead of one per component.
+ */
+pub struct PlayerSnapshot {
+    pub status: Option<PlaybackStatus>,
+    pub volume: u8,
+}
+
+/**
+ * Snapshot the player for the views. The status can fail when the player
+ * thread is wedged: the views then render as if nothing is playing, which is
+ * the least-wrong thing to show. The volume always answers.
+ */
+pub async fn player_snapshot(state: &AppState) -> PlayerSnapshot {
+    let status = state.player.status().await.ok();
+    let volume = state
+        .player
+        .request_async(|player| player.get_volume())
+        .await
+        .unwrap_or(100);
+    PlayerSnapshot { status, volume }
 }
 
 impl Shell {
     /**
      * Build the shell for a full page render: category tabs from the
-     * collection, and the current queue for the drawer. Async because the
-     * player's status (which tells the drawer which track is playing) lives
-     * on the Player thread.
+     * collection, plus the queue drawer and player bar from one player
+     * snapshot. Async because the player state lives on the Player thread.
      */
     pub async fn for_page(state: &AppState, title: &str, active_category: &str) -> Shell {
+        let snapshot = player_snapshot(state).await;
+        Shell::from_snapshot(state, title, active_category, &snapshot, false)
+    }
+
+    /**
+     * Build the shell for an action response: only the live chrome (queue
+     * list, player bar) matters, the rest of the page is never swapped, and
+     * `oob` tells htmx to replace those regions out-of-band.
+     */
+    pub async fn for_action(state: &AppState) -> Shell {
+        let snapshot = player_snapshot(state).await;
+        Shell::from_snapshot(state, "", "", &snapshot, true)
+    }
+
+    fn from_snapshot(
+        state: &AppState,
+        title: &str,
+        active_category: &str,
+        snapshot: &PlayerSnapshot,
+        oob: bool,
+    ) -> Shell {
         Shell {
             title: title.to_string(),
             categories: state
@@ -48,34 +98,25 @@ impl Shell {
                 })
                 .collect(),
             active_category: active_category.to_string(),
-            queue: QueueView::build(state).await,
-            oob: false,
+            queue: QueueView::from_snapshot(state, snapshot),
+            player_bar: PlayerBarView::from_snapshot(state, snapshot),
+            oob,
         }
     }
 
     /**
-     * Build the shell for an action response: only the queue matters, the
-     * rest of the chrome is never swapped, and `oob` tells htmx to replace
-     * the live queue list with this one.
-     */
-    pub fn for_action(queue: QueueView) -> Shell {
-        Shell::for_fragment_with_oob(queue, true)
-    }
-
-    /**
      * Build the shell for a direct swap of the queue list (not out-of-band).
+     * Only the queue is rendered from this shell, so the player bar is left
+     * empty.
      */
     pub fn for_fragment(queue: QueueView) -> Shell {
-        Shell::for_fragment_with_oob(queue, false)
-    }
-
-    fn for_fragment_with_oob(queue: QueueView, oob: bool) -> Shell {
         Shell {
             title: String::new(),
             categories: Vec::new(),
             active_category: String::new(),
             queue,
-            oob,
+            player_bar: PlayerBarView::default(),
+            oob: false,
         }
     }
 }
@@ -106,10 +147,14 @@ impl QueueView {
      * track to play, so nothing is highlighted.
      */
     pub async fn build(data: &AppState) -> QueueView {
-        let playing = data
-            .player
-            .status()
-            .await
+        let snapshot = player_snapshot(data).await;
+        QueueView::from_snapshot(data, &snapshot)
+    }
+
+    fn from_snapshot(data: &AppState, snapshot: &PlayerSnapshot) -> QueueView {
+        let playing = snapshot
+            .status
+            .as_ref()
             .map(|status| status.active)
             .unwrap_or(false);
 
@@ -128,6 +173,87 @@ impl QueueView {
         let empty = tracks.is_empty();
         QueueView { tracks, empty }
     }
+}
+
+/**
+ * The bottom player bar: what is playing, the transport state, progress and
+ * volume. Rendered as part of every page (it sits in the shell, outside the
+ * swapped content), as an out-of-band swap in every action response, and -
+ * just the progress readout - polled every second.
+ */
+#[derive(Debug, Clone, Default)]
+pub struct PlayerBarView {
+    /// The track playing right now; empty strings when idle.
+    pub track_title: String,
+    pub track_artist: String,
+    /// A track's playback lifecycle is open (playing or paused). When idle
+    /// the bar shows nothing instead.
+    pub active: bool,
+    pub paused: bool,
+    /// Elapsed time in the current track, rendered as `M:SS`; empty when
+    /// unknown or idle.
+    pub elapsed: String,
+    /// Total duration of the current track, rendered as `M:SS`; empty when
+    /// unknown or idle.
+    pub duration: String,
+    /// Whether the progress readout has anything to show. There is a
+    /// progress element in the bar at all times (the poll swaps it), but it
+    /// is empty while idle.
+    pub show_progress: bool,
+    pub volume: u8,
+}
+
+impl PlayerBarView {
+    /**
+     * The bar's view from a player snapshot: the current track comes from
+     * the front of the queue (the player's own idea of "the track" is just
+     * a file path), the progress and paused state from the status.
+     */
+    pub fn from_snapshot(data: &AppState, snapshot: &PlayerSnapshot) -> PlayerBarView {
+        let status = snapshot.status.as_ref();
+        let active = status.map(|status| status.active).unwrap_or(false);
+
+        let track = if active {
+            data.queue
+                .read()
+                .ok()
+                .and_then(|queue| queue.tracks.front().cloned())
+        } else {
+            None
+        };
+
+        let (elapsed, duration, show_progress) = match status {
+            Some(status) if status.active => (
+                status.position.as_ref().map(mmss).unwrap_or_default(),
+                status.duration.as_ref().map(mmss).unwrap_or_default(),
+                status.duration.is_some(),
+            ),
+            _ => (String::new(), String::new(), false),
+        };
+
+        PlayerBarView {
+            track_title: track.as_ref().map(|t| t.name.clone()).unwrap_or_default(),
+            track_artist: track
+                .as_ref()
+                .and_then(|t| t.artist.clone())
+                .unwrap_or_default(),
+            active,
+            paused: status.map(|status| status.paused).unwrap_or(false),
+            elapsed,
+            duration,
+            show_progress,
+            volume: snapshot.volume,
+        }
+    }
+}
+
+/**
+ * Render a duration as `M:SS`, the way players show it (no leading zero on
+ * the minutes, tracks longer than an hour get more minutes).
+ */
+fn mmss(duration: &Duration) -> String {
+    let total_seconds = duration.as_secs();
+    format!("{}:{:02}", total_seconds / 60, total_seconds % 60)
 }
 
 /**
@@ -330,4 +456,25 @@ pub struct NotFoundTemplate {
 #[template(path = "fragments/queue.html")]
 pub struct QueueTemplate {
     pub shell: Shell,
+}
+
+/**
+ * An action response: the player bar and the queue drawer together, both as
+ * out-of-band swaps. Every transport/queue action re-renders both, so the
+ * live chrome never goes stale after a click.
+ */
+#[derive(Template)]
+#[template(path = "fragments/action.html")]
+pub struct ActionTemplate {
+    pub shell: Shell,
+}
+
+/**
+ * The progress readout on its own: the one thing the one-second poll swaps.
+ * Small on purpose - the poll response is a few dozen bytes.
+ */
+#[derive(Template)]
+#[template(path = "fragments/progress.html")]
+pub struct ProgressTemplate {
+    pub bar: PlayerBarView,
 }

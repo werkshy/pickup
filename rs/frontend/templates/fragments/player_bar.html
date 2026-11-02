@@ -1,0 +1,41 @@
+{# The bottom player bar. Lives in the shell, outside the swapped content,
+   so navigation never touches it. It carries the one-second progress poll
+   (hx-target points at the progress element, which the poll swaps in place
+   - the footer itself is never re-rendered by polling, so a mid-drag volume
+   slider is never yanked away). Every action response swaps the whole bar
+   out-of-band, which re-renders the poll attributes along with the state. #}
+<footer id="player-bar" {% if shell.oob %}hx-swap-oob="true"{% endif %}
+        hx-get="/web/fragments/progress" hx-trigger="every 1s"
+        hx-target="#progress" hx-swap="outerHTML">
+    <div id="now-playing">
+        {% if shell.player_bar.active %}
+        <span class="np-title">{{ shell.player_bar.track_title }}</span>
+        {% if !shell.player_bar.track_artist.is_empty() %}
+        <span class="np-artist">{{ shell.player_bar.track_artist }}</span>
+        {% endif %}
+        {% else %}
+        <span class="muted">Nothing playing</span>
+        {% endif %}
+    </div>
+    <div id="transport">
+        {% if shell.player_bar.active && !shell.player_bar.paused %}
+        <button id="transport-pause" class="transport-button" title="Pause"
+                hx-post="/web/pause" hx-swap="none">&#10074;&#10074;</button>
+        {% else %}
+        <button id="transport-play" class="transport-button" title="Play"
+                hx-post="/web/resume" hx-swap="none">&#9654;</button>
+        {% endif %}
+        <button id="transport-skip" class="transport-button" title="Next track"
+                hx-post="/web/skip" hx-swap="none">&#9197;</button>
+        <button id="transport-stop" class="transport-button" title="Stop"
+                hx-post="/web/stop" hx-swap="none">&#9632;</button>
+        <span id="progress">{% if shell.player_bar.show_progress %}{{ shell.player_bar.elapsed }} / {{ shell.player_bar.duration }}{% endif %}</span>
+    </div>
+    <div id="bar-actions">
+        <input id="volume" class="volume-slider" type="range" min="0" max="100"
+               name="volume" value="{{ shell.player_bar.volume }}" title="Volume"
+               hx-post="/web/volume" hx-trigger="change" hx-include="this"
+               hx-swap="none">
+        <button id="drawer-toggle" class="icon-button" title="Show the queue">&#9776;&nbsp;Queue</button>
+    </div>
+</footer>

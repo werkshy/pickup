@@ -1,0 +1,2 @@
+{# The progress readout, swapped in place by the bar's one-second poll. #}
+<span id="progress">{% if bar.show_progress %}{{ bar.elapsed }} / {{ bar.duration }}{% endif %}</span>

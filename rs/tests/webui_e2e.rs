@@ -65,6 +65,7 @@ async fn clear_playlist() {
 const TRACK_1: &str = "Bryan Teoh/Free/01 - Finally See The Light.mp3";
 const TRACK_2: &str = "Bryan Teoh/Free/02 - Neptunian Princess.mp3";
 const TRACK_2_TITLE: &str = "02 - Neptunian Princess";
+const TRACK_1_TITLE: &str = "01 - Finally See The Light";
 const ALBUM: &str = "Bryan Teoh/Free";
 const ARTIST: &str = "Bryan Teoh";
 
@@ -341,6 +342,187 @@ async fn test_album_page_shows_the_queue_in_the_drawer() {
     assert!(
         body.contains(r#"class="playing""#),
         "the playing track is highlighted: {body}"
+    );
+
+    clear_playlist().await;
+}
+
+/// The volume action posts a form-encoded value (htmx sends the slider's
+/// name/value as an urlencoded body).
+async fn post_form(uri: &str, body: &str) -> (StatusCode, String) {
+    let app = test::init_service(build_app((*APP_STATE).clone())).await;
+    let req = test::TestRequest::post()
+        .uri(uri)
+        .insert_header((CONTENT_TYPE, "application/x-www-form-urlencoded"))
+        .set_payload(body.to_string())
+        .to_request();
+    let resp = test::call_service(&app, req).await;
+    let status = resp.status();
+    let body = test::read_body(resp).await;
+    (status, String::from_utf8_lossy(&body).to_string())
+}
+
+/// Every page renders the player bar in the shell, with the poll attributes
+/// and the transport in its idle state.
+#[actix_web::test]
+async fn test_player_bar_renders_on_full_pages() {
+    let (_, body) = get_html("/").await;
+
+    assert!(
+        body.contains(r#"id="player-bar""#),
+        "the bar is in the shell: {body}"
+    );
+    assert!(
+        body.contains(r#"hx-get="/web/fragments/progress""#),
+        "the bar polls the progress fragment: {body}"
+    );
+    assert!(
+        body.contains(r#"id="progress""#),
+        "the poll target exists on the page (htmx targetError otherwise): {body}"
+    );
+    assert!(
+        body.contains(r#"id="volume""#),
+        "the bar has the volume slider: {body}"
+    );
+    assert!(
+        body.contains("Nothing playing"),
+        "the idle bar shows nothing playing: {body}"
+    );
+    assert!(
+        body.contains(r#"id="transport-play""#),
+        "the idle bar shows the play (resume) button: {body}"
+    );
+}
+
+/// The transport buttons swap the bar out-of-band: pause flips the toggle,
+/// resume flips it back, stop idles the bar.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_transport_actions_swap_the_bar_out_of_band() {
+    clear_playlist().await;
+
+    let track = generate_track_id(Path::new(TRACK_1));
+    let (_, body) = post_html(&format!("/web/play/{track}")).await;
+    assert!(
+        body.contains(r#"id="player-bar" hx-swap-oob"#),
+        "playing swaps the bar out-of-band: {body}"
+    );
+    assert!(
+        body.contains(r#"id="transport-pause""#),
+        "the playing bar shows the pause button: {body}"
+    );
+    assert!(
+        body.contains(TRACK_1_TITLE),
+        "the bar shows the playing track: {body}"
+    );
+
+    let (_, body) = post_html("/web/pause").await;
+    assert!(
+        body.contains(r#"id="transport-play""#),
+        "the paused bar shows the play button: {body}"
+    );
+
+    let (_, body) = post_html("/web/resume").await;
+    assert!(
+        body.contains(r#"id="transport-pause""#),
+        "the resumed bar shows the pause button: {body}"
+    );
+
+    let (_, body) = post_html("/web/stop").await;
+    assert!(
+        body.contains("Nothing playing"),
+        "the stopped bar shows nothing playing: {body}"
+    );
+    assert!(
+        body.contains(r#"id="transport-play""#),
+        "the stopped bar shows the play button: {body}"
+    );
+
+    clear_playlist().await;
+}
+
+/// Skip advances the queue: the swapped bar shows the new track and the
+/// swapped drawer marks it as playing.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_skip_action_swaps_the_bar_and_the_drawer() {
+    clear_playlist().await;
+
+    let album = generate_album_id(Path::new(ALBUM));
+    let _ = post_html(&format!("/web/queue/add/{album}")).await;
+
+    let (_, body) = post_html("/web/skip").await;
+    assert!(
+        body.contains(TRACK_1_TITLE),
+        "the bar shows the track skip started: {body}"
+    );
+    assert!(
+        body.contains(r#"id="player-bar" hx-swap-oob"#),
+        "skip swaps the bar: {body}"
+    );
+    assert!(
+        body.contains(r#"id="queue-list" hx-swap-oob"#),
+        "skip swaps the drawer: {body}"
+    );
+
+    clear_playlist().await;
+}
+
+/// The volume action renders the value that was actually set into the
+/// swapped bar's slider.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_volume_action_sets_the_slider() {
+    let (_, body) = post_form("/web/volume", "volume=42").await;
+
+    assert!(body.contains(r#"id="player-bar" hx-swap-oob"#), "{body}");
+    assert!(
+        body.contains(r#"name="volume" value="42""#),
+        "the swapped bar carries the set volume: {body}"
+    );
+}
+
+/// The volume slider clamps out-of-range values server-side.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_volume_action_clamps_out_of_range_values() {
+    let (_, body) = post_form("/web/volume", "volume=4000").await;
+
+    assert!(
+        body.contains(r#"name="volume" value="100""#),
+        "4000 clamps to 100: {body}"
+    );
+}
+
+/// The progress fragment is the poll target: it renders the elapsed readout
+/// while playing, and is empty while idle.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_progress_fragment_shows_the_elapsed_time() {
+    clear_playlist().await;
+
+    let (_, idle) = get_html("/web/fragments/progress").await;
+    assert!(
+        idle.contains(r#"<span id="progress"></span>"#),
+        "the idle progress is empty: {idle}"
+    );
+
+    let track = generate_track_id(Path::new(TRACK_1));
+    let _ = post_html(&format!("/web/play/{track}")).await;
+
+    let (_, playing) = get_html("/web/fragments/progress").await;
+    assert!(
+        playing.contains(r#"id="progress""#),
+        "the playing progress renders: {playing}"
+    );
+    assert!(
+        !playing.contains(r#"hx-swap-oob"#),
+        "the poll swap is direct, not out-of-band: {playing}"
+    );
+    // The readout is elapsed / total, e.g. "0:00 / 0:15".
+    assert!(
+        playing.contains(" / "),
+        "the readout is elapsed / total: {playing}"
     );
 
     clear_playlist().await;
