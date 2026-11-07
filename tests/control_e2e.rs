@@ -22,6 +22,7 @@ use pickup::{
         utils::generate_track_id,
     },
     queue::PlaybackQueue,
+    session::SessionStore,
     spawn_player,
 };
 use serde_json::{self, json};
@@ -386,6 +387,7 @@ async fn test_play_with_missing_file_returns_error() {
         player: spawn_player(queue.clone(), PathBuf::from(TEST_MUSIC_DIR)),
         collection: Arc::new(collection),
         queue,
+        sessions: SessionStore::new(),
     });
 
     let app = test::init_service(build_app(app_state)).await;
