@@ -44,8 +44,6 @@ pub fn session_id(req: &HttpRequest) -> Option<String> {
 }
 
 struct SessionState {
-    // The session's own playback queue; wired up with the session queue API.
-    #[allow(dead_code)]
     queue: PlaybackQueue,
     last_seen: Instant,
 }
@@ -135,6 +133,26 @@ impl SessionStore {
 
     pub fn is_empty(&self) -> bool {
         self.len() == 0
+    }
+
+    /// Run `f` with read access to the session's queue. Returns None when
+    /// the session does not exist.
+    pub fn read_queue<R>(&self, id: &str, f: impl FnOnce(&PlaybackQueue) -> R) -> Option<R> {
+        self.sessions
+            .read()
+            .unwrap()
+            .get(id)
+            .map(|state| f(&state.queue))
+    }
+
+    /// Run `f` with mutable access to the session's queue. Returns None
+    /// when the session does not exist.
+    pub fn update_queue<R>(&self, id: &str, f: impl FnOnce(&mut PlaybackQueue) -> R) -> Option<R> {
+        self.sessions
+            .write()
+            .unwrap()
+            .get_mut(id)
+            .map(|state| f(&mut state.queue))
     }
 }
 
