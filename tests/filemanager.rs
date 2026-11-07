@@ -5,11 +5,13 @@ use pickup::filemanager::{
 };
 
 const NUM_FILES: usize = 33;
+mod helpers;
+use helpers::TEST_MUSIC_DIR;
 
 #[test]
 fn test_refresh_and_load() {
     let options = CollectionOptions {
-        dir: String::from("../music"),
+        dir: String::from(TEST_MUSIC_DIR),
         ignores: None,
     };
 

@@ -1,6 +1,4 @@
-/*.json
-
-/pickup-rust/target/
+target/
 .idea/
 .cache/
-rs/TODO.md
+TODO.md

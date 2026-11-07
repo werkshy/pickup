@@ -1,6 +1,3 @@
-use std::collections::{BTreeMap, HashMap};
-use std::path::{Path, PathBuf};
-
 use super::{
     cache,
     collection_builder::build,
@@ -8,6 +5,8 @@ use super::{
     options::CollectionOptions,
     utils::{generate_album_id, generate_artist_id, generate_category_id, generate_disc_id},
 };
+use std::collections::{BTreeMap, HashMap};
+use std::path::{Path, PathBuf};
 
 pub struct Collection {
     pub dir: String,
@@ -291,13 +290,17 @@ fn folder_name(kind: Kind, path: &Path) -> String {
 }
 
 #[cfg(test)]
+pub mod consts {
+    pub const TEST_MUSIC_DIR: &str = "../music";
+}
+
+#[cfg(test)]
 mod tests {
     use std::path::PathBuf;
 
     use super::*;
+    use crate::filemanager::collection::consts::TEST_MUSIC_DIR;
     use crate::filemanager::model::factories::*;
-
-    const TEST_MUSIC_DIR: &str = "../music";
 
     #[test]
     fn test_add_category() {

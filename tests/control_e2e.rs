@@ -9,6 +9,7 @@ use serial_test::serial;
 mod helpers;
 
 use helpers::build_test_app_state;
+use helpers::TEST_MUSIC_DIR;
 use once_cell::sync::Lazy;
 use pickup::{
     app_state::AppState,
@@ -71,7 +72,7 @@ async fn test_status_reports_empty_player() {
 #[actix_web::test]
 async fn test_status_reports_playing_track() {
     let options = CollectionOptions {
-        dir: String::from("../music"),
+        dir: String::from(TEST_MUSIC_DIR),
         ignores: None,
     };
     assert_matches!(refresh(options), Ok(_));
