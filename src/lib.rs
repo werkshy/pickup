@@ -4,6 +4,7 @@ pub mod error;
 pub mod filemanager;
 pub mod player;
 pub mod queue;
+pub mod session;
 pub mod webui;
 
 use std::path::PathBuf;
@@ -56,6 +57,7 @@ pub fn build_app_state(options: &ServeOptions) -> AppState {
         player,
         collection: collection_arc,
         queue,
+        sessions: session::SessionStore::new(),
     }
 }
 
@@ -98,7 +100,13 @@ pub fn build_app(
                 )
                 .into()
             }))
-            .map(|app| app.wrap(Logger::default()))
+            .map(|app| {
+                app.wrap(Logger::default())
+                    // Gives every request a browser session: an existing one
+                    // via the session cookie, or a new one with the cookie
+                    // set on the response.
+                    .wrap(session::SessionMiddleware)
+            })
             .default_service(web::to(not_found)),
     ));
     // Serve the spec collected from the services above; must come after them
