@@ -11,22 +11,43 @@ pub mod actions;
 pub mod pages;
 pub mod views;
 
-use std::path::Path;
-
-use actix_files::Files;
 use actix_web::dev::{ServiceFactory, ServiceRequest};
 use actix_web::http::StatusCode;
-use actix_web::{Error, HttpResponse, ResponseError};
+use actix_web::{get, web, Error, HttpResponse, ResponseError};
 use askama::Template;
+use rust_embed::RustEmbed;
 use utoipa_actix_web::UtoipaApp;
 
 use crate::app_state::AppState;
 use crate::error::AppError;
 
-/// Static assets (htmx, CSS, JS), served from disk so they can be edited
-/// without a rebuild.
-/// TODO: Embed in binary for release builds.
-const STATIC_DIR: &str = "frontend/static";
+/// Static assets (htmx, CSS, JS, favicons). In debug builds `rust-embed`
+/// serves them from disk, in release builds they are compiled into the binary.
+#[derive(RustEmbed)]
+#[folder = "frontend/static/"]
+struct StaticAssets;
+
+/// Serve a static asset by name. Reject `..` path components, especially
+/// important for debug builds that are reading from the filesystem.
+#[get("/static/{filename:.*}")]
+async fn static_asset(filename: web::Path<String>) -> HttpResponse {
+    let filename = filename.into_inner();
+    if filename
+        .split(['/', '\\'])
+        .any(|component| component == "..")
+    {
+        return HttpResponse::NotFound().finish();
+    }
+    match StaticAssets::get(&filename) {
+        Some(asset) => {
+            let mime = mime_guess::from_path(&filename).first_or_octet_stream();
+            HttpResponse::Ok()
+                .content_type(mime.as_ref())
+                .body(asset.data.into_owned())
+        }
+        None => HttpResponse::NotFound().finish(),
+    }
+}
 
 /**
  * Register the web UI services. The JSON API's `UtoipaApp::service` only
@@ -53,12 +74,8 @@ where
             .service(actions::volume)
             .service(actions::queue_fragment)
             .service(actions::progress)
-            .service(Files::new("/static", static_dir()))
+            .service(static_asset)
     })
-}
-
-fn static_dir() -> &'static Path {
-    Path::new(STATIC_DIR)
 }
 
 /**
