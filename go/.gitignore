@@ -1,6 +1,0 @@
-/pickup
-/*.json
-
-/pickup-rust/target/
-.idea/
-.cache/

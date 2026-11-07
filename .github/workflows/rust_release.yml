@@ -17,7 +17,6 @@ jobs:
     defaults:
       run:
         shell: bash
-        working-directory: rs
 
     strategy:
       fail-fast: false
@@ -69,7 +68,7 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            rs/target/
+            target/
           key: ${{ runner.os }}-cargo-release-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
       - name: Update rust toolchain
         run: |
@@ -88,7 +87,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: pickup_${{ matrix.os }}_${{ matrix.arch }}
-          path: rs/pickup_${{ matrix.os }}_${{ matrix.arch }}
+          path: pickup_${{ matrix.os }}_${{ matrix.arch }}
           if-no-files-found: error
 
   release:

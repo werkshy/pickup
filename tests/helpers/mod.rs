@@ -9,6 +9,8 @@ use pickup::{
     ServeOptions,
 };
 
+pub const TEST_MUSIC_DIR: &str = "./music";
+
 #[allow(dead_code)] // Used in tests, but triggers dead_code on test binaries that don't use it.
 pub fn build_test_app() -> App<
     impl ServiceFactory<
@@ -25,7 +27,7 @@ pub fn build_test_app() -> App<
 pub fn build_test_app_state() -> Data<AppState> {
     let options = ServeOptions {
         collection_options: CollectionOptions {
-            dir: String::from("../music"),
+            dir: String::from(TEST_MUSIC_DIR),
             ignores: None,
         },
         port: 3001,

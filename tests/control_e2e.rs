@@ -9,6 +9,7 @@ use serial_test::serial;
 mod helpers;
 
 use helpers::build_test_app_state;
+use helpers::TEST_MUSIC_DIR;
 use once_cell::sync::Lazy;
 use pickup::{
     app_state::AppState,
@@ -71,7 +72,7 @@ async fn test_status_reports_empty_player() {
 #[actix_web::test]
 async fn test_status_reports_playing_track() {
     let options = CollectionOptions {
-        dir: String::from("../music"),
+        dir: String::from(TEST_MUSIC_DIR),
         ignores: None,
     };
     assert_matches!(refresh(options), Ok(_));
@@ -227,7 +228,7 @@ async fn test_pause_when_idle_is_ok() {
 #[actix_web::test]
 async fn test_play_replaces_the_current_track() {
     let options = CollectionOptions {
-        dir: String::from("../music"),
+        dir: String::from(TEST_MUSIC_DIR),
         ignores: None,
     };
     assert_matches!(refresh(options), Ok(_));
@@ -289,7 +290,7 @@ async fn test_stop() {
 #[actix_web::test]
 async fn test_play() {
     let options = CollectionOptions {
-        dir: String::from("../music"),
+        dir: String::from(TEST_MUSIC_DIR),
         ignores: None,
     };
 
@@ -368,7 +369,7 @@ async fn test_play_with_missing_file_returns_error() {
         disc: None,
     };
 
-    let mut collection = Collection::new(String::from("../music"));
+    let mut collection = Collection::new(String::from(TEST_MUSIC_DIR));
     collection.add_folder(
         Kind::Album,
         &missing_location,
@@ -382,7 +383,7 @@ async fn test_play_with_missing_file_returns_error() {
     // Player would play from a different queue than the API mutates.
     let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
     let app_state = Data::new(AppState {
-        player: spawn_player(queue.clone(), PathBuf::from("../music")),
+        player: spawn_player(queue.clone(), PathBuf::from(TEST_MUSIC_DIR)),
         collection: Arc::new(collection),
         queue,
     });
@@ -403,7 +404,7 @@ async fn test_play_with_missing_file_returns_error() {
     assert_eq!(body["code"], "playback_failed");
     let message = body["message"].as_str().unwrap();
     assert!(
-        message.contains("could not open ../music/definitely/missing/file.wav"),
+        message.contains("could not open ./music/definitely/missing/file.wav"),
         "unexpected error body: {message}"
     );
 

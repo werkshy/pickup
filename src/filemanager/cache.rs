@@ -237,6 +237,7 @@ fn get_root(path: &Path) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use crate::collection::consts::TEST_MUSIC_DIR;
     use std::collections::HashSet;
     use std::path::{Path, PathBuf};
 
@@ -250,14 +251,17 @@ mod tests {
 
     #[test]
     fn test_cache_path_is_rooted_at_cache_dir() {
-        let path = get_cache_path("../music");
+        let path = get_cache_path(TEST_MUSIC_DIR);
 
         assert_eq!(CACHE_ROOT_PATH, path.parent().unwrap().to_str().unwrap());
     }
 
     #[test]
     fn test_cache_path_is_distinct_per_music_dir() {
-        assert_ne!(get_cache_path("../music"), get_cache_path("../other-music"));
+        assert_ne!(
+            get_cache_path(TEST_MUSIC_DIR),
+            get_cache_path("../other-music")
+        );
     }
 
     #[test]
@@ -266,8 +270,8 @@ mod tests {
         // path, so `init` misses it and refreshes rather than decoding bytes
         // written by another schema.
         assert_ne!(
-            cache_path_for("../music", "v3"),
-            cache_path_for("../music", "v4")
+            cache_path_for(TEST_MUSIC_DIR, "v3"),
+            cache_path_for(TEST_MUSIC_DIR, "v4")
         );
     }
 
@@ -362,6 +366,10 @@ mod tests {
         let album = dir.join("Artist/Album");
         std::fs::create_dir_all(&album).unwrap();
         std::fs::write(album.join("01 Track.mp3"), "").unwrap();
+        if !supports_non_utf8_names(&album) {
+            eprintln!("skipping: filesystem does not support non-UTF-8 names");
+            return;
+        }
         std::fs::write(album.join(non_utf8_name()), "").unwrap();
 
         let found = walk_dirs(&dir, HashSet::new());
@@ -376,11 +384,32 @@ mod tests {
     #[test]
     fn test_walk_dirs_skips_non_utf8_dir_names() {
         let dir = temp_music_dir("skips-dir-names");
-        let album = dir.join("Artist").join(non_utf8_name());
+        let artist = dir.join("Artist");
+        std::fs::create_dir_all(&artist).unwrap();
+        if !supports_non_utf8_names(&artist) {
+            eprintln!("skipping: filesystem does not support non-UTF-8 names");
+            return;
+        }
+        let album = artist.join(non_utf8_name());
         std::fs::create_dir_all(&album).unwrap();
         std::fs::write(album.join("01 Track.mp3"), "").unwrap();
 
         assert!(walk_dirs(&dir, HashSet::new()).is_empty());
+    }
+
+    /// Whether this filesystem lets us create a name that isn't valid UTF-8.
+    /// APFS and HFS+ reject them with EILSEQ, so the non-UTF-8 tests can't run
+    /// there.
+    #[cfg(unix)]
+    fn supports_non_utf8_names(dir: &Path) -> bool {
+        let probe = dir.join(non_utf8_name());
+        match std::fs::write(&probe, "") {
+            Ok(()) => {
+                let _ = std::fs::remove_file(&probe);
+                true
+            }
+            Err(_) => false,
+        }
     }
 
     /// A file name that is not valid UTF-8: the 0xFF byte is never valid UTF-8.

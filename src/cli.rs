@@ -1,18 +1,10 @@
 use clap::{Parser, Subcommand};
 use pickup::filemanager::model::Kind;
 
-const DEFAULT_MUSIC_DIR: &str = "../music";
+const DEFAULT_MUSIC_DIR: &str = "./music";
 const DEFAULT_PORT: u32 = 9090;
 
 // Clap CLI definition struct
-// TODO:
-// Can change the music-dir arg to PathBuf
-// Allow overriding ignores
-// Add subcommands e.g.
-//    db search
-//    client add
-//    client play
-
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
