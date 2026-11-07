@@ -163,6 +163,12 @@ pub struct ApiQueueResponse {
     pub tracks: Vec<ApiTrack>,
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ApiSessionNextResponse {
+    /// The next track to play, or null when the session queue has run out.
+    pub track: Option<ApiTrack>,
+}
+
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct ApiQueueRemoveInput {
     /// Index of the track to remove in the queue. Index 0 is the track
