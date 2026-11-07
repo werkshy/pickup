@@ -6,6 +6,7 @@ pub mod list;
 pub mod openapi;
 pub mod queue;
 pub mod session;
+pub mod track;
 pub mod types;
 
 use actix_web::dev::{ServiceFactory, ServiceRequest};
@@ -44,4 +45,5 @@ where
         .service(session::move_track)
         .service(session::clear)
         .service(session::next)
+        .service(track::get)
 }
