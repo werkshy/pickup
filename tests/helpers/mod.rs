@@ -9,7 +9,7 @@ use pickup::{
     ServeOptions,
 };
 
-pub const TEST_MUSIC_DIR: &str = "../music";
+pub const TEST_MUSIC_DIR: &str = "./music";
 
 #[allow(dead_code)] // Used in tests, but triggers dead_code on test binaries that don't use it.
 pub fn build_test_app() -> App<
