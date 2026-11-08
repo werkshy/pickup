@@ -23,9 +23,8 @@ I've written functional prototypes of this in C++, Python, C++ again (I was
 trying to run it on an NSLU2 embedded Linux machine with 32MB RAM), Go/React,
 and now Rust with htmx. It started off as a standalone player, then grew an
 xmms2 backend, then became an mpd client, and now has its own built-in playback
-engine. going to use mpd for playback, since I already use mpd everywhere and
-it just works. I'm writing it in Rust because I want it to be fast, run on
-low-powered systems like Raspberry Pi, and I am enjoying learning more Rust.
+engine. I'm writing it in Rust because I want it to be fast, run on low-powered
+systems like Raspberry Pi, and I am enjoying learning more Rust.
 
 ## Design Requirements
 
@@ -52,3 +51,21 @@ low-powered systems like Raspberry Pi, and I am enjoying learning more Rust.
 ## Screenshot
 
 ![Screenshot (Go/React version)](./screenshot.png)
+
+## Development
+
+Set up a rust toolchain e.g. `rustup toolchain install`
+
+Set up playwright:
+```
+cd e2e
+npm install
+npx playwright install chromium
+```
+
+### Run tests
+
+```
+cargo test
+cd e2e && npm test
+```

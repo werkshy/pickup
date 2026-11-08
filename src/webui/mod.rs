@@ -13,13 +13,65 @@ pub mod views;
 
 use actix_web::dev::{ServiceFactory, ServiceRequest};
 use actix_web::http::StatusCode;
-use actix_web::{get, web, Error, HttpResponse, ResponseError};
+use actix_web::{
+    cookie::time::Duration as CookieDuration, cookie::Cookie, get, web, Error, HttpRequest,
+    HttpResponse, ResponseError,
+};
 use askama::Template;
 use rust_embed::RustEmbed;
 use utoipa_actix_web::UtoipaApp;
 
 use crate::app_state::AppState;
 use crate::error::AppError;
+
+/**
+ * The two playback modes, chosen per browser with the `pickup_mode` cookie.
+ * Browser mode plays in the browser through its own session queue; jukebox
+ * mode plays on the server through the global queue. The default is browser
+ * mode, and unknown cookie values fall back to it.
+ */
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlaybackMode {
+    Browser,
+    Jukebox,
+}
+
+pub const MODE_COOKIE: &str = "pickup_mode";
+const BROWSER_MODE: &str = "browser";
+const JUKEBOX_MODE: &str = "jukebox";
+const MODE_TTL_DAYS: i64 = 30;
+
+impl PlaybackMode {
+    /// The value the mode cookie carries.
+    pub fn cookie_value(self) -> &'static str {
+        match self {
+            PlaybackMode::Browser => BROWSER_MODE,
+            PlaybackMode::Jukebox => JUKEBOX_MODE,
+        }
+    }
+
+    /// The name a mode is known by in the UI (labels and data attributes).
+    pub fn name(self) -> &'static str {
+        self.cookie_value()
+    }
+}
+
+/// Read the request's playback mode, defaulting to browser mode.
+pub fn playback_mode(req: &HttpRequest) -> PlaybackMode {
+    match req.cookie(MODE_COOKIE) {
+        Some(cookie) if cookie.value() == JUKEBOX_MODE => PlaybackMode::Jukebox,
+        _ => PlaybackMode::Browser,
+    }
+}
+
+/// The cookie that persists the playback mode choice per browser.
+pub fn mode_cookie(mode: PlaybackMode) -> Cookie<'static> {
+    Cookie::build(MODE_COOKIE, mode.cookie_value())
+        .path("/")
+        .max_age(CookieDuration::days(MODE_TTL_DAYS))
+        .same_site(actix_web::cookie::SameSite::Lax)
+        .finish()
+}
 
 /// Static assets (htmx, CSS, JS, favicons). In debug builds `rust-embed`
 /// serves them from disk, in release builds they are compiled into the binary.
@@ -72,6 +124,8 @@ where
             .service(actions::skip)
             .service(actions::stop)
             .service(actions::volume)
+            .service(actions::mode_browser)
+            .service(actions::mode_jukebox)
             .service(actions::queue_fragment)
             .service(actions::progress)
             .service(static_asset)
@@ -103,8 +157,8 @@ pub(crate) fn render_with_status<T: Template>(
  * only #content is carved out of it). API consumers keep the JSON error
  * shape - the content negotiation lives at the app-wide fallback.
  */
-pub async fn not_found_page(state: &AppState, path: &str) -> HttpResponse {
-    let shell = views::Shell::for_page(state, "Not found · Pickup", "").await;
+pub async fn not_found_page(state: &AppState, req: &HttpRequest, path: &str) -> HttpResponse {
+    let shell = views::Shell::for_page(state, req, "Not found · Pickup", "").await;
     match render_with_status(
         StatusCode::NOT_FOUND,
         &views::NotFoundTemplate {

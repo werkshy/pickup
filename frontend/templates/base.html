@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="/static/app.css">
     <script src="/static/htmx.min.js"></script>
     <script src="/static/app.js" defer></script>
+    <script src="/static/player.js" defer></script>
 </head>
 {# Navigation swaps only #content: hx-select carves it out of the full-page
    response, hx-swap=outerHTML replaces it with the response's own copy (so
@@ -22,6 +23,7 @@
     <header id="site-header" hx-boost="true"
             hx-target="#content" hx-select="#content" hx-swap="outerHTML">
         <a class="brand" href="/">Pickup</a>
+        {% include "fragments/playback_mode.html" %}
         <nav id="category-tabs">
             {% for category in shell.categories %}
             <a href="/browse/{{ category.id }}"

@@ -171,7 +171,7 @@ async fn not_found(request: HttpRequest) -> HttpResponse {
 
     if wants_html {
         if let Some(state) = request.app_data::<Data<AppState>>() {
-            return webui::not_found_page(state, request.path()).await;
+            return webui::not_found_page(state, &request, request.path()).await;
         }
     }
     AppError::not_found("No such route").error_response()

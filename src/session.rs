@@ -43,6 +43,15 @@ pub fn session_id(req: &HttpRequest) -> Option<String> {
     req.extensions().get::<SessionId>().map(|id| id.0.clone())
 }
 
+/**
+ * The session id a request belongs to, as an error when it is missing. A
+ * missing id means the session middleware did not run, which is not
+ * something a client can cause.
+ */
+pub fn request_session_id(req: &HttpRequest) -> Result<String, crate::error::AppError> {
+    session_id(req).ok_or_else(|| crate::error::AppError::internal("Request has no session"))
+}
+
 struct SessionState {
     queue: PlaybackQueue,
     last_seen: Instant,

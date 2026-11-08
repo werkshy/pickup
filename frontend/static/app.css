@@ -11,6 +11,7 @@
     --accent: #4fd1a1;
     --accent-dim: #2b6f5a;
     --border: #303030;
+    --border-strong: #565656;
     --danger: #e07070;
 }
 
@@ -64,6 +65,49 @@ a:hover {
     font-weight: 700;
     letter-spacing: 0.06em;
     color: var(--accent);
+}
+
+/* The playback mode switch: a two-state toggle next to the brand, whose
+   active side shows where sound is coming from (this browser or the
+   server). */
+#playback-mode {
+    display: inline-flex;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    overflow: hidden;
+    flex: none;
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 4%);
+}
+
+.mode-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 1.6rem;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.mode-option + .mode-option {
+    border-left: 1px solid var(--border-strong);
+}
+
+.mode-option svg {
+    width: 1.4rem;
+    height: 1.4rem;
+}
+
+.mode-option:hover {
+    color: var(--text);
+    background: var(--panel);
+}
+
+.mode-option.active {
+    color: var(--accent);
+    background: var(--bg);
 }
 
 #category-tabs {

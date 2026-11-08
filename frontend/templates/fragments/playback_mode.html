@@ -1,0 +1,34 @@
+{# The playback mode switch, next to the brand in the header: a two-state toggle whose active side
+shows where sound is coming from. Clicking a side switches to (or stays in) that mode; the response
+re-renders this switch, the drawer and the player bar out-of-band. #}
+<div
+    id="playback-mode"
+    role="group"
+    aria-label="Playback mode"
+    {%
+    if
+    shell.oob
+    %}hx-swap-oob="true"
+    {%
+    endif
+    %}
+>
+    <button
+        id="mode-browser"
+        class="mode-option{% if shell.is_browser() %} active{% endif %}"
+        title="Play in this browser"
+        hx-post="/web/mode/browser"
+        hx-swap="none"
+    >
+        {% include "icons/laptop-audio.svg" %}
+    </button>
+    <button
+        id="mode-jukebox"
+        class="mode-option{% if !shell.is_browser() %} active{% endif %}"
+        title="Play on the server (jukebox mode)"
+        hx-post="/web/mode/jukebox"
+        hx-swap="none"
+    >
+        {% include "icons/jukebox-flat.svg" %}
+    </button>
+</div>

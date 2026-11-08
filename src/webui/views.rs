@@ -4,6 +4,7 @@
  */
 use std::path::{Path, PathBuf};
 
+use actix_web::HttpRequest;
 use askama::Template;
 
 use std::time::Duration;
@@ -16,6 +17,8 @@ use crate::filemanager::utils::{
     generate_album_id, generate_artist_id, generate_category_id, generate_disc_id,
 };
 use crate::player::PlaybackStatus;
+use crate::session;
+use crate::webui::{playback_mode, PlaybackMode};
 
 /**
  * The shared chrome of every page: title, category tabs, the queue drawer's
@@ -28,9 +31,25 @@ pub struct Shell {
     pub categories: Vec<CategoryTab>,
     /// ID of the category tab to highlight; empty on the home page.
     pub active_category: String,
+    /// Which playback mode the browser is in: it decides which queue the
+    /// drawer shows and how the player bar is rendered and driven.
+    pub mode: PlaybackMode,
     pub queue: QueueView,
     pub player_bar: PlayerBarView,
     pub oob: bool,
+}
+
+impl Shell {
+    /// Browser playback mode: the bar and the drawer come from the
+    /// session's queue, and the browser's own player drives the bar.
+    pub fn is_browser(&self) -> bool {
+        self.mode == PlaybackMode::Browser
+    }
+
+    /// The mode's name, for data attributes and labels.
+    pub fn mode_name(&self) -> &'static str {
+        self.mode.name()
+    }
 }
 
 /**
@@ -62,25 +81,65 @@ pub async fn player_snapshot(state: &AppState) -> PlayerSnapshot {
 impl Shell {
     /**
      * Build the shell for a full page render: category tabs from the
-     * collection, plus the queue drawer and player bar from one player
-     * snapshot. Async because the player state lives on the Player thread.
+     * collection, plus the queue drawer and player bar. Async because the
+     * jukebox player state lives on the Player thread.
      */
-    pub async fn for_page(state: &AppState, title: &str, active_category: &str) -> Shell {
-        let snapshot = player_snapshot(state).await;
-        Shell::from_snapshot(state, title, active_category, &snapshot, false)
+    pub async fn for_page(
+        state: &AppState,
+        req: &HttpRequest,
+        title: &str,
+        active_category: &str,
+    ) -> Shell {
+        let mode = playback_mode(req);
+        let session_id = session::session_id(req);
+        match mode {
+            PlaybackMode::Jukebox => {
+                let snapshot = player_snapshot(state).await;
+                Shell::jukebox_shell(state, title, active_category, &snapshot, false)
+            }
+            PlaybackMode::Browser => Shell::browser_shell(
+                state,
+                session_id.as_deref(),
+                title,
+                active_category,
+                false,
+                false,
+            ),
+        }
     }
 
     /**
      * Build the shell for an action response: only the live chrome (queue
      * list, player bar) matters, the rest of the page is never swapped, and
-     * `oob` tells htmx to replace those regions out-of-band.
+     * `oob` tells htmx to replace those regions out-of-band. `start_playing`
+     * tells the browser player to start the queue's front track right away
+     * (the "play now" actions in browser mode).
      */
-    pub async fn for_action(state: &AppState) -> Shell {
-        let snapshot = player_snapshot(state).await;
-        Shell::from_snapshot(state, "", "", &snapshot, true)
+    pub async fn for_action(state: &AppState, req: &HttpRequest, start_playing: bool) -> Shell {
+        Shell::for_action_in_mode(state, req, playback_mode(req), start_playing).await
     }
 
-    fn from_snapshot(
+    /// The same, but rendering as a mode the request's cookie does not name:
+    /// the mode toggle renders the chrome for the mode it is switching to.
+    pub async fn for_action_in_mode(
+        state: &AppState,
+        req: &HttpRequest,
+        mode: PlaybackMode,
+        start_playing: bool,
+    ) -> Shell {
+        let session_id = session::session_id(req);
+        match mode {
+            PlaybackMode::Jukebox => {
+                let snapshot = player_snapshot(state).await;
+                Shell::jukebox_shell(state, "", "", &snapshot, true)
+            }
+            PlaybackMode::Browser => {
+                Shell::browser_shell(state, session_id.as_deref(), "", "", true, start_playing)
+            }
+        }
+    }
+
+    fn jukebox_shell(
         state: &AppState,
         title: &str,
         active_category: &str,
@@ -98,8 +157,41 @@ impl Shell {
                 })
                 .collect(),
             active_category: active_category.to_string(),
+            mode: PlaybackMode::Jukebox,
             queue: QueueView::from_snapshot(state, snapshot),
             player_bar: PlayerBarView::from_snapshot(state, snapshot),
+            oob,
+        }
+    }
+
+    /**
+     * The shell in browser mode: the drawer and the bar come from the
+     * session's queue. The server does not know whether the browser is
+     * playing, so the bar renders the front track as its best idea of
+     * "now playing" and the player script keeps it true.
+     */
+    fn browser_shell(
+        state: &AppState,
+        session_id: Option<&str>,
+        title: &str,
+        active_category: &str,
+        oob: bool,
+        start_playing: bool,
+    ) -> Shell {
+        Shell {
+            title: title.to_string(),
+            categories: state
+                .collection
+                .values()
+                .map(|folder| CategoryTab {
+                    id: folder.id.clone(),
+                    name: folder.name.clone(),
+                })
+                .collect(),
+            active_category: active_category.to_string(),
+            mode: PlaybackMode::Browser,
+            queue: QueueView::from_session(state, session_id),
+            player_bar: PlayerBarView::for_session(state, session_id, start_playing),
             oob,
         }
     }
@@ -114,6 +206,7 @@ impl Shell {
             title: String::new(),
             categories: Vec::new(),
             active_category: String::new(),
+            mode: PlaybackMode::Jukebox,
             queue,
             player_bar: PlayerBarView::default(),
             oob: false,
@@ -146,19 +239,26 @@ impl QueueView {
      * playing right now when the player is active; when idle it is the next
      * track to play, so nothing is highlighted.
      */
-    pub async fn build(data: &AppState) -> QueueView {
-        let snapshot = player_snapshot(data).await;
-        QueueView::from_snapshot(data, &snapshot)
+    pub async fn build(state: &AppState, req: &HttpRequest) -> QueueView {
+        match playback_mode(req) {
+            PlaybackMode::Jukebox => {
+                let snapshot = player_snapshot(state).await;
+                QueueView::from_snapshot(state, &snapshot)
+            }
+            PlaybackMode::Browser => {
+                QueueView::from_session(state, session::session_id(req).as_deref())
+            }
+        }
     }
 
-    fn from_snapshot(data: &AppState, snapshot: &PlayerSnapshot) -> QueueView {
+    fn from_snapshot(state: &AppState, snapshot: &PlayerSnapshot) -> QueueView {
         let playing = snapshot
             .status
             .as_ref()
             .map(|status| status.active)
             .unwrap_or(false);
 
-        let queue = data.queue.read().unwrap();
+        let queue = state.queue.read().unwrap();
         let tracks: Vec<QueueTrackRow> = queue
             .tracks
             .iter()
@@ -173,6 +273,34 @@ impl QueueView {
         let empty = tracks.is_empty();
         QueueView { tracks, empty }
     }
+
+    /**
+     * The session queue in browser mode. The server cannot know whether the
+     * browser is actually sounding the front track, so nothing is
+     * highlighted here: the player script marks the current track as
+     * playing based on the audio element's real state.
+     */
+    fn from_session(state: &AppState, session_id: Option<&str>) -> QueueView {
+        let tracks: Vec<QueueTrackRow> = session_id
+            .and_then(|id| {
+                state.sessions.read_queue(id, |queue| {
+                    queue
+                        .tracks
+                        .iter()
+                        .enumerate()
+                        .map(|(index, track)| QueueTrackRow {
+                            index,
+                            title: track.name.clone(),
+                            artist: track.artist.clone().unwrap_or_default(),
+                            playing: false,
+                        })
+                        .collect::<Vec<_>>()
+                })
+            })
+            .unwrap_or_default();
+        let empty = tracks.is_empty();
+        QueueView { tracks, empty }
+    }
 }
 
 /**
@@ -183,38 +311,84 @@ impl QueueView {
  */
 #[derive(Debug, Clone, Default)]
 pub struct PlayerBarView {
-    /// The track playing right now; empty strings when idle.
-    pub track_title: String,
-    pub track_artist: String,
-    /// A track's playback lifecycle is open (playing or paused). When idle
-    /// the bar shows nothing instead.
-    pub active: bool,
-    pub paused: bool,
-    /// Elapsed time in the current track, rendered as `M:SS`; empty when
-    /// unknown or idle.
-    pub elapsed: String,
-    /// Total duration of the current track, rendered as `M:SS`; empty when
-    /// unknown or idle.
-    pub duration: String,
-    /// Whether the progress readout has anything to show. There is a
-    /// progress element in the bar at all times (the poll swaps it), but it
-    /// is empty while idle.
-    pub show_progress: bool,
+    /// The track playing right now; `None` when idle. Shared by both modes:
+    /// the browser bar shows the session queue's front, the jukebox bar the
+    /// player's current track.
+    pub now_playing: Option<NowPlaying>,
+    /// Preformatted progress readout (`"0:12 / 3:45"`); `None` when idle or
+    /// the duration is unknown. Jukebox only - the browser player draws its
+    /// own progress.
+    pub progress: Option<String>,
     pub volume: u8,
+    /// Jukebox only: whether the player is actively sounding the track (as
+    /// opposed to paused or idle), which chooses the play/pause button.
+    pub playing: bool,
+}
+
+/// A track as the player bar displays it.
+#[derive(Debug, Clone)]
+pub struct NowPlaying {
+    /// The track's id, used by the browser player's data attributes.
+    pub id: String,
+    pub title: String,
+    /// `None` when the track has no artist (or an empty one).
+    pub artist: Option<String>,
+    /// Browser mode: whether the player script should start this track right
+    /// away (the "play now" actions). Always false in jukebox mode.
+    pub autoplay: bool,
+}
+
+impl NowPlaying {
+    fn new(id: String, title: String, artist: Option<String>, autoplay: bool) -> NowPlaying {
+        NowPlaying {
+            id,
+            title,
+            artist: artist.filter(|artist| !artist.is_empty()),
+            autoplay,
+        }
+    }
 }
 
 impl PlayerBarView {
     /**
+     * The bar's view in browser mode: the session queue's front is the
+     * current track. The server cannot know whether the browser is actually
+     * sounding it, so the player script keeps the bar in step with the
+     * <audio> element.
+     */
+    pub fn for_session(
+        state: &AppState,
+        session_id: Option<&str>,
+        autoplay: bool,
+    ) -> PlayerBarView {
+        let front = session_id
+            .and_then(|id| {
+                state
+                    .sessions
+                    .read_queue(id, |queue| queue.tracks.front().cloned())
+            })
+            .flatten();
+
+        PlayerBarView {
+            now_playing: front
+                .map(|track| NowPlaying::new(track.id, track.name, track.artist, autoplay)),
+            volume: 100,
+            ..PlayerBarView::default()
+        }
+    }
+
+    /**
      * The bar's view from a player snapshot: the current track comes from
      * the front of the queue (the player's own idea of "the track" is just
-     * a file path), the progress and paused state from the status.
+     * a file path), the progress and playing state from the status.
      */
-    pub fn from_snapshot(data: &AppState, snapshot: &PlayerSnapshot) -> PlayerBarView {
+    pub fn from_snapshot(state: &AppState, snapshot: &PlayerSnapshot) -> PlayerBarView {
         let status = snapshot.status.as_ref();
         let active = status.map(|status| status.active).unwrap_or(false);
 
         let track = if active {
-            data.queue
+            state
+                .queue
                 .read()
                 .ok()
                 .and_then(|queue| queue.tracks.front().cloned())
@@ -222,27 +396,26 @@ impl PlayerBarView {
             None
         };
 
-        let (elapsed, duration, show_progress) = match status {
-            Some(status) if status.active => (
-                status.position.as_ref().map(mmss).unwrap_or_default(),
-                status.duration.as_ref().map(mmss).unwrap_or_default(),
-                status.duration.is_some(),
-            ),
-            _ => (String::new(), String::new(), false),
+        let (progress, playing) = match status {
+            Some(status) if status.active => {
+                let progress = status.duration.as_ref().map(|duration| {
+                    format!(
+                        "{} / {}",
+                        status.position.as_ref().map(mmss).unwrap_or_default(),
+                        mmss(duration)
+                    )
+                });
+                (progress, !status.paused)
+            }
+            _ => (None, false),
         };
 
         PlayerBarView {
-            track_title: track.as_ref().map(|t| t.name.clone()).unwrap_or_default(),
-            track_artist: track
-                .as_ref()
-                .and_then(|t| t.artist.clone())
-                .unwrap_or_default(),
-            active,
-            paused: status.map(|status| status.paused).unwrap_or(false),
-            elapsed,
-            duration,
-            show_progress,
+            now_playing: track
+                .map(|track| NowPlaying::new(track.id, track.name, track.artist, false)),
+            progress,
             volume: snapshot.volume,
+            playing,
         }
     }
 }
@@ -264,6 +437,9 @@ pub struct FolderPageView {
     pub crumbs: Vec<Crumb>,
     pub heading: String,
     pub kind: String,
+    /// Category pages list many folders side by side: the list gets the
+    /// multicolumn class.
+    pub multicolumn: bool,
     pub sub_kind_label: String,
     pub folders: Vec<FolderLink>,
     pub folders_empty: bool,
@@ -279,6 +455,7 @@ impl FolderPageView {
             crumbs: breadcrumbs(folder),
             heading: folder.name.clone(),
             kind: kind_name(folder.kind).to_string(),
+            multicolumn: folder.kind == Kind::Category,
             sub_kind_label: sub_kind_label(folder.kind).to_string(),
             folders: folder
                 .folders
