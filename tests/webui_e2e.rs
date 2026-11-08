@@ -85,8 +85,10 @@ const TRACK_1_TITLE: &str = "01 - Finally See The Light";
 const ALBUM: &str = "Bryan Teoh/Free";
 const ARTIST: &str = "Bryan Teoh";
 
+/// The home page lands on the default "Music" category rather than the list
+/// of categories, so its artists are immediately browsable.
 #[actix_web::test]
-async fn test_home_page_lists_the_categories() {
+async fn test_home_page_shows_the_music_category() {
     let (status, body) = get_html("/").await;
 
     assert_eq!(status, StatusCode::OK);
@@ -98,7 +100,18 @@ async fn test_home_page_lists_the_categories() {
         body.contains(&generate_category_id(Path::new("Music"))),
         "the Music category tab should be on the home page: {body}"
     );
-    assert!(body.contains(">Music</a>"), "unexpected body: {body}");
+    assert!(
+        body.contains("<h1>Music</h1>"),
+        "the home page shows the Music folder: {body}"
+    );
+    assert!(
+        body.contains(">Artists</h2>"),
+        "the home page lists the Music category's artists: {body}"
+    );
+    assert!(
+        body.contains(&generate_artist_id(Path::new(ARTIST))),
+        "the artist link should be on the home page: {body}"
+    );
 }
 
 #[actix_web::test]
