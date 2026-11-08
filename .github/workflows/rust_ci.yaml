@@ -47,3 +47,18 @@ jobs:
         run: cargo clippy --no-deps -- -Dwarnings
       - name: "Run tests"
         run: cargo test
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      # The browser tests drive a real Chromium; --with-deps installs the
+      # system libraries Chromium needs (libnspr4, libnss3, libatk, ...).
+      - name: "Install e2e dependencies"
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+        working-directory: e2e
+      - name: "Run browser tests"
+        run: npx playwright test
+        working-directory: e2e

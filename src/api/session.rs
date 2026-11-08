@@ -7,6 +7,7 @@ use crate::{
     },
     app_state::AppState,
     error::AppError,
+    filemanager::model::Track,
     session,
 };
 
@@ -18,10 +19,7 @@ use crate::{
  * right now, or the next one to play when the browser is idle.
  */
 fn request_session(req: &HttpRequest) -> Result<String, AppError> {
-    // The session middleware resolves the session for every request; a
-    // missing id means the middleware did not run, which is not something a
-    // client can cause.
-    session::session_id(req).ok_or_else(|| AppError::internal("Request has no session"))
+    session::request_session_id(req)
 }
 
 fn queue_snapshot(state: &AppState, id: &str) -> Result<ApiQueueResponse, AppError> {
@@ -30,6 +28,88 @@ fn queue_snapshot(state: &AppState, id: &str) -> Result<ApiQueueResponse, AppErr
         .read_queue(id, |queue| ApiQueueResponse {
             tracks: queue.tracks.iter().map(ApiTrack::from_track).collect(),
         })
+        .ok_or_else(|| AppError::internal("Session not found"))
+}
+
+/**
+ * The session queue operations, shared with the web UI actions (which the
+ * browser drives through /web/... in browser playback mode). Each takes the
+ * session id the session middleware resolved for the request.
+ */
+pub(crate) fn session_add(
+    state: &AppState,
+    id: &str,
+    input: &ApiQueueInput,
+) -> Result<(), AppError> {
+    let Some(tracks) = state.collection.get_tracks(&input.id) else {
+        return Err(AppError::not_found(
+            "No matching music found in the collection",
+        ));
+    };
+    let tracks: Vec<_> = tracks.into_iter().cloned().collect();
+    let play_now = input.play_now;
+
+    state
+        .sessions
+        .update_queue(id, |queue| match input.position {
+            ApiQueuePosition::Replace => queue.replace_with(tracks),
+            ApiQueuePosition::Next => queue.insert_next(tracks),
+            ApiQueuePosition::Tail => {
+                if play_now && queue.tracks.is_empty() {
+                    queue.insert_front(tracks);
+                } else {
+                    queue.add_tracks(tracks);
+                }
+            }
+        })
+        .ok_or_else(|| AppError::internal("Session not found"))?;
+    Ok(())
+}
+
+pub(crate) fn session_remove(state: &AppState, id: &str, index: usize) -> Result<(), AppError> {
+    let removed = state
+        .sessions
+        .update_queue(id, |queue| queue.remove(index))
+        .ok_or_else(|| AppError::internal("Session not found"))?;
+    if removed.is_none() {
+        return Err(AppError::invalid_request(format!(
+            "Index {index} is outside the queue"
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn session_move(
+    state: &AppState,
+    id: &str,
+    from: usize,
+    to: usize,
+) -> Result<(), AppError> {
+    let moved = state
+        .sessions
+        .update_queue(id, |queue| queue.move_track(from, to))
+        .ok_or_else(|| AppError::internal("Session not found"))?;
+    if !moved {
+        return Err(AppError::invalid_request(format!(
+            "Cannot move from {from} to {to}: outside the queue"
+        )));
+    }
+    Ok(())
+}
+
+pub(crate) fn session_clear(state: &AppState, id: &str) -> Result<(), AppError> {
+    state
+        .sessions
+        .update_queue(id, |queue| queue.clear())
+        .ok_or_else(|| AppError::internal("Session not found"))?;
+    Ok(())
+}
+
+/// Finish the track at the front: pop it and return the next track, if any.
+pub(crate) fn session_next(state: &AppState, id: &str) -> Result<Option<Track>, AppError> {
+    state
+        .sessions
+        .update_queue(id, |queue| queue.advance())
         .ok_or_else(|| AppError::internal("Session not found"))
 }
 
@@ -78,32 +158,7 @@ pub async fn add(
     input: web::Json<ApiQueueInput>,
 ) -> Result<impl Responder, AppError> {
     let id = request_session(&req)?;
-    let ApiQueueInput {
-        id: target,
-        position,
-        play_now,
-    } = input.into_inner();
-    let Some(tracks) = data.collection.get_tracks(&target) else {
-        return Err(AppError::not_found(
-            "No matching music found in the collection",
-        ));
-    };
-    let tracks: Vec<_> = tracks.into_iter().cloned().collect();
-
-    data.sessions
-        .update_queue(&id, |queue| match position {
-            ApiQueuePosition::Replace => queue.replace_with(tracks),
-            ApiQueuePosition::Next => queue.insert_next(tracks),
-            ApiQueuePosition::Tail => {
-                if play_now && queue.tracks.is_empty() {
-                    queue.insert_front(tracks);
-                } else {
-                    queue.add_tracks(tracks);
-                }
-            }
-        })
-        .ok_or_else(|| AppError::internal("Session not found"))?;
-
+    session_add(&data, &id, &input)?;
     Ok(web::Json(queue_snapshot(&data, &id)?))
 }
 
@@ -125,16 +180,7 @@ pub async fn remove(
     input: web::Json<ApiQueueRemoveInput>,
 ) -> Result<impl Responder, AppError> {
     let id = request_session(&req)?;
-    let removed = data
-        .sessions
-        .update_queue(&id, |queue| queue.remove(input.index))
-        .ok_or_else(|| AppError::internal("Session not found"))?;
-    if removed.is_none() {
-        return Err(AppError::invalid_request(format!(
-            "Index {} is outside the queue",
-            input.index
-        )));
-    }
+    session_remove(&data, &id, input.index)?;
     Ok(web::Json(queue_snapshot(&data, &id)?))
 }
 
@@ -155,16 +201,7 @@ pub async fn move_track(
     input: web::Json<ApiQueueMoveInput>,
 ) -> Result<impl Responder, AppError> {
     let id = request_session(&req)?;
-    let moved = data
-        .sessions
-        .update_queue(&id, |queue| queue.move_track(input.from, input.to))
-        .ok_or_else(|| AppError::internal("Session not found"))?;
-    if !moved {
-        return Err(AppError::invalid_request(format!(
-            "Cannot move from {} to {}: outside the queue",
-            input.from, input.to
-        )));
-    }
+    session_move(&data, &id, input.from, input.to)?;
     Ok(web::Json(queue_snapshot(&data, &id)?))
 }
 
@@ -182,9 +219,7 @@ pub async fn clear(
     req: HttpRequest,
 ) -> Result<impl Responder, AppError> {
     let id = request_session(&req)?;
-    data.sessions
-        .update_queue(&id, |queue| queue.clear())
-        .ok_or_else(|| AppError::internal("Session not found"))?;
+    session_clear(&data, &id)?;
     Ok(web::Json(queue_snapshot(&data, &id)?))
 }
 
@@ -202,10 +237,7 @@ pub async fn clear(
 #[post("/session/queue/next")]
 pub async fn next(data: web::Data<AppState>, req: HttpRequest) -> Result<impl Responder, AppError> {
     let id = request_session(&req)?;
-    let next = data
-        .sessions
-        .update_queue(&id, |queue| queue.advance())
-        .ok_or_else(|| AppError::internal("Session not found"))?;
+    let next = session_next(&data, &id)?;
     Ok(web::Json(ApiSessionNextResponse {
         track: next.map(|track| ApiTrack::from_track(&track)),
     }))

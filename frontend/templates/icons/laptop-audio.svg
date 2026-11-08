@@ -1,0 +1,35 @@
+<svg aria-hidden="true" viewBox="0 0 512 512">
+    <defs>
+        <mask
+            id="cut-laptop"
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="512"
+            height="512"
+        >
+            <rect width="512" height="512" fill="#fff" />
+            <rect x="114" y="118" width="284" height="170" rx="6" fill="#000" />
+            <g stroke="#fff" stroke-width="20" stroke-linecap="round">
+                <line x1="166" y1="223" x2="166" y2="183" />
+                <line x1="196" y1="243" x2="196" y2="163" />
+                <line x1="226" y1="263" x2="226" y2="143" />
+                <line x1="256" y1="238" x2="256" y2="168" />
+                <line x1="286" y1="253" x2="286" y2="153" />
+                <line x1="316" y1="231" x2="316" y2="175" />
+                <line x1="346" y1="218" x2="346" y2="188" />
+            </g>
+            <rect x="216" y="314" width="80" height="18" rx="9" fill="#000" />
+        </mask>
+    </defs>
+    <g mask="url(#cut-laptop)" fill="currentColor">
+        <rect x="96" y="100" width="320" height="206" rx="16" />
+        <path d="M56 322 H456 L476 372 Q480 384 466 384 H46 Q32 384 36 372 Z" />
+    </g>
+    <g fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round">
+        <path d="M443.6 179.9 A36 36 0 0 1 443.6 226.1" />
+        <path d="M463.5 163.1 A62 62 0 0 1 463.5 242.9" />
+        <path d="M68.4 179.9 A36 36 0 0 0 68.4 226.1" />
+        <path d="M48.5 163.1 A62 62 0 0 0 48.5 242.9" />
+    </g>
+</svg>

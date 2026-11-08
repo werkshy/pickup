@@ -1,41 +1,44 @@
 {# The bottom player bar. Lives in the shell, outside the swapped content,
-   so navigation never touches it. It carries the one-second progress poll
+   so navigation never touches it. It comes in two flavors, per the
+   browser's playback mode:
+
+   Jukebox: the server plays. The bar carries the one-second progress poll
    (hx-target points at the progress element, which the poll swaps in place
-   - the footer itself is never re-rendered by polling, so a mid-drag volume
-   slider is never yanked away). Every action response swaps the whole bar
-   out-of-band, which re-renders the poll attributes along with the state. #}
+   - the footer itself is never re-rendered by polling, so a mid-drag
+   volume slider is never yanked away). Transport buttons post to /web/*.
+
+   Browser: the browser plays. The bar carries the session queue's front
+   track in its data attributes (track id, title, artist, autoplay), which
+   is how every server render tells the player script what to be playing;
+   the script owns transport, progress and volume, so none of them have
+   htmx attributes here. #}
 <footer id="player-bar" {% if shell.oob %}hx-swap-oob="true"{% endif %}
-        hx-get="/web/fragments/progress" hx-trigger="every 1s"
-        hx-target="#progress" hx-swap="outerHTML">
+        {% if !shell.is_browser() %}hx-get="/web/fragments/progress" hx-trigger="every 1s"
+        hx-target="#progress" hx-swap="outerHTML"{% endif %}
+        data-mode="{{ shell.mode_name() }}"
+        {% if let Some(track) = shell.player_bar.now_playing %}data-track-id="{{ track.id }}" data-title="{{ track.title }}" data-artist="{% if let Some(artist) = track.artist %}{{ artist }}{% endif %}" data-autoplay="{{ track.autoplay }}"{% endif %}>
     <div id="now-playing">
-        {% if shell.player_bar.active %}
-        <span class="np-title">{{ shell.player_bar.track_title }}</span>
-        {% if !shell.player_bar.track_artist.is_empty() %}
-        <span class="np-artist">{{ shell.player_bar.track_artist }}</span>
+        {% if let Some(track) = shell.player_bar.now_playing %}
+        <span class="np-title">{{ track.title }}</span>
+        {% if let Some(artist) = track.artist %}
+        <span class="np-artist">{{ artist }}</span>
         {% endif %}
         {% else %}
         <span class="muted">Nothing playing</span>
         {% endif %}
     </div>
     <div id="transport">
-        {% if shell.player_bar.active && !shell.player_bar.paused %}
-        <button id="transport-pause" class="transport-button" title="Pause"
-                hx-post="/web/pause" hx-swap="none">&#10074;&#10074;</button>
+        {% if shell.is_browser() %}
+        {% include "fragments/player_bar/transport_browser.html" %}
         {% else %}
-        <button id="transport-play" class="transport-button" title="Play"
-                hx-post="/web/resume" hx-swap="none">&#9654;</button>
+        {% include "fragments/player_bar/transport_jukebox.html" %}
         {% endif %}
-        <button id="transport-skip" class="transport-button" title="Next track"
-                hx-post="/web/skip" hx-swap="none">&#9197;</button>
-        <button id="transport-stop" class="transport-button" title="Stop"
-                hx-post="/web/stop" hx-swap="none">&#9632;</button>
-        <span id="progress">{% if shell.player_bar.show_progress %}{{ shell.player_bar.elapsed }} / {{ shell.player_bar.duration }}{% endif %}</span>
     </div>
     <div id="bar-actions">
         <input id="volume" class="volume-slider" type="range" min="0" max="100"
                name="volume" value="{{ shell.player_bar.volume }}" title="Volume"
-               hx-post="/web/volume" hx-trigger="change" hx-include="this"
-               hx-swap="none">
+               {% if !shell.is_browser() %}hx-post="/web/volume" hx-trigger="change" hx-include="this"
+               hx-swap="none"{% endif %}>
         <button id="drawer-toggle" class="icon-button" title="Show the queue">&#9776;&nbsp;Queue</button>
     </div>
 </footer>

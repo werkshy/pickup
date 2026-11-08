@@ -1,5 +1,8 @@
 {# An action response: both live chrome regions, out-of-band. The primary
    target gets nothing (hx-swap=none on the actions); htmx applies the OOB
-   swaps and leaves the page alone. #}
+   swaps and leaves the page alone. The playback mode switch is rendered
+   with the same shell (it moves with the mode), though only the mode
+   endpoints actually change it. #}
+{% include "fragments/playback_mode.html" %}
 {% include "fragments/player_bar.html" %}
 {% include "fragments/queue.html" %}

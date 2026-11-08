@@ -6,6 +6,7 @@
 use std::path::Path;
 
 use actix_web::{
+    cookie::Cookie,
     http::{header::CONTENT_TYPE, StatusCode},
     test,
 };
@@ -21,13 +22,25 @@ use pickup::{
     filemanager::utils::{
         generate_album_id, generate_artist_id, generate_category_id, generate_track_id,
     },
+    webui::MODE_COOKIE,
 };
 
 static APP_STATE: Lazy<actix_web::web::Data<AppState>> = Lazy::new(build_test_app_state);
 
+/**
+ * The default playback mode is browser mode; these tests exercise the
+ * jukebox (server player) half of the UI, so they pin the mode cookie.
+ */
+fn jukebox_cookie() -> Cookie<'static> {
+    Cookie::new(MODE_COOKIE, "jukebox")
+}
+
 async fn get_html(uri: &str) -> (StatusCode, String) {
     let app = test::init_service(build_app((*APP_STATE).clone())).await;
-    let req = test::TestRequest::get().uri(uri).to_request();
+    let req = test::TestRequest::get()
+        .uri(uri)
+        .cookie(jukebox_cookie())
+        .to_request();
     let resp = test::call_service(&app, req).await;
     let content_type = resp
         .headers()
@@ -45,7 +58,10 @@ async fn get_html(uri: &str) -> (StatusCode, String) {
 
 async fn post_html(uri: &str) -> (StatusCode, String) {
     let app = test::init_service(build_app((*APP_STATE).clone())).await;
-    let req = test::TestRequest::post().uri(uri).to_request();
+    let req = test::TestRequest::post()
+        .uri(uri)
+        .cookie(jukebox_cookie())
+        .to_request();
     let resp = test::call_service(&app, req).await;
     let status = resp.status();
     let body = test::read_body(resp).await;
@@ -361,6 +377,7 @@ async fn post_form(uri: &str, body: &str) -> (StatusCode, String) {
     let app = test::init_service(build_app((*APP_STATE).clone())).await;
     let req = test::TestRequest::post()
         .uri(uri)
+        .cookie(jukebox_cookie())
         .insert_header((CONTENT_TYPE, "application/x-www-form-urlencoded"))
         .set_payload(body.to_string())
         .to_request();

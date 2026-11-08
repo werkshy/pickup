@@ -1,0 +1,12 @@
+{% if shell.player_bar.playing %}
+<button id="transport-pause" class="transport-button" title="Pause"
+        hx-post="/web/pause" hx-swap="none">&#10074;&#10074;</button>
+{% else %}
+<button id="transport-play" class="transport-button" title="Play"
+        hx-post="/web/resume" hx-swap="none">&#9654;</button>
+{% endif %}
+<button id="transport-skip" class="transport-button" title="Next track"
+        hx-post="/web/skip" hx-swap="none">&#9197;</button>
+<button id="transport-stop" class="transport-button" title="Stop"
+        hx-post="/web/stop" hx-swap="none">&#9632;</button>
+<span id="progress">{% if let Some(progress) = shell.player_bar.progress %}{{ progress }}{% endif %}</span>

@@ -1,0 +1,40 @@
+<svg aria-hidden="true" viewBox="0 0 512 512">
+    <defs>
+        <mask
+            id="cut-jukebox"
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width="512"
+            height="512"
+        >
+            <rect width="512" height="512" fill="#fff" />
+            <path d="M126 304 V208 C126 140 184 92 256 92 C328 92 386 140 386 208 V304 Z" fill="#000" />
+            <circle cx="256" cy="212" r="60" fill="#fff" />
+            <circle cx="256" cy="212" r="44" fill="none" stroke="#000" stroke-width="3" />
+            <circle cx="256" cy="212" r="30" fill="none" stroke="#000" stroke-width="3" />
+            <circle cx="256" cy="212" r="17" fill="#000" />
+            <circle cx="256" cy="212" r="4" fill="#fff" />
+            <rect x="126" y="320" width="260" height="38" rx="10" fill="#000" />
+            <circle cx="160" cy="339" r="9" fill="#fff" />
+            <circle cx="192" cy="339" r="9" fill="#fff" />
+            <circle cx="224" cy="339" r="9" fill="#fff" />
+            <rect x="262" y="329" width="104" height="20" rx="5" fill="#fff" />
+            <rect x="126" y="372" width="260" height="76" rx="10" fill="#000" />
+            <g stroke="#fff" stroke-width="5" stroke-linecap="round">
+                <line x1="146" y1="388" x2="366" y2="388" />
+                <line x1="146" y1="402" x2="366" y2="402" />
+                <line x1="146" y1="416" x2="366" y2="416" />
+                <line x1="146" y1="430" x2="366" y2="430" />
+            </g>
+        </mask>
+    </defs>
+    <path
+        mask="url(#cut-jukebox)"
+        fill="currentColor"
+        d="M92 462 V204 C92 110 158 44 256 44 C354 44 420 110 420 204 V462 Z"
+    />
+    <rect x="76" y="470" width="360" height="20" rx="6" fill="currentColor" />
+    <rect x="104" y="494" width="40" height="8" rx="3" fill="currentColor" />
+    <rect x="368" y="494" width="40" height="8" rx="3" fill="currentColor" />
+</svg>
