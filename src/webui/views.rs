@@ -434,6 +434,7 @@ fn mmss(duration: &Duration) -> String {
  * below, and the tracks directly inside.
  */
 pub struct FolderPageView {
+    pub id: String,
     pub crumbs: Vec<Crumb>,
     pub heading: String,
     pub kind: String,
@@ -452,6 +453,7 @@ pub struct FolderPageView {
 impl FolderPageView {
     pub fn from_folder(folder: &Folder) -> FolderPageView {
         FolderPageView {
+            id: folder.id.clone(),
             crumbs: breadcrumbs(folder),
             heading: folder.name.clone(),
             kind: kind_name(folder.kind).to_string(),

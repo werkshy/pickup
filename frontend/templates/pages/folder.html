@@ -8,7 +8,16 @@
 </nav>
 {% endif %}
 
-<h1>{{ page.heading }}</h1>
+<h1>{{ page.heading }}
+    <span class="row-actions">
+        <button class="action-play" title="Play {{ page.heading }} now"
+                hx-post="/web/play/{{ page.id }}" hx-swap="none">&#9654;</button>
+        <button class="action-next" title="Play {{ page.heading }} next"
+                hx-post="/web/queue/next/{{ page.id }}" hx-swap="none">&#187;</button>
+        <button class="action-add" title="Add {{ page.heading }} to the queue"
+                hx-post="/web/queue/add/{{ page.id }}" hx-swap="none">+</button>
+    </span>
+</h1>
 
 {% if !page.folders_empty %}
 <h2>{{ page.sub_kind_label }}</h2>
