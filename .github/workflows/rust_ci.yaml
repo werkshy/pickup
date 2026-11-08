@@ -47,9 +47,9 @@ jobs:
         run: cargo clippy --no-deps -- -Dwarnings
       - name: "Run tests"
         run: cargo test
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
           cache-dependency-path: e2e/package-lock.json
       # The browser tests drive a real Chromium; --with-deps installs the
