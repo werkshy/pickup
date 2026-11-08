@@ -82,6 +82,24 @@ mkdir -p cache
 docker compose up -d
 ```
 
+**Using the Published Image**
+
+Example docker-compose snippet:
+
+```
+services:
+  pickup:
+    image: ghcr.io/werkshy/pickup
+    container_name: pickup
+    restart: unless-stopped
+    user: 1000:100
+    volumes:
+      - "/data/music:/music:ro"
+      - "./pickup/cache:/cache"
+    ports:
+      - 9090:9090
+```
+
 **Environment variables**
 
 | Variable       | Default               | Description                                            |
