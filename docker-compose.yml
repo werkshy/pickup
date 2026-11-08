@@ -1,0 +1,20 @@
+services:
+  pickup:
+    image: ghcr.io/werkshy/pickup:latest
+    build: .
+    restart: unless-stopped
+    ports:
+      - "${PICKUP_PORT:-9090}:9090"
+    environment:
+      MUSIC_DIR: /music
+      CACHE_DIR: /cache
+      PORT: "9090"
+    volumes:
+      - "${MUSIC_PATH:-./music}:/music:ro"
+      - "${CACHE_PATH:-./cache}:/cache"
+    user: "${PUID:-1000}:${PGID:-1000}"
+    # For server-side jukebox playback, map the host audio device:
+    # devices:
+    #   - /dev/snd:/dev/snd
+    # group_add:
+    #   - audio

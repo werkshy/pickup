@@ -202,32 +202,30 @@ pub async fn serve(options: ServeOptions) -> std::io::Result<()> {
         .await
 }
 
-/**
- * Spawn a new thread with a Player instance (rodio's Sink can't be shared
- * across threads). Create a channel to send commands into the Player thread,
- * and return a PlayerClient (internal interface for sending commands.)
- *
- * The queue is shared with the Player thread: when a track finishes, the
- * Player pops the finished track and starts the next one. `music_dir`
- * is the collection root the queue's track paths are relative to.
- */
 pub fn spawn_player(queue: Arc<RwLock<queue::PlaybackQueue>>, music_dir: PathBuf) -> PlayerClient {
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || {
-        let mut player = Player::new(queue, music_dir);
-
-        // Poll-based loop: besides running commands, the Player thread wakes
-        // up every POLL_INTERVAL so time-based handling (position tracking,
-        // near-end detection) works even when no commands arrive.
-        loop {
-            match rx.recv_timeout(POLL_INTERVAL) {
-                Ok(command) => {
-                    player.command(command);
-                    player.tick();
+        match Player::try_new(queue, music_dir) {
+            Ok(mut player) => {
+                // Poll-based loop: besides running commands, the Player thread wakes
+                // up every POLL_INTERVAL so time-based handling (position tracking,
+                // near-end detection) works even when no commands arrive.
+                loop {
+                    match rx.recv_timeout(POLL_INTERVAL) {
+                        Ok(command) => {
+                            player.command(command);
+                            player.tick();
+                        }
+                        Err(RecvTimeoutError::Timeout) => player.tick(),
+                        Err(RecvTimeoutError::Disconnected) => break,
+                    }
                 }
-                Err(RecvTimeoutError::Timeout) => player.tick(),
-                Err(RecvTimeoutError::Disconnected) => break,
+            }
+            Err(error) => {
+                log::warn!(
+                    "Failed to create audio player ({error}): jukebox playback will be unavailable"
+                );
             }
         }
     });

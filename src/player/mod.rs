@@ -107,14 +107,27 @@ pub struct Player {
 
 impl Player {
     pub fn new(queue: Arc<RwLock<PlaybackQueue>>, music_dir: PathBuf) -> Player {
+        Self::try_new(queue, music_dir).expect("open default audio stream")
+    }
+
+    /**
+     * Create a Player, opening the default audio output stream. Returns an
+     * error instead of panicking when there is no usable audio device (e.g.
+     * inside a container without `/dev/snd`), so the server can still run;
+     * jukebox playback will simply be unavailable until the server is
+     * restarted with an audio device.
+     */
+    pub fn try_new(
+        queue: Arc<RwLock<PlaybackQueue>>,
+        music_dir: PathBuf,
+    ) -> Result<Player, rodio::DeviceSinkError> {
         log::info!("Creating stream and sink");
         // We can't drop `player` or nothing will play, but it doesn't implement Send and can't be
         // shared across threads.
-        let mut sink =
-            rodio::DeviceSinkBuilder::open_default_sink().expect("open default audio stream");
+        let mut sink = rodio::DeviceSinkBuilder::open_default_sink()?;
         sink.log_on_drop(false);
         let player = rodio::Player::connect_new(sink.mixer());
-        Player {
+        Ok(Player {
             player,
             sink,
             queue,
@@ -123,7 +136,7 @@ impl Player {
             duration: None,
             finishing_fired: false,
             stopped: false,
-        }
+        })
     }
 
     pub fn command(&mut self, mut command: Box<dyn Command>) {

@@ -69,3 +69,60 @@ npx playwright install chromium
 cargo test
 cd e2e && npm test
 ```
+
+## Docker
+
+Images are published to GitHub Container Registry: `ghcr.io/werkshy/pickup`.
+
+A `docker-compose.yml` is included. By default it mounts `./music` read-only at `/music`
+and `./cache` at `/cache`, and serves on port 9090.
+
+```bash
+mkdir -p cache
+docker compose up -d
+```
+
+**Environment variables**
+
+| Variable       | Default               | Description                                            |
+|----------------|-----------------------|--------------------------------------------------------|
+| `MUSIC_DIR`    | `/music` (container)  | Root of the music collection; overridden by bind mount |
+| `CACHE_DIR`    | `/cache` (container)  | Directory for the music file cache; overridden by bind mount |
+| `PORT`         | `9090`                | HTTP server port                                       |
+| `RUST_LOG`     | (unset)               | Filter; defaults to `info,symphonia_bundle_mp3=warn`  |
+
+**Permissions**
+
+The compose service runs as UID/GID 1000 by default. The `./cache` bind mount
+must be writable by that user. Override with `PUID`/`PGID` e.g.
+`user: "${PUID:-1000}:${PGID:-1000}"`.
+
+**Audio (jukebox mode)**
+
+Browser playback (the default mode) works without any audio device. To use
+server‑side jukebox mode, map the host sound device into the container:
+
+```
+services:
+  pickup:
+    # devices:
+    #   - /dev/snd:/dev/snd
+    # group_add:
+    #   - audio
+```
+
+**Refreshing the cache after library changes**
+
+```bash
+docker compose run --rm pickup refresh
+```
+
+**No authentication**
+
+The server has no built‑in authentication and should not be exposed to the
+public internet. Put it behind a reverse proxy or restrict port mapping to
+`127.0.0.1`.
+
+## Background
+
+...

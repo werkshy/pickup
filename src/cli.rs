@@ -8,8 +8,14 @@ const DEFAULT_PORT: u32 = 9090;
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
 pub struct Cli {
-    /// Set the root music directory
-    #[arg(short, long, value_name = "DIR", default_value_t = DEFAULT_MUSIC_DIR.to_string())]
+    /// Set the root music directory (env: MUSIC_DIR)
+    #[arg(
+        short,
+        long,
+        value_name = "DIR",
+        env = "MUSIC_DIR",
+        default_value_t = DEFAULT_MUSIC_DIR.to_string()
+    )]
     pub music_dir: String,
 
     #[command(subcommand)]
@@ -29,7 +35,8 @@ pub enum Commands {
 
     /// Start the HTTP server
     Serve {
-        #[arg(short, long, default_value_t = DEFAULT_PORT)]
+        /// Port to listen on (env: PORT)
+        #[arg(short, long, env = "PORT", default_value_t = DEFAULT_PORT)]
         port: u32,
     },
 

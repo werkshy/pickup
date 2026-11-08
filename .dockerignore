@@ -1,0 +1,10 @@
+.git
+.github
+target
+cache
+.cache
+e2e
+test-results
+playwright-report
+music
+screenshot.png
