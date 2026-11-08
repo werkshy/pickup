@@ -10,7 +10,8 @@ use jwalk::{Parallelism, WalkDir};
 
 use super::options::CollectionOptions;
 
-static CACHE_ROOT_PATH: &str = ".cache";
+const DEFAULT_CACHE_ROOT_PATH: &str = ".cache";
+const CACHE_DIR_ENV: &str = "CACHE_DIR";
 const DEFAULT_IGNORES: [&str; 2] = ["Music", "Audio Music Apps"];
 
 /**
@@ -91,18 +92,30 @@ fn hash(s: &str) -> String {
 }
 
 /**
- * Get a unique path for a cache of the current music_dir by hashing music_dir
- * and using CACHE_ROOT_PATH as the root
+ * The directory caches live in. Configurable with the CACHE_DIR env var so a
+ * container can mount it (e.g. at /cache); defaults to `.cache` relative to
+ * the working directory.
  */
-fn get_cache_path(music_dir: &str) -> PathBuf {
-    cache_path_for(music_dir, CACHE_VERSION)
+fn cache_root() -> PathBuf {
+    std::env::var_os(CACHE_DIR_ENV)
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(DEFAULT_CACHE_ROOT_PATH))
 }
 
 /**
- * Build the path for the cache file, hashing the music dir and a version.
+ * Get a unique path for a cache of the current music_dir by hashing music_dir
+ * and using the cache root.
  */
-fn cache_path_for(music_dir: &str, version: &str) -> PathBuf {
-    Path::new(CACHE_ROOT_PATH).join(hash(&format!("{version}:{music_dir}")))
+fn get_cache_path(music_dir: &str) -> PathBuf {
+    cache_path_in(&cache_root(), music_dir, CACHE_VERSION)
+}
+
+/**
+ * Build the path for the cache file under `root`, hashing the music dir and a
+ * version.
+ */
+fn cache_path_in(root: &Path, music_dir: &str, version: &str) -> PathBuf {
+    root.join(hash(&format!("{version}:{music_dir}")))
 }
 
 /**
@@ -245,22 +258,26 @@ mod tests {
     use std::{ffi::OsString, os::unix::ffi::OsStringExt};
 
     use super::{
-        cache_path_for, get_cache_path, get_root, is_music_file, load, walk_dirs, write_snapshot,
-        CACHE_ROOT_PATH,
+        cache_path_in, get_root, is_music_file, load, walk_dirs, write_snapshot,
+        DEFAULT_CACHE_ROOT_PATH,
     };
 
     #[test]
-    fn test_cache_path_is_rooted_at_cache_dir() {
-        let path = get_cache_path(TEST_MUSIC_DIR);
+    fn test_cache_path_is_rooted_at_default_cache_root() {
+        let path = cache_path_in(Path::new(DEFAULT_CACHE_ROOT_PATH), TEST_MUSIC_DIR, "v4");
 
-        assert_eq!(CACHE_ROOT_PATH, path.parent().unwrap().to_str().unwrap());
+        assert_eq!(
+            DEFAULT_CACHE_ROOT_PATH,
+            path.parent().unwrap().to_str().unwrap()
+        );
     }
 
     #[test]
     fn test_cache_path_is_distinct_per_music_dir() {
+        let root = Path::new(DEFAULT_CACHE_ROOT_PATH);
         assert_ne!(
-            get_cache_path(TEST_MUSIC_DIR),
-            get_cache_path("../other-music")
+            cache_path_in(root, TEST_MUSIC_DIR, "v4"),
+            cache_path_in(root, "../other-music", "v4")
         );
     }
 
@@ -269,9 +286,10 @@ mod tests {
         // A stale cache from a previous schema must not resolve to the current
         // path, so `init` misses it and refreshes rather than decoding bytes
         // written by another schema.
+        let root = Path::new(DEFAULT_CACHE_ROOT_PATH);
         assert_ne!(
-            cache_path_for(TEST_MUSIC_DIR, "v3"),
-            cache_path_for(TEST_MUSIC_DIR, "v4")
+            cache_path_in(root, TEST_MUSIC_DIR, "v3"),
+            cache_path_in(root, TEST_MUSIC_DIR, "v4")
         );
     }
 

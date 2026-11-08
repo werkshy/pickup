@@ -1,6 +1,8 @@
 target/
 .idea/
 .cache/
+cache/*
+!cache/.gitkeep
 TODO.md
 node_modules/
 test-results/
