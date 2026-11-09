@@ -260,4 +260,64 @@ test.describe("browser playback", () => {
       folder.tracks[0].title,
     );
   });
+
+  test("the folder title play button plays the folder now", async ({ page }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const first = folder.tracks[0];
+
+    await page.goto(`/browse/${folder.id}`);
+    // The h1 buttons are hover-revealed like the row actions.
+    await page.locator("h1").hover();
+    await page.locator("h1 .action-play").click();
+
+    await expect(page.locator("#now-playing .np-title")).toHaveText(first.title);
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.currentTime ?? -1"),
+      )
+      .toBeGreaterThan(0.5);
+    await expect(page.locator("#transport-pause")).toBeVisible();
+  });
+
+  test("the folder title add button queues the folder without playing", async ({
+    page,
+  }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const first = folder.tracks[0];
+
+    await page.goto(`/browse/${folder.id}`);
+    await page.locator("h1").hover();
+    await page.locator("h1 .action-add").click();
+
+    await expect(page.locator("#now-playing .np-title")).toHaveText(first.title);
+    await expect(page.locator("#transport-play")).toBeVisible();
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.currentTime ?? -1"),
+      )
+      .toBe(0);
+  });
+
+  test("the folder title next button queues the folder behind the current", async ({
+    page,
+  }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const [first, second] = folder.tracks;
+    test.skip(!second, "needs an album with two tracks");
+
+    await page.goto(`/browse/${folder.id}`);
+    await addTrackRow(page, 0);
+    await page.locator("#transport-play").click();
+    await expect(page.locator("#now-playing .np-title")).toHaveText(first.title);
+
+    await page.locator("h1").hover();
+    await page.locator("h1 .action-next").click();
+
+    // Next inserts the whole folder behind the current track, so the first
+    // track is queued again and the second lands one deeper: three entries.
+    const queued = page.locator("#queue-list li");
+    await expect(queued).toHaveCount(3);
+    await expect(queued.nth(2)).toContainText(second.title);
+    await expect(page.locator("#now-playing .np-title")).toHaveText(first.title);
+  });
 });

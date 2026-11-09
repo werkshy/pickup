@@ -244,7 +244,8 @@ a:hover {
 }
 
 .folder-list li:hover .row-actions,
-.track-list li:hover .row-actions {
+.track-list li:hover .row-actions,
+#content h1:hover .row-actions {
     visibility: visible;
 }
 
