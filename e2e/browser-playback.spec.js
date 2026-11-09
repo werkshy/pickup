@@ -66,6 +66,36 @@ test.describe("browser playback", () => {
     );
   });
 
+  test("going back keeps the player playing", async ({ page }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const track = folder.tracks[0];
+
+    await page.goto(`/browse/${folder.id}`);
+    await page.locator(".track-title", { hasText: track.title }).first().click();
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.currentTime ?? -1"),
+      )
+      .toBeGreaterThan(0.5);
+
+    // Leave the page with a boosted navigation, then use the browser's back
+    // button. History restores only #content, so the player bar (and the
+    // audio element behind it) is never swapped out and playback continues.
+    await page.locator(".brand").click();
+    await expect(page).toHaveURL("/");
+    await page.goBack();
+
+    await expect(page).toHaveURL(`/browse/${folder.id}`);
+    await expect(page.locator("#now-playing .np-title")).toHaveText(track.title);
+    await expect(page.locator("#transport-pause")).toBeVisible();
+    expect((await audioState(page)).paused).toBe(false);
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.currentTime ?? -1"),
+      )
+      .toBeGreaterThan(0.5);
+  });
+
   test("the track row play button plays the track now", async ({ page }) => {
     const folder = await findFolderWithTracks(page.request);
     const track = folder.tracks[0];
