@@ -276,6 +276,35 @@ async fn test_remove_action_removes_a_queued_track() {
     clear_playlist().await;
 }
 
+/// The move action reorders the queue and returns the refreshed drawer and
+/// bar out-of-band, like the other queue actions.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_move_action_reorders_the_queue() {
+    clear_playlist().await;
+
+    let album = generate_album_id(Path::new(ALBUM));
+    let _ = post_html(&format!("/web/queue/add/{album}")).await;
+
+    let (status, body) = post_html("/web/queue/move/0/1").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains(r#"id="queue-list" hx-swap-oob"#),
+        "the move swaps the drawer out-of-band: {body}"
+    );
+    assert!(
+        body.contains(r#"data-index="0""#),
+        "queue rows carry their indices for drag-and-drop: {body}"
+    );
+
+    let queue = get_json("/queue").await;
+    let tracks = queue["tracks"].as_array().unwrap();
+    assert_eq!(tracks[0]["id"], generate_track_id(Path::new(TRACK_2)));
+    assert_eq!(tracks[1]["id"], generate_track_id(Path::new(TRACK_1)));
+
+    clear_playlist().await;
+}
+
 #[serial(queue)]
 #[actix_web::test]
 async fn test_clear_action_empties_the_queue() {

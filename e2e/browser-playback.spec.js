@@ -31,6 +31,32 @@ async function addTrackRow(page, index = 0) {
   await row.locator(".action-add").click();
 }
 
+async function openQueue(page) {
+  await page.locator("#drawer-toggle").click();
+}
+
+/**
+ * Drag one queue row onto another. `placement` picks the half of the target
+ * to drop on, which is how the queue decides whether the dragged track goes
+ * before or after it.
+ */
+async function dragQueueRow(page, from, to, placement = "before") {
+  const source = page.locator("#queue-list li[data-index]").nth(from);
+  const target = page.locator("#queue-list li[data-index]").nth(to);
+  const box = await target.boundingBox();
+  if (!box) throw new Error("queue row has no bounding box");
+  await source.dragTo(target, {
+    targetPosition: {
+      x: box.width / 2,
+      y: placement === "before" ? 3 : box.height - 3,
+    },
+  });
+}
+
+function queueTitles(page) {
+  return page.locator("#queue-list .queue-title").allTextContents();
+}
+
 function audioState(page) {
   return page.evaluate("(() => { const a = document.querySelector('audio'); return a ? { paused: a.paused, currentTime: a.currentTime } : null; })()");
 }
@@ -402,5 +428,51 @@ test.describe("browser playback", () => {
     // Stop the server player and leave the jukebox queue empty.
     await page.locator("#drawer-toggle").click();
     await page.locator("#queue-clear").click();
+  });
+
+  test("the queue can be reordered by dragging while idle", async ({ page }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const [first, second] = folder.tracks;
+    test.skip(!second, "needs an album with two tracks");
+
+    await page.goto(`/browse/${folder.id}`);
+    await addTrackRow(page, 0);
+    await addTrackRow(page, 1);
+    await expect(page.locator("#queue-list li[data-index]")).toHaveCount(2);
+    await openQueue(page);
+
+    // Nothing is playing, so even the front of the queue can be reordered.
+    await dragQueueRow(page, 1, 0, "before");
+    await expect(page.locator("#queue-list .queue-title")).toHaveText([
+      second.title,
+      first.title,
+    ]);
+  });
+
+  test("the playing track and the top of the queue are locked", async ({
+    page,
+  }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const [first, second] = folder.tracks;
+    test.skip(!second, "needs an album with two tracks");
+
+    await page.goto(`/browse/${folder.id}`);
+    await addTrackRow(page, 0);
+    await addTrackRow(page, 1);
+    await page.locator("#transport-play").click();
+    await expect(page.locator("#transport-pause")).toBeVisible();
+    await openQueue(page);
+
+    // The playing row is the front of the queue and cannot be dragged.
+    const playing = page.locator("#queue-list li.playing");
+    await expect(playing.locator(".queue-title")).toHaveText(first.title);
+    await expect(playing).toHaveAttribute("draggable", "false");
+
+    // Dropping another track ahead of it is rejected too.
+    await dragQueueRow(page, 1, 0, "before");
+    await expect(page.locator("#queue-list .queue-title")).toHaveText([
+      first.title,
+      second.title,
+    ]);
   });
 });

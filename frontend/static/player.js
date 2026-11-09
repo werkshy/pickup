@@ -224,11 +224,16 @@ function refreshQueueDrawer() {
 // element's real state. "Playing" means sounding now, or paused part-way
 // through (the same open-lifecycle the jukebox drawer highlights).
 function updateQueueHighlight() {
+    if (!browserMode()) return;
     const current = document.querySelector("#queue-list li");
     if (!current || current.classList.contains("queue-empty")) return;
     const active = currentTrackId !== null &&
         (!audio.paused || (audio.currentTime > 0 && !audio.ended));
     current.classList.toggle("playing", active);
+    // The playing row is fixed at the front; only the rest may be reordered.
+    for (const row of document.querySelectorAll("#queue-list li[data-index]")) {
+        row.draggable = !row.classList.contains("playing");
+    }
 }
 
 // Align the player with what the server last rendered into the bar: a page

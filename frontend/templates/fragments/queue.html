@@ -1,6 +1,7 @@
 <ol id="queue-list" {% if shell.oob %}hx-swap-oob="true"{% endif %}>
     {% for track in shell.queue.tracks %}
-    <li {% if track.playing %}class="playing"{% endif %}>
+    <li data-index="{{ track.index }}"
+        {% if track.playing %}class="playing" draggable="false"{% else %}draggable="true"{% endif %}>
         <span class="queue-pos">{{ track.index + 1 }}</span>
         <span class="queue-titles">
             <span class="queue-title">{{ track.title }}</span>
