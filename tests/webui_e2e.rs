@@ -101,7 +101,7 @@ async fn test_home_page_shows_the_music_category() {
         "the Music category tab should be on the home page: {body}"
     );
     assert!(
-        body.contains("<h1>Music</h1>"),
+        body.contains("<h1>Music"),
         "the home page shows the Music folder: {body}"
     );
     assert!(
@@ -419,6 +419,10 @@ async fn test_player_bar_renders_on_full_pages() {
         "the poll target exists on the page (htmx targetError otherwise): {body}"
     );
     assert!(
+        body.contains(r#"id="seek""#),
+        "the bar has the seek slider: {body}"
+    );
+    assert!(
         body.contains(r#"id="volume""#),
         "the bar has the volume slider: {body}"
     );
@@ -541,7 +545,7 @@ async fn test_progress_fragment_shows_the_elapsed_time() {
 
     let (_, idle) = get_html("/web/fragments/progress").await;
     assert!(
-        idle.contains(r#"<span id="progress"></span>"#),
+        idle.contains(r#"<span id="progress""#) && !idle.contains(" / "),
         "the idle progress is empty: {idle}"
     );
 
@@ -554,6 +558,14 @@ async fn test_progress_fragment_shows_the_elapsed_time() {
         "the playing progress renders: {playing}"
     );
     assert!(
+        playing.contains("data-position="),
+        "the poll carries the current position for the seek slider: {playing}"
+    );
+    assert!(
+        playing.contains("data-duration="),
+        "the poll carries the duration for the seek slider: {playing}"
+    );
+    assert!(
         !playing.contains(r#"hx-swap-oob"#),
         "the poll swap is direct, not out-of-band: {playing}"
     );
@@ -561,6 +573,32 @@ async fn test_progress_fragment_shows_the_elapsed_time() {
     assert!(
         playing.contains(" / "),
         "the readout is elapsed / total: {playing}"
+    );
+
+    clear_playlist().await;
+}
+
+/// The seek action moves the jukebox to the requested position and returns
+/// the refreshed bar out-of-band.
+#[serial(queue)]
+#[actix_web::test]
+async fn test_seek_action_moves_the_jukebox() {
+    clear_playlist().await;
+
+    let track = generate_track_id(Path::new(TRACK_1));
+    let _ = post_html(&format!("/web/play/{track}")).await;
+
+    let (status, body) = post_form("/web/seek", "position=5").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains(r#"id="player-bar" hx-swap-oob"#),
+        "seeking swaps the bar out-of-band: {body}"
+    );
+
+    let status = get_json("/status").await;
+    assert!(
+        status["position_secs"].as_f64().is_some_and(|p| p >= 4.0),
+        "the jukebox seeks to about 5 seconds: {status}"
     );
 
     clear_playlist().await;

@@ -5,13 +5,14 @@
    Jukebox: the server plays. The bar carries the one-second progress poll
    (hx-target points at the progress element, which the poll swaps in place
    - the footer itself is never re-rendered by polling, so a mid-drag
-   volume slider is never yanked away). Transport buttons post to /web/*.
+   volume or seek slider is never yanked away). Transport buttons post to
+   /web/*, and the seek slider posts to /web/seek when it is released.
 
    Browser: the browser plays. The bar carries the session queue's front
    track in its data attributes (track id, title, artist, autoplay), which
    is how every server render tells the player script what to be playing;
-   the script owns transport, progress and volume, so none of them have
-   htmx attributes here. #}
+   the script owns transport, progress, seeking and volume, so none of them
+   have htmx attributes here. #}
 <footer id="player-bar" {% if shell.oob %}hx-swap-oob="true"{% endif %}
         {% if !shell.is_browser() %}hx-get="/web/fragments/progress" hx-trigger="every 1s"
         hx-target="#progress" hx-swap="outerHTML"{% endif %}
@@ -26,6 +27,18 @@
         {% else %}
         <span class="muted">Nothing playing</span>
         {% endif %}
+    </div>
+    <div id="seek-bar">
+        <input id="seek" class="seek-slider" type="range" min="0"
+               max="{{ shell.player_bar.seek_max() }}"
+               value="{{ shell.player_bar.seek_value() }}"
+               step="0.1" aria-label="Seek"
+               {% if !shell.player_bar.seekable() %}disabled{% endif %}
+               {% if !shell.is_browser() %}name="position" hx-post="/web/seek"
+               hx-trigger="change" hx-include="this" hx-swap="none"{% endif %}>
+        <span id="progress"
+              {% if let Some(position) = shell.player_bar.position_secs %}data-position="{{ position }}"{% endif %}
+              {% if let Some(duration) = shell.player_bar.duration_secs %}data-duration="{{ duration }}"{% endif %}>{% if let Some(progress) = shell.player_bar.progress %}{{ progress }}{% endif %}</span>
     </div>
     <div id="transport">
         {% if shell.is_browser() %}

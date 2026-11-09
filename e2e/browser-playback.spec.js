@@ -350,4 +350,57 @@ test.describe("browser playback", () => {
     await expect(queued.nth(2)).toContainText(second.title);
     await expect(page.locator("#now-playing .np-title")).toHaveText(first.title);
   });
+
+  test("the progress bar seeks in the browser player", async ({ page }) => {
+    const folder = await findFolderWithTracks(page.request);
+    const track = folder.tracks[0];
+
+    await page.goto(`/browse/${folder.id}`);
+    await page.locator(".track-title", { hasText: track.title }).first().click();
+    await expect(page.locator("#transport-pause")).toBeVisible();
+    // The slider becomes usable once the browser knows the track duration.
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.duration ?? 0"),
+      )
+      .toBeGreaterThan(60);
+
+    await page.locator("#seek").fill("30");
+    await expect
+      .poll(async () =>
+        page.evaluate("document.querySelector('audio')?.currentTime ?? 0"),
+      )
+      .toBeGreaterThan(29);
+    await expect(page.locator("#progress")).toContainText("0:30");
+  });
+
+  test("the jukebox progress bar seeks on the server", async ({ page }) => {
+    const folder = await findFolderWithTracks(page.request);
+
+    await page.goto(`/browse/${folder.id}`);
+    await page.locator("#mode-jukebox").click();
+    await expect(page.locator("#player-bar")).toHaveAttribute(
+      "data-mode",
+      "jukebox",
+    );
+
+    const row = page.locator(".track-list li").first();
+    await row.hover();
+    await row.locator(".action-play").click();
+    await expect(page.locator("#transport-pause")).toBeVisible();
+    // The server's render carries the track duration into the slider.
+    await expect(page.locator("#seek")).toBeEnabled();
+
+    await page.locator("#seek").fill("5");
+    await expect
+      .poll(async () => {
+        const status = await (await page.request.get("/status")).json();
+        return status.position_secs ?? 0;
+      })
+      .toBeGreaterThan(4);
+
+    // Stop the server player and leave the jukebox queue empty.
+    await page.locator("#drawer-toggle").click();
+    await page.locator("#queue-clear").click();
+  });
 });

@@ -9,6 +9,7 @@
  */
 use actix_web::{get, post, web, HttpRequest, HttpResponse};
 use serde::Deserialize;
+use std::time::Duration;
 
 use crate::api::queue::{add_to_queue, clear_queue, move_in_queue, remove_from_queue};
 use crate::api::session::{session_add, session_clear, session_move, session_remove};
@@ -154,6 +155,37 @@ pub async fn resume(data: web::Data<AppState>, req: HttpRequest) -> Result<HttpR
 #[post("/web/pause")]
 pub async fn pause(data: web::Data<AppState>, req: HttpRequest) -> Result<HttpResponse, AppError> {
     data.player.pause().await.map_err(AppError::from)?;
+    action_response(&data, &req, false).await
+}
+
+/**
+ * Seek to a position (in seconds) in the current track. Sent when the
+ * jukebox progress slider is released; the browser player handles its own
+ * seeking and never calls this. The response's out-of-band bar carries the
+ * position the server settled on.
+ */
+#[derive(Deserialize)]
+pub struct SeekForm {
+    position: f64,
+}
+
+#[post("/web/seek")]
+pub async fn seek(
+    data: web::Data<AppState>,
+    req: HttpRequest,
+    form: web::Form<SeekForm>,
+) -> Result<HttpResponse, AppError> {
+    if playback_mode(&req) == PlaybackMode::Jukebox {
+        if !form.position.is_finite() || form.position < 0.0 {
+            return Err(AppError::invalid_request(
+                "The seek position must be a non-negative number of seconds",
+            ));
+        }
+        data.player
+            .seek(Duration::from_secs_f64(form.position))
+            .await
+            .map_err(AppError::from)?;
+    }
     action_response(&data, &req, false).await
 }
 

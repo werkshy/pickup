@@ -1,2 +1,6 @@
-{# The progress readout, swapped in place by the bar's one-second poll. #}
-<span id="progress">{% if let Some(progress) = bar.progress %}{{ progress }}{% endif %}</span>
+{# The progress readout, swapped in place by the bar's one-second poll. The
+   data attributes let the player script keep the (unswapped) seek slider in
+   step with the server's position. #}
+<span id="progress"
+      {% if let Some(position) = bar.position_secs %}data-position="{{ position }}"{% endif %}
+      {% if let Some(duration) = bar.duration_secs %}data-duration="{{ duration }}"{% endif %}>{% if let Some(progress) = bar.progress %}{{ progress }}{% endif %}</span>
