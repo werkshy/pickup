@@ -4,18 +4,31 @@
  * the response (see the hx-select on <body> in base.html), so one handler
  * serves both full loads and swaps.
  */
+use std::path::Path;
+
 use actix_web::{get, web, HttpRequest, HttpResponse};
 
 use crate::app_state::AppState;
 use crate::error::AppError;
+use crate::filemanager::collection_builder::DEFAULT_CATEGORY;
+use crate::filemanager::model::Folder;
+use crate::filemanager::utils::generate_category_id;
 use crate::webui::render;
 use crate::webui::views::{FolderPageView, FolderTemplate, HomeTemplate, Shell};
 
-/// The home page: the collection's categories.
+/// The home page: the default ("Music") category, so the collection's main
+/// folders are what you land on. If that category isn't in the collection,
+/// fall back to the list of every category.
 #[get("/")]
 pub async fn home(data: web::Data<AppState>, req: HttpRequest) -> Result<HttpResponse, AppError> {
-    let shell = Shell::for_page(&data, &req, "Pickup", "").await;
-    render(&HomeTemplate { shell })
+    let id = generate_category_id(Path::new(DEFAULT_CATEGORY));
+    match data.collection.get_folder(&id) {
+        Some(folder) => folder_page(&data, &req, folder).await,
+        None => {
+            let shell = Shell::for_page(&data, &req, "Pickup", "").await;
+            render(&HomeTemplate { shell })
+        }
+    }
 }
 
 /// A folder page: category, artist, album or disc. Every level renders the
@@ -35,6 +48,16 @@ pub async fn browse(
             return Ok(crate::webui::not_found_page(&data, &req, &format!("/browse/{id}")).await)
         }
     };
+    folder_page(&data, &req, folder).await
+}
+
+/// Render a folder with the full page shell. Shared by the home page (which
+/// lands on the default category) and the browse route.
+async fn folder_page(
+    data: &AppState,
+    req: &HttpRequest,
+    folder: &Folder,
+) -> Result<HttpResponse, AppError> {
     let page = FolderPageView::from_folder(folder);
 
     let title = if page.heading.is_empty() {
@@ -42,6 +65,6 @@ pub async fn browse(
     } else {
         format!("{} · Pickup", page.heading)
     };
-    let shell = Shell::for_page(&data, &req, &title, &page.active_category).await;
+    let shell = Shell::for_page(data, req, &title, &page.active_category).await;
     render(&FolderTemplate { shell, page })
 }
