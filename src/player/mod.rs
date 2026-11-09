@@ -39,7 +39,8 @@ pub trait Command: Send {
 /// A snapshot of the playback state, as returned by `Player::status`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlaybackStatus {
-    /// Number of sources queued in the player, including the one playing.
+    /// Number of sources queued in the player, including the one playing. A
+    /// stopped player reports 0 even if the audio sink is still draining.
     pub queued: usize,
     /**
      * Whether a track's playback lifecycle is open: it is playing, or it
@@ -236,10 +237,18 @@ impl Player {
     }
 
     pub fn status(&self) -> PlaybackStatus {
-        let queued = self.player.len();
-        let paused = self.player.is_paused();
-        let position = self.position();
-        let duration = if self.player.empty() {
+        // A stopped player is logically idle immediately, even while rodio's
+        // sink drains the last source asynchronously. Reading the sink length
+        // here would briefly report a track that is no longer in the queue.
+        let stopped = self.stopped;
+        let queued = if stopped { 0 } else { self.player.len() };
+        let paused = if stopped {
+            false
+        } else {
+            self.player.is_paused()
+        };
+        let position = if stopped { None } else { self.position() };
+        let duration = if stopped || self.player.empty() {
             None
         } else {
             self.duration
@@ -708,6 +717,14 @@ mod tests {
         // Nothing has drained yet: state must be held until it does.
         assert!(player.stopped);
         assert!(!player.player.empty());
+
+        // But the status is logical: a stopped player is idle even while the
+        // sink is still tearing down.
+        let status = player.status();
+        assert_eq!(status.queued, 0);
+        assert!(!status.paused);
+        assert_eq!(status.position, None);
+        assert_eq!(status.duration, None);
 
         player.stop();
     }
