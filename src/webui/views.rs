@@ -319,6 +319,12 @@ pub struct PlayerBarView {
     /// the duration is unknown. Jukebox only - the browser player draws its
     /// own progress.
     pub progress: Option<String>,
+    /// Jukebox only: elapsed seconds in the current track, used to place the
+    /// seek slider. `None` when idle.
+    pub position_secs: Option<f64>,
+    /// Jukebox only: total length of the current track in seconds, used as
+    /// the seek slider's maximum. `None` when idle or unknown.
+    pub duration_secs: Option<f64>,
     pub volume: u8,
     /// Jukebox only: whether the player is actively sounding the track (as
     /// opposed to paused or idle), which chooses the play/pause button.
@@ -396,7 +402,7 @@ impl PlayerBarView {
             None
         };
 
-        let (progress, playing) = match status {
+        let (progress, position_secs, duration_secs, playing) = match status {
             Some(status) if status.active => {
                 let progress = status.duration.as_ref().map(|duration| {
                     format!(
@@ -405,18 +411,40 @@ impl PlayerBarView {
                         mmss(duration)
                     )
                 });
-                (progress, !status.paused)
+                (
+                    progress,
+                    status.position.map(|position| position.as_secs_f64()),
+                    status.duration.map(|duration| duration.as_secs_f64()),
+                    !status.paused,
+                )
             }
-            _ => (None, false),
+            _ => (None, None, None, false),
         };
 
         PlayerBarView {
             now_playing: track
                 .map(|track| NowPlaying::new(track.id, track.name, track.artist, false)),
             progress,
+            position_secs,
+            duration_secs,
             volume: snapshot.volume,
             playing,
         }
+    }
+
+    /// Whether the seek slider can be used: there is a known duration.
+    pub fn seekable(&self) -> bool {
+        self.duration_secs.is_some_and(|duration| duration > 0.0)
+    }
+
+    /// The seek slider's maximum, in seconds (0 when unknown).
+    pub fn seek_max(&self) -> f64 {
+        self.duration_secs.unwrap_or(0.0)
+    }
+
+    /// The seek slider's current position, in seconds (0 when idle).
+    pub fn seek_value(&self) -> f64 {
+        self.position_secs.unwrap_or(0.0)
     }
 }
 

@@ -424,7 +424,7 @@ body.queue-open #drawer {
 
 #player-bar {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    grid-template-columns: minmax(6rem, 1fr) minmax(8rem, 2.5fr) auto auto;
     align-items: center;
     gap: 1rem;
     height: 4rem;
@@ -477,12 +477,33 @@ body.queue-open #drawer {
     color: var(--accent);
 }
 
+#seek-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+}
+
+.seek-slider {
+    flex: 1;
+    min-width: 4rem;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.seek-slider:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
 #progress {
+    flex: none;
     font-size: 0.85rem;
     color: var(--text-muted);
     font-variant-numeric: tabular-nums;
     min-width: 6.5rem; /* stops the transport sliding around as digits change */
-    text-align: center;
+    text-align: right;
+    white-space: nowrap;
 }
 
 #bar-actions {

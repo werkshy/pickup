@@ -121,6 +121,7 @@ where
             .service(actions::clear)
             .service(actions::resume)
             .service(actions::pause)
+            .service(actions::seek)
             .service(actions::skip)
             .service(actions::stop)
             .service(actions::volume)

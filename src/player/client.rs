@@ -137,6 +137,16 @@ impl PlayerClient {
     }
 
     /**
+     * Seeks within the currently playing track. No-op when nothing is
+     * playing.
+     */
+    pub async fn seek(&self, position: Duration) -> Result<(), PlayerError> {
+        self.request_async(move |player| player.seek(position))
+            .await
+            .and_then(|result| result.map_err(PlayerError::Failed))
+    }
+
+    /**
      * Checks that a track can be decoded, without changing playback or the
      * queue. The path is relative to the music root, like queue track paths.
      */

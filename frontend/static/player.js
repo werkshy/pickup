@@ -21,6 +21,11 @@ audio.hidden = true;
 let currentTrackId = null;
 // One advance at a time: the ended event and a skip click must not queue up.
 let advancing = false;
+// True while the user is dragging the seek slider, so time updates and the
+// jukebox poll do not yank the thumb out from under them.
+let seeking = false;
+// Holds the thumb after a jukebox seek is released until the server answers.
+let seekReleaseTimer = null;
 
 function playerBar() {
     return document.getElementById("player-bar");
@@ -89,6 +94,67 @@ function setProgress(current, duration) {
     if (progress && Number.isFinite(duration) && duration > 0) {
         progress.textContent = mmss(current) + " / " + mmss(duration);
     }
+    setSeek(current, duration);
+}
+
+// Point the seek slider at a position/duration. A track with no known
+// duration cannot be scrubbed yet.
+function setSeek(current, duration) {
+    const seek = document.getElementById("seek");
+    if (!seek) return;
+    if (!Number.isFinite(duration) || duration <= 0) {
+        seek.disabled = true;
+        seek.max = "0";
+        if (!seeking) seek.value = "0";
+        return;
+    }
+    seek.disabled = false;
+    seek.max = String(duration);
+    if (!seeking) {
+        seek.value = String(Math.min(Math.max(0, current), duration));
+    }
+}
+
+// Clear the readout and disable the slider (no track loaded).
+function resetProgress() {
+    const progress = document.getElementById("progress");
+    if (progress) progress.textContent = "";
+    const seek = document.getElementById("seek");
+    if (seek) {
+        seek.disabled = true;
+        seek.max = "0";
+        seek.value = "0";
+    }
+}
+
+// In jukebox mode the server renders the position into #progress's data
+// attributes on every poll; the slider itself is never swapped, so dragging
+// it is never interrupted.
+function syncJukeboxSeek() {
+    if (browserMode()) return;
+    const progress = document.getElementById("progress");
+    const seek = document.getElementById("seek");
+    if (!progress || !seek) return;
+    const duration = Number(progress.dataset.duration);
+    const position = Number(progress.dataset.position);
+    if (
+        progress.dataset.duration === undefined ||
+        !Number.isFinite(duration) ||
+        duration <= 0
+    ) {
+        seek.disabled = true;
+        seek.max = "0";
+        if (!seeking) seek.value = "0";
+        return;
+    }
+    seek.disabled = false;
+    seek.max = String(duration);
+    if (!seeking) {
+        const value = Number.isFinite(position)
+            ? Math.min(Math.max(0, position), duration)
+            : 0;
+        seek.value = String(value);
+    }
 }
 
 // The server always renders the slider at its default volume, so after a swap
@@ -103,6 +169,7 @@ function setVolume() {
 function playTrack(track, autoplay) {
     currentTrackId = track.id;
     audio.src = trackUrl(track.id);
+    resetProgress();
     setNowPlaying(track.id, track.title, track.artist);
     if (autoplay) {
         audio.play().catch(() => {
@@ -134,6 +201,7 @@ async function advance() {
             audio.removeAttribute("src");
             setNowPlaying(null, "", "");
             setPaused(true);
+            resetProgress();
         }
         refreshQueueDrawer();
     } finally {
@@ -186,6 +254,7 @@ function syncFromBar() {
         currentTrackId = null;
         setNowPlaying(null, "", "");
         setPaused(true);
+        resetProgress();
         return;
     }
 
@@ -241,6 +310,16 @@ document.addEventListener("click", (event) => {
 });
 
 document.addEventListener("input", (event) => {
+    if (event.target.id === "seek") {
+        seeking = true;
+        if (!browserMode()) return; // jukebox seeks when the slider is released
+        const duration = audio.duration;
+        if (Number.isFinite(duration) && duration > 0) {
+            audio.currentTime = Number(event.target.value);
+            setProgress(audio.currentTime, duration);
+        }
+        return;
+    }
     if (!browserMode()) return;
     if (event.target.id === "volume") {
         audio.volume = Number(event.target.value) / 100;
@@ -252,9 +331,31 @@ document.addEventListener("input", (event) => {
     }
 });
 
+document.addEventListener("change", (event) => {
+    if (event.target.id !== "seek") return;
+    if (browserMode()) {
+        seeking = false;
+        const duration = audio.duration;
+        if (Number.isFinite(duration) && duration > 0) {
+            audio.currentTime = Number(event.target.value);
+            setProgress(audio.currentTime, duration);
+        }
+        return;
+    }
+    // The jukebox slider's hx-post has fired. Keep the thumb where the user
+    // left it until the server's response (or the next poll) catches up.
+    clearTimeout(seekReleaseTimer);
+    seekReleaseTimer = setTimeout(() => {
+        seeking = false;
+        syncJukeboxSeek();
+    }, 750);
+});
+
 audio.addEventListener("play", () => { setPaused(false); updateQueueHighlight(); });
 audio.addEventListener("pause", () => { setPaused(true); updateQueueHighlight(); });
 audio.addEventListener("timeupdate", () => setProgress(audio.currentTime, audio.duration));
+audio.addEventListener("loadedmetadata", () => setProgress(audio.currentTime, audio.duration));
+audio.addEventListener("durationchange", () => setProgress(audio.currentTime, audio.duration));
 audio.addEventListener("ended", () => advance());
 
 // Restore the volume the browser chose last time, and sync with the bar the
@@ -272,8 +373,11 @@ audio.addEventListener("ended", () => advance());
         // No storage access: the default volume applies.
     }
     syncFromBar();
+    syncJukeboxSeek();
+    document.body.addEventListener("htmx:afterSwap", syncJukeboxSeek);
     document.body.addEventListener("htmx:oobAfterSwap", () => {
         syncFromBar();
+        syncJukeboxSeek();
         // The drawer may have been swapped out-of-band in the same response.
         updateQueueHighlight();
     });

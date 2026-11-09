@@ -423,6 +423,26 @@ impl Player {
     }
 
     /**
+     * Seek within the currently playing track (or the paused one). No-op
+     * when nothing is playing. A target beyond the known duration is clamped
+     * to the end.
+     */
+    pub fn seek(&mut self, position: Duration) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if !self.active || self.player.empty() {
+            log::info!("Nothing to seek: no track is playing");
+            return Ok(());
+        }
+        let target = self
+            .duration
+            .map(|duration| position.min(duration))
+            .unwrap_or(position);
+        log::info!("Seeking to {:?}", target);
+        self.player
+            .try_seek(target)
+            .map_err(|error| format!("could not seek: {error}").into())
+    }
+
+    /**
      * Start playing the track at the front of the queue, replacing whatever
      * is currently playing. The queue is the source of truth: callers mutate
      * it first, then ask the player to play from it.
@@ -963,6 +983,41 @@ mod tests {
 
         player.stop();
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_seek_moves_the_position() {
+        let dir = test_audio_dir("seek");
+        let path_a = dir.join("a.wav");
+        write_wav(&path_a, 480_000); // 10s, so the target is well inside
+
+        let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
+        queue
+            .write()
+            .unwrap()
+            .add_tracks(vec![make_track(path_a.clone())]);
+        let mut player = Player::new(queue.clone(), PathBuf::from(""));
+
+        player.play_queue().unwrap();
+        player.seek(Duration::from_secs(5)).unwrap();
+
+        let position = player.position().unwrap();
+        assert!(
+            position >= Duration::from_secs(5) && position < Duration::from_secs(6),
+            "expected the position to move to about 5s, got {position:?}"
+        );
+
+        player.stop();
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_seek_is_a_noop_when_idle() {
+        let mut player = test_player();
+
+        player.seek(Duration::from_secs(5)).unwrap();
+
+        assert!(player.player.empty());
     }
 
     #[test]
