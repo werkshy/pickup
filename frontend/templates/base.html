@@ -15,6 +15,10 @@
    response, hx-swap=outerHTML replaces it with the response's own copy (so
    the boosting attributes are always the freshly rendered ones).
 
+   hx-history-elt makes browser back/forward restore only #content too, so
+   the player bar below (and the <audio> element the script owns) survives
+   history navigation and keeps playing.
+
    These attributes live on the boosted containers, NOT on <body>: htmx
    inherits hx-* attributes from ancestors, and a body-level hx-select would
    filter every other request's response (e.g. the player bar's progress
@@ -32,7 +36,7 @@
         </nav>
     </header>
 
-    <main id="content" hx-boost="true"
+    <main id="content" hx-boost="true" hx-history-elt
           hx-target="#content" hx-select="#content" hx-swap="outerHTML">
         {% block content %}{% endblock %}
     </main>
