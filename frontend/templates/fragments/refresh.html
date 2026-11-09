@@ -1,0 +1,12 @@
+{# The collection refresh control. A click starts a background rebuild; the
+   status span then polls itself until the rebuild finishes, at which point
+   the response no longer carries the polling attribute. #}
+<span id="refresh-control" class="refresh-control">
+    <span id="refresh-status"
+          class="refresh-status{% if refresh.running %} running{% endif %}{% if refresh.failed %} error{% endif %}"
+          {% if refresh.running %}hx-get="/web/fragments/refresh" hx-trigger="every 1s"
+          hx-target="#refresh-control" hx-swap="outerHTML" hx-select="unset"{% endif %}>{% if !refresh.message.is_empty() %}{{ refresh.message }}{% endif %}</span>
+    <button id="refresh-collection" class="icon-button" title="Refresh the music collection"
+            hx-post="/web/refresh" hx-target="#refresh-control" hx-swap="outerHTML"
+            hx-select="unset">Refresh</button>
+</span>

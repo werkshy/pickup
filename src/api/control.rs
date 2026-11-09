@@ -23,7 +23,8 @@ pub async fn play(
     id: web::Path<String>,
 ) -> Result<impl Responder, AppError> {
     let id = id.into_inner();
-    let Some(track) = data.collection.get_track(&id) else {
+    let collection = data.collection.get();
+    let Some(track) = collection.get_track(&id).cloned() else {
         return Err(AppError::not_found(format!(
             "No track found with ID '{id}'"
         )));
@@ -40,10 +41,7 @@ pub async fn play(
     // the new playback starting, it would advance past the new queue's
     // first track.
     data.player.stop().await.map_err(AppError::from)?;
-    data.queue
-        .write()
-        .unwrap()
-        .replace_with(vec![track.clone()]);
+    data.queue.write().unwrap().replace_with(vec![track]);
 
     // Tell the player to play the new queue.
     data.player

@@ -14,6 +14,7 @@ use pickup::{
     filemanager::{
         collection::Collection,
         model::{CollectionLocation, Kind, Track},
+        options::CollectionOptions,
     },
     queue::PlaybackQueue,
     session::SessionStore,
@@ -171,13 +172,17 @@ async fn test_missing_file_is_an_error() {
     collection.add_track(missing_track, &missing_location);
 
     let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
-    let state = Data::new(AppState {
+    let state = Data::new(AppState::new(
         // The player is not involved in serving track files.
-        player: pickup::spawn_player(queue.clone(), PathBuf::from(helpers::TEST_MUSIC_DIR)),
-        collection: Arc::new(collection),
+        pickup::spawn_player(queue.clone(), PathBuf::from(helpers::TEST_MUSIC_DIR)),
+        collection,
         queue,
-        sessions: SessionStore::new(),
-    });
+        SessionStore::new(),
+        CollectionOptions {
+            dir: String::from(helpers::TEST_MUSIC_DIR),
+            ignores: None,
+        },
+    ));
 
     let (status, _, _, body) = get_track(&state, "/track/missing", None).await;
 

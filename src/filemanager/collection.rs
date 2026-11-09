@@ -32,6 +32,25 @@ pub fn init(options: CollectionOptions) -> std::io::Result<Collection> {
     Ok(collection)
 }
 
+/**
+ * Rebuild the collection from a fresh walk of the music dir, rather than
+ * loading the cache. Used by the in-process refresh, which needs to see
+ * files added or removed since the cache was written.
+ */
+pub fn refresh(options: CollectionOptions) -> std::io::Result<Collection> {
+    let start = std::time::Instant::now();
+    let dir = options.dir.clone();
+    let files = cache::refresh(options)?;
+    let path_count = files.len();
+    let collection = build(dir, files);
+    log::info!(
+        "Refreshed {path_count} paths and built collection of {} tracks in {:?}",
+        collection.all_tracks().len(),
+        start.elapsed()
+    );
+    Ok(collection)
+}
+
 impl Collection {
     pub fn new(dir: String) -> Self {
         Self {

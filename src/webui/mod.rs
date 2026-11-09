@@ -9,6 +9,7 @@
  */
 pub mod actions;
 pub mod pages;
+pub mod refresh;
 pub mod views;
 
 use actix_web::dev::{ServiceFactory, ServiceRequest};
@@ -129,6 +130,8 @@ where
             .service(actions::mode_jukebox)
             .service(actions::queue_fragment)
             .service(actions::progress)
+            .service(refresh::trigger)
+            .service(refresh::fragment)
             .service(static_asset)
     })
 }

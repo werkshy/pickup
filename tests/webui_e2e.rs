@@ -355,6 +355,23 @@ async fn test_static_assets_are_served() {
     assert_eq!(status, StatusCode::OK);
 }
 
+#[actix_web::test]
+async fn test_refresh_control_and_trigger() {
+    let (status, body) = get_html("/web/fragments/refresh").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains(r#"id="refresh-control""#),
+        "the refresh fragment should render the control: {body}"
+    );
+
+    let (status, body) = post_html("/web/refresh").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(
+        body.contains(r#"id="refresh-control""#),
+        "triggering a refresh should return the control: {body}"
+    );
+}
+
 /// The queue drawer shows the JSON-visible queue state on full page loads,
 /// including which track is playing.
 #[serial(queue)]

@@ -107,6 +107,7 @@ services:
 | `MUSIC_DIR`    | `/music` (container)  | Root of the music collection; overridden by bind mount |
 | `CACHE_DIR`    | `/cache` (container)  | Directory for the music file cache; overridden by bind mount |
 | `PORT`         | `9090`                | HTTP server port                                       |
+| `REFRESH_HOUR_UTC` | `6`               | Hour (UTC) the nightly collection refresh runs         |
 | `RUST_LOG`     | (unset)               | Filter; defaults to `info,symphonia_bundle_mp3=warn`  |
 
 **Permissions**
@@ -131,9 +132,16 @@ services:
 
 **Refreshing the cache after library changes**
 
+Use the **Refresh** button in the web UI, or from the command line:
+
 ```bash
 docker compose run --rm pickup refresh
 ```
+
+The server also refreshes the collection automatically every night at
+`REFRESH_HOUR_UTC` (06:00 UTC by default). Both kinds of refresh rebuild the
+collection in the background and swap it in when it is ready, so browsing and
+playback continue against the old collection until the new one is complete.
 
 **No authentication**
 

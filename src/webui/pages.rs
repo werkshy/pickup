@@ -11,7 +11,6 @@ use actix_web::{get, web, HttpRequest, HttpResponse};
 use crate::app_state::AppState;
 use crate::error::AppError;
 use crate::filemanager::collection_builder::DEFAULT_CATEGORY;
-use crate::filemanager::model::Folder;
 use crate::filemanager::utils::generate_category_id;
 use crate::webui::render;
 use crate::webui::views::{FolderPageView, FolderTemplate, HomeTemplate, Shell};
@@ -22,8 +21,12 @@ use crate::webui::views::{FolderPageView, FolderTemplate, HomeTemplate, Shell};
 #[get("/")]
 pub async fn home(data: web::Data<AppState>, req: HttpRequest) -> Result<HttpResponse, AppError> {
     let id = generate_category_id(Path::new(DEFAULT_CATEGORY));
-    match data.collection.get_folder(&id) {
-        Some(folder) => folder_page(&data, &req, folder).await,
+    let collection = data.collection.get();
+    match collection.get_folder(&id) {
+        Some(folder) => {
+            let page = FolderPageView::from_folder(folder);
+            folder_page(&data, &req, page).await
+        }
         None => {
             let shell = Shell::for_page(&data, &req, "Pickup", "").await;
             render(&HomeTemplate { shell })
@@ -42,13 +45,15 @@ pub async fn browse(
     id: web::Path<String>,
 ) -> Result<HttpResponse, AppError> {
     let id = id.into_inner();
-    let folder = match data.collection.get_folder(&id) {
+    let collection = data.collection.get();
+    let folder = match collection.get_folder(&id) {
         Some(folder) => folder,
         None => {
             return Ok(crate::webui::not_found_page(&data, &req, &format!("/browse/{id}")).await)
         }
     };
-    folder_page(&data, &req, folder).await
+    let page = FolderPageView::from_folder(folder);
+    folder_page(&data, &req, page).await
 }
 
 /// Render a folder with the full page shell. Shared by the home page (which
@@ -56,10 +61,8 @@ pub async fn browse(
 async fn folder_page(
     data: &AppState,
     req: &HttpRequest,
-    folder: &Folder,
+    page: FolderPageView,
 ) -> Result<HttpResponse, AppError> {
-    let page = FolderPageView::from_folder(folder);
-
     let title = if page.heading.is_empty() {
         "Pickup".to_string()
     } else {
