@@ -13,6 +13,6 @@ use crate::api::types::IndexResponse;
 pub async fn hello() -> impl Responder {
     web::Json(IndexResponse {
         name: "pickup".to_string(),
-        version: env!("CARGO_PKG_VERSION").to_string(),
+        version: crate::VERSION.to_string(),
     })
 }

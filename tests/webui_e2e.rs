@@ -97,6 +97,10 @@ async fn test_home_page_shows_the_music_category() {
         "the home page is HTML: {body}"
     );
     assert!(
+        body.contains(&format!(r#"title="Pickup version {}""#, pickup::VERSION)),
+        "the home link should show the version: {body}"
+    );
+    assert!(
         body.contains(&generate_category_id(Path::new("Music"))),
         "the Music category tab should be on the home page: {body}"
     );

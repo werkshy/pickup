@@ -26,7 +26,7 @@
 <body>
     <header id="site-header" hx-boost="true"
             hx-target="#content" hx-select="#content" hx-swap="outerHTML">
-        <a class="brand" href="/">Pickup</a>
+        <a class="brand" href="/" title="Pickup version {{ shell.version }}">Pickup</a>
         {% include "fragments/playback_mode.html" %}
         <nav id="category-tabs">
             {% for category in shell.categories %}

@@ -4,6 +4,7 @@ target/
 cache/*
 !cache/.gitkeep
 TODO.md
+VERSION
 node_modules/
 test-results/
 playwright-report/
