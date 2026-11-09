@@ -134,6 +134,30 @@ a:hover {
     font-weight: 600;
 }
 
+/* The collection refresh control, pushed to the right of the header. The
+   status is only visible while a refresh is running or shortly after. */
+.refresh-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+    flex: none;
+}
+
+.refresh-status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.refresh-status.running {
+    color: var(--accent);
+}
+
+.refresh-status.error {
+    color: var(--danger);
+}
+
 /* ---- main content ---- */
 
 #content {

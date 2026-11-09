@@ -28,11 +28,11 @@ pub async fn get(
     path: web::Path<String>,
 ) -> Result<impl Responder, AppError> {
     let id = path.into_inner();
-    let track = data
-        .collection
+    let collection = data.collection.get();
+    let track = collection
         .get_track(&id)
         .ok_or_else(|| AppError::not_found("No matching music found in the collection"))?;
-    let file = PathBuf::from(&data.collection.dir).join(&track.path);
+    let file = PathBuf::from(&collection.dir).join(&track.path);
 
     NamedFile::open(&file).map_err(|error| {
         log::warn!("Serving {:?} failed: {}", file, error);

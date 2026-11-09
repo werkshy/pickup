@@ -49,11 +49,13 @@ pub(crate) async fn add_to_queue(
     data: &web::Data<AppState>,
     input: &ApiQueueInput,
 ) -> Result<(), AppError> {
-    let Some(tracks) = data.collection.get_tracks(&input.id) else {
+    let collection = data.collection.get();
+    let Some(tracks) = collection.get_tracks(&input.id) else {
         return Err(AppError::not_found(
             "No matching music found in the collection",
         ));
     };
+    let tracks: Vec<_> = tracks.into_iter().cloned().collect();
 
     log::info!("Adding {} tracks to the queue", tracks.len());
     let status = data.player.status().await.map_err(AppError::from)?;
@@ -71,7 +73,6 @@ pub(crate) async fn add_to_queue(
     // block to scope the RwLock
     {
         let mut queue = data.queue.write().unwrap();
-        let tracks: Vec<_> = tracks.into_iter().cloned().collect();
         match input.position {
             ApiQueuePosition::Replace => queue.replace_with(tracks),
             // "Next" means behind the playing track, or at the front when the

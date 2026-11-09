@@ -34,6 +34,8 @@
                {% if shell.active_category == category.id %}class="active"{% endif %}>{{ category.name }}</a>
             {% endfor %}
         </nav>
+        {% let refresh = shell.refresh %}
+        {% include "fragments/refresh.html" %}
     </header>
 
     <main id="content" hx-boost="true" hx-history-elt

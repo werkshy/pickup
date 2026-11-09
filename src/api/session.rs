@@ -41,7 +41,8 @@ pub(crate) fn session_add(
     id: &str,
     input: &ApiQueueInput,
 ) -> Result<(), AppError> {
-    let Some(tracks) = state.collection.get_tracks(&input.id) else {
+    let collection = state.collection.get();
+    let Some(tracks) = collection.get_tracks(&input.id) else {
         return Err(AppError::not_found(
             "No matching music found in the collection",
         ));

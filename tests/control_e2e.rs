@@ -383,12 +383,16 @@ async fn test_play_with_missing_file_returns_error() {
     // The queue Arc must be the same one the Player thread holds, or the
     // Player would play from a different queue than the API mutates.
     let queue = Arc::new(RwLock::new(PlaybackQueue::new()));
-    let app_state = Data::new(AppState {
-        player: spawn_player(queue.clone(), PathBuf::from(TEST_MUSIC_DIR)),
-        collection: Arc::new(collection),
+    let app_state = Data::new(AppState::new(
+        spawn_player(queue.clone(), PathBuf::from(TEST_MUSIC_DIR)),
+        collection,
         queue,
-        sessions: SessionStore::new(),
-    });
+        SessionStore::new(),
+        CollectionOptions {
+            dir: String::from(TEST_MUSIC_DIR),
+            ignores: None,
+        },
+    ));
 
     let app = test::init_service(build_app(app_state)).await;
 

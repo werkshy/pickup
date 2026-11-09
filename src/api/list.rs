@@ -15,7 +15,7 @@ use crate::{
 )]
 #[get("/categories")]
 pub async fn list_categories(data: web::Data<AppState>) -> impl Responder {
-    let collection = data.collection.as_ref();
+    let collection = data.collection.get();
 
     let response = ListCategoriesResponse {
         categories: collection.values().map(ApiFolderRef::from_folder).collect(),
@@ -39,8 +39,8 @@ pub async fn get_folder(
     id: web::Path<String>,
 ) -> Result<impl Responder, AppError> {
     let id = id.into_inner();
-    let folder = data
-        .collection
+    let collection = data.collection.get();
+    let folder = collection
         .get_folder(&id)
         .ok_or_else(|| AppError::not_found(format!("No folder found with ID '{id}'")))?;
     Ok(web::Json(ApiFolder::from_folder(folder)))

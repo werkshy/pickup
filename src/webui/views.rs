@@ -3,11 +3,10 @@
  * dumb: strings to render, booleans to branch on, no logic beyond loops.
  */
 use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use actix_web::HttpRequest;
 use askama::Template;
-
-use std::time::Duration;
 
 use crate::api::types::kind_name;
 use crate::app_state::AppState;
@@ -17,6 +16,7 @@ use crate::filemanager::utils::{
     generate_album_id, generate_artist_id, generate_category_id, generate_disc_id,
 };
 use crate::player::PlaybackStatus;
+use crate::refresh::RefreshStatus;
 use crate::session;
 use crate::webui::{playback_mode, PlaybackMode};
 
@@ -34,6 +34,7 @@ pub struct Shell {
     /// Which playback mode the browser is in: it decides which queue the
     /// drawer shows and how the player bar is rendered and driven.
     pub mode: PlaybackMode,
+    pub refresh: RefreshView,
     pub queue: QueueView,
     pub player_bar: PlayerBarView,
     pub oob: bool,
@@ -146,10 +147,10 @@ impl Shell {
         snapshot: &PlayerSnapshot,
         oob: bool,
     ) -> Shell {
+        let collection = state.collection.get();
         Shell {
             title: title.to_string(),
-            categories: state
-                .collection
+            categories: collection
                 .values()
                 .map(|folder| CategoryTab {
                     id: folder.id.clone(),
@@ -158,6 +159,7 @@ impl Shell {
                 .collect(),
             active_category: active_category.to_string(),
             mode: PlaybackMode::Jukebox,
+            refresh: RefreshView::from_status(state.refresh.status()),
             queue: QueueView::from_snapshot(state, snapshot),
             player_bar: PlayerBarView::from_snapshot(state, snapshot),
             oob,
@@ -178,10 +180,10 @@ impl Shell {
         oob: bool,
         start_playing: bool,
     ) -> Shell {
+        let collection = state.collection.get();
         Shell {
             title: title.to_string(),
-            categories: state
-                .collection
+            categories: collection
                 .values()
                 .map(|folder| CategoryTab {
                     id: folder.id.clone(),
@@ -190,6 +192,7 @@ impl Shell {
                 .collect(),
             active_category: active_category.to_string(),
             mode: PlaybackMode::Browser,
+            refresh: RefreshView::from_status(state.refresh.status()),
             queue: QueueView::from_session(state, session_id),
             player_bar: PlayerBarView::for_session(state, session_id, start_playing),
             oob,
@@ -207,6 +210,7 @@ impl Shell {
             categories: Vec::new(),
             active_category: String::new(),
             mode: PlaybackMode::Jukebox,
+            refresh: RefreshView::default(),
             queue,
             player_bar: PlayerBarView::default(),
             oob: false,
@@ -218,6 +222,63 @@ pub struct CategoryTab {
     pub id: String,
     pub name: String,
 }
+
+/**
+ * The collection refresh control's state: whether a refresh is running, and
+ * what happened to the last one.
+ */
+#[derive(Default)]
+pub struct RefreshView {
+    pub running: bool,
+    pub message: String,
+    pub failed: bool,
+}
+
+impl RefreshView {
+    pub fn from_status(status: RefreshStatus) -> RefreshView {
+        if status.running {
+            return RefreshView {
+                running: true,
+                message: "Refreshing…".to_string(),
+                failed: false,
+            };
+        }
+
+        if let Some(error) = status.last_error {
+            return RefreshView {
+                running: false,
+                message: format!("Refresh failed: {error}"),
+                failed: true,
+            };
+        }
+
+        let message = status
+            .last_completed
+            .map(|completed| format!("Refreshed {}", time_ago(completed)))
+            .unwrap_or_default();
+        RefreshView {
+            running: false,
+            message,
+            failed: false,
+        }
+    }
+}
+
+fn time_ago(then: SystemTime) -> String {
+    match SystemTime::now().duration_since(then) {
+        Ok(elapsed) if elapsed.as_secs() < 60 => "just now".to_string(),
+        Ok(elapsed) if elapsed.as_secs() < 3600 => {
+            format!("{}m ago", elapsed.as_secs() / 60)
+        }
+        Ok(elapsed) if elapsed.as_secs() < SECONDS_PER_DAY => {
+            format!("{}h ago", elapsed.as_secs() / 3600)
+        }
+        Ok(elapsed) => format!("{}d ago", elapsed.as_secs() / SECONDS_PER_DAY),
+        Err(_) => "just now".to_string(),
+    }
+}
+
+const SECONDS_PER_DAY: u64 = 24 * 60 * 60;
 
 pub struct QueueView {
     pub tracks: Vec<QueueTrackRow>,
@@ -684,4 +745,14 @@ pub struct ActionTemplate {
 #[template(path = "fragments/progress.html")]
 pub struct ProgressTemplate {
     pub bar: PlayerBarView,
+}
+
+/**
+ * The collection refresh control on its own, for starting a refresh and for
+ * its own status poll.
+ */
+#[derive(Template)]
+#[template(path = "fragments/refresh.html")]
+pub struct RefreshTemplate {
+    pub refresh: RefreshView,
 }

@@ -4,6 +4,7 @@ pub mod error;
 pub mod filemanager;
 pub mod player;
 pub mod queue;
+pub mod refresh;
 pub mod session;
 pub mod webui;
 
@@ -52,13 +53,13 @@ pub fn build_app_state(options: &ServeOptions) -> AppState {
         PathBuf::from(&options.collection_options.dir),
     );
     let collection = collection::init(options.collection_options.clone()).unwrap();
-    let collection_arc = Arc::new(collection);
-    AppState {
+    AppState::new(
         player,
-        collection: collection_arc,
+        collection,
         queue,
-        sessions: session::SessionStore::new(),
-    }
+        session::SessionStore::new(),
+        options.collection_options.clone(),
+    )
 }
 
 /**
@@ -192,7 +193,9 @@ fn path_error_message(error: &PathError) -> String {
 
 pub async fn serve(options: ServeOptions) -> std::io::Result<()> {
     let address = format!("0.0.0.0:{}", options.port);
-    let app_state = Data::new(build_app_state(&options));
+    let app_state = build_app_state(&options);
+    app_state.refresh.spawn_nightly();
+    let app_state = Data::new(app_state);
     log::info!("Starting on http://{}", address);
     HttpServer::new(move || build_app(app_state.clone()))
         .workers(2)
