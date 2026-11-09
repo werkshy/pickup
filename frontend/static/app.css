@@ -344,6 +344,26 @@ body.queue-open #drawer {
     background: var(--panel-raised);
 }
 
+#queue-list li[draggable="true"] {
+    cursor: grab;
+}
+
+#queue-list li[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+#queue-list li.dragging {
+    opacity: 0.4;
+}
+
+#queue-list li.drop-before {
+    box-shadow: inset 0 2px 0 var(--accent);
+}
+
+#queue-list li.drop-after {
+    box-shadow: inset 0 -2px 0 var(--accent);
+}
+
 #queue-list li.playing .queue-title {
     color: var(--accent);
     font-weight: 600;
