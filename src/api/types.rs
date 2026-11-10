@@ -22,7 +22,8 @@ pub struct VolumeResponse {
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct PlaybackStatusResponse {
-    /// Number of sources queued in the player, including the one playing.
+    /// Number of sources queued in the player, including the one playing. A
+    /// stopped player reports 0 even if the audio sink is still draining.
     pub queued: usize,
     pub paused: bool,
     /// Position in the currently playing track, in seconds; absent when

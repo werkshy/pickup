@@ -1,6 +1,8 @@
 use std::path::Path;
+use std::time::Duration;
 
 use actix_web::{
+    rt::time::sleep,
     test::{self, read_body_json},
     web::Data,
 };
@@ -38,6 +40,26 @@ async fn get_json(uri: &str) -> serde_json::Value {
     let app = test::init_service(build_app((*APP_STATE).clone())).await;
     let req = test::TestRequest::get().uri(uri).to_request();
     test::call_and_read_body_json(&app, req).await
+}
+
+/**
+ * Poll /status until it matches `expected`. Playback state changes can be
+ * asynchronous (the audio sink drains in the background), so tests must not
+ * assume the first read after an action is already settled.
+ */
+async fn wait_for_status(expected: impl Fn(&serde_json::Value) -> bool) -> serde_json::Value {
+    let deadline = std::time::Instant::now() + Duration::from_secs(5);
+    loop {
+        let status = get_json("/status").await;
+        if expected(&status) {
+            return status;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "status did not reach the expected state in time: {status}"
+        );
+        sleep(Duration::from_millis(20)).await;
+    }
 }
 
 async fn add_to_queue(body: serde_json::Value) -> serde_json::Value {
@@ -166,7 +188,7 @@ async fn test_add_replace_without_play_now_stops_playback() {
     }))
     .await;
 
-    let status = get_json("/status").await;
+    let status = wait_for_status(|status| status["queued"] == 0).await;
     assert_eq!(status["queued"], 0);
     let queue = get_json("/queue").await;
     assert_eq!(queue["tracks"].as_array().unwrap().len(), 1);
@@ -184,7 +206,7 @@ async fn test_clear_stops_playback() {
 
     clear_playlist().await;
 
-    let status = get_json("/status").await;
+    let status = wait_for_status(|status| status["queued"] == 0).await;
     assert_eq!(status["queued"], 0);
 }
 
@@ -256,7 +278,7 @@ async fn test_remove_last_playing_track_stops() {
 
     assert_eq!(resp.get("tracks").unwrap().as_array().unwrap().len(), 0);
 
-    let status = get_json("/status").await;
+    let status = wait_for_status(|status| status["queued"] == 0 && status["paused"] == false).await;
     assert_eq!(status["queued"], 0);
     assert_eq!(status["paused"], false);
 }
