@@ -28,6 +28,7 @@ use crate::webui::{playback_mode, PlaybackMode};
  */
 pub struct Shell {
     pub title: String,
+    pub version: &'static str,
     pub categories: Vec<CategoryTab>,
     /// ID of the category tab to highlight; empty on the home page.
     pub active_category: String,
@@ -150,6 +151,7 @@ impl Shell {
         let collection = state.collection.get();
         Shell {
             title: title.to_string(),
+            version: crate::VERSION,
             categories: collection
                 .values()
                 .map(|folder| CategoryTab {
@@ -183,6 +185,7 @@ impl Shell {
         let collection = state.collection.get();
         Shell {
             title: title.to_string(),
+            version: crate::VERSION,
             categories: collection
                 .values()
                 .map(|folder| CategoryTab {
@@ -207,6 +210,7 @@ impl Shell {
     pub fn for_fragment(queue: QueueView) -> Shell {
         Shell {
             title: String::new(),
+            version: crate::VERSION,
             categories: Vec::new(),
             active_category: String::new(),
             mode: PlaybackMode::Jukebox,

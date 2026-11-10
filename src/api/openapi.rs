@@ -12,7 +12,7 @@ use utoipa_actix_web::AppExt;
 #[openapi(
     info(
         title = "Pickup API",
-        version = env!("CARGO_PKG_VERSION"),
+        version = env!("PICKUP_VERSION"),
         description = "API for the Pickup music player server.",
     ),
     tags(

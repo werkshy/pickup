@@ -8,6 +8,15 @@ pub mod refresh;
 pub mod session;
 pub mod webui;
 
+/**
+ * The version stamped into this build: the release tag for tagged builds,
+ * otherwise the crate version.
+ */
+pub const VERSION: &str = match option_env!("PICKUP_VERSION") {
+    Some(version) => version,
+    None => env!("CARGO_PKG_VERSION"),
+};
+
 use std::path::PathBuf;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, RwLock};

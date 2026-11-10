@@ -5,7 +5,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libasound2-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
+ARG PICKUP_VERSION=""
+ENV PICKUP_VERSION=${PICKUP_VERSION}
 COPY Cargo.toml Cargo.lock ./
+COPY build.rs ./
 COPY askama.toml ./
 COPY src ./src
 COPY frontend ./frontend

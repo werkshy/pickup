@@ -70,6 +70,14 @@ cargo test
 cd e2e && npm test
 ```
 
+### Version stamping
+
+Release builds are stamped with their git tag: the build script reads
+`PICKUP_VERSION`, then a `VERSION` file, then the exact tag at `HEAD`, and
+falls back to the crate version otherwise. The Docker build accepts
+`PICKUP_VERSION` as a build argument. The stamped version is returned by
+`GET /hello` and shown in the header's home-link tooltip.
+
 ## Docker
 
 Images are published to GitHub Container Registry: `ghcr.io/werkshy/pickup`.

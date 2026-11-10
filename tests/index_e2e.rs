@@ -15,6 +15,6 @@ async fn test_index_get() {
 
     assert_eq!(
         resp,
-        json!({ "name": "pickup", "version": env!("CARGO_PKG_VERSION") })
+        json!({ "name": "pickup", "version": pickup::VERSION })
     );
 }
