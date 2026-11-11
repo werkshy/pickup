@@ -1,4 +1,4 @@
-name: Rust Release
+name: Release
 
 # Builds cross-compiled release binaries and creates a GitHub release for
 # semver tags, e.g. 0.1.0 or v0.1.0.
@@ -22,8 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Mirrors the go build matrix, minus arm5: modern ubuntu has no
-          # armel packages, so there's no matching alsa to link against.
+          # No arm5 builds - modern ubuntu has no armel packages, so
+          # there's no matching alsa to link against.
           # We build natively where a runner exists (arm64 runners are
           # free for public repos), and via 'cross' (docker+qemu) for
           # armv7, since there's no armv7 runner.
